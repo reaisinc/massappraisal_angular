@@ -11,7 +11,7 @@ li.disabled{color:gray}
 <div class="container">
 	<div class="jumbotron">
 		<div class="row">
-			<div class="col-md-4">
+			<div class="col-md-11">
 				<h4>Stepwise regression summary</h4>
 				<div id="summary">
 					<b>Formula: </b>{{swregression.names[0]}} = {{swregression.coef[0]['Estimate']}} <span ng-repeat="row in swregression.coef track by $index" ng-if="$index>0"> {{$index}} + {{swregression.names[$index]}} * {{row['Estimate']}}</span>
@@ -38,7 +38,7 @@ li.disabled{color:gray}
 					</table>
 				</div>
 			</div>
-			<div class="col-md-8">
+			<div class="col-md-1">
 				<img id="plotimg">
 			</div>
 		</div>

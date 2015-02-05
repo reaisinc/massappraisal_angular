@@ -62,7 +62,7 @@ Note:  Correlation does not prove “cause and effect”.  Correlation can be sp
 		<tr ng-repeat="row in correlation">
 			<td><input type='checkbox' ng-model="row.include" ng-change="selectField(row.name)"  ng-checked="row.include" ></td>
 			<td style='text-align:right' ng-class='{warning: row.valid}' style='font-weight:bold'>{{row.name}}</td>
-			<td style='text-align:right' ng-class='{warning: row.valid}' ng-repeat="c in row.vals">{{ c }}</td>
+			<td style='text-align:right' ng-class='{warning: row.valid}' ng-repeat="c in row.vals  track by $index">{{ c || '0' }}</td>
 		</tr>
 	</table>
 

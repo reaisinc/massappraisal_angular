@@ -94,16 +94,15 @@ function getOgrInfo(req,res,pid,fileName){
 		}catch(e){}
 
 		if(data.Geometry=='None'){
-			loadNonSpatial(req,res,fileName,filePath,data);
+			loadNonSpatial(req,res,fileName,filePath,pid,data);
 		}
 		else{ 
 			pg.connect(global.conString,function(err, client, release) {
 				if (err){ res.json({"err":"No connection to database;"});throw err;}
-
-				var sql=["delete from "+req.user.shortName+".tables where name='"+data['Layer name']+"'"
-				         ,"insert into "+req.user.shortName+".tables(name,filename,pid,type,geometrytype,filetype,date_loaded) values('"+data['Layer name']+"', "+pid+","+ (req.query.subj?"1":"0") +",'"+data['Geometry']+"','" + data['file'] + "',NOW())"]
+				//"delete from "+req.user.shortName+".tables where name='"+data['Layer name']+"'"
+				var sql="insert into "+req.user.shortName+".tables(name,filename,pid,type,geometrytype,filetype,date_loaded) values('"+data['Layer name']+"', "+pid+","+ (req.query.subj?"1":"0") +",'"+data['Geometry']+"','" + data['file'] + "',NOW())"
 				console.log(sql);
-				client.query(sql.join(";"), function(err, result) {
+				client.query(sql, function(err, result) {
 					release()
 					// res.json(msg));
 					res.json(data);
@@ -380,7 +379,7 @@ function createStatsTable(req,res,pid,fileName,tableName){
 /*
  * Verify file upload.
  */
-function loadNonSpatial(req,res,fileName,filePath,data){
+function loadNonSpatial(req,res,fileName,filePath,pid,data){
 	if(/^win/.test(process.platform))
 		process.env['GDAL_DATA'] = 'C:\\PostgreSQL93\\gdal-data';
 	var tableName = data["Layer name"].replace(/\W/g, '').toLowerCase();
@@ -410,12 +409,12 @@ function loadNonSpatial(req,res,fileName,filePath,data){
 		// res.end(data.toString());
 		// var msg={"step":step,"ret":data?JSON.stringify(data):""};
 		// if(er)msg['err']="Unable to load table: "+er;
-		convertCSV2Numeric(tableName,data,req,res,isCSV);
+		convertCSV2Numeric(fileName,tableName,data,pid,req,res,isCSV);
 	});
 
 }
 
-function convertCSV2Numeric(tableName,data,req,res,isCSV)
+function convertCSV2Numeric(fileName,tableName,data,pid,req,res,isCSV)
 {
 	var baseTableName=tableName;
 	var sql="select column_name from information_schema.columns where table_schema='"+req.user.shortName+"' and table_name = '"+tableName+"' and column_name not in('ogc_fid','wkb_geometry','id','shape_leng','shape_area','_acres_total') and data_type not in('numeric','double precision','float','integer','decimal')";
@@ -446,7 +445,8 @@ function convertCSV2Numeric(tableName,data,req,res,isCSV)
 			           ,"alter table " + tableName + "_stats drop if exists wkb_geometry"
 			           ,"alter table " + tableName + "_stats drop if exists ogc_fid"
 			           ,"alter table " + tableName + "_stats add oid serial"
-
+					   //,"delete from "+req.user.shortName+".tables where name='"+baseTableName+"'"
+					   ,"insert into "+req.user.shortName+".tables(name,filename,pid,type,geometrytype,filetype,date_loaded) values('"+baseTableName + "','"+fileName+"',"+pid+","+(req.query.subj?"1":"0") +",'"+data['Geometry']+"','" + data['file'] + "',NOW())"
 			           ,'drop table if exists ' + tableName + '_vars'
 			           // "create table " + tableName + "_vars as select 1 as
 			           // include,0 as id,0 as depvar,column_name as name from

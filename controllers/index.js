@@ -45,11 +45,11 @@ router.use('/projects', require('./projects'))
 
 
 
-router.use('/tables', require('./tables'))
+//router.use('/tables', require('./tables'))
 router.use('/upload', require('./upload'))
-router.use('/uploadfiles', require('./uploadfiles'))
+//router.use('/uploadfiles', require('./uploadfiles'))
 router.use('/load', require('./load'))
-
+/*
 router.use('/summary', require('./summary'))
 router.use('/configure', require('./configure'))
 router.use('/correlation', require('./correlation'))
@@ -57,12 +57,13 @@ router.use('/regression', require('./regression'))
 router.use('/stepwise_regression', require('./stepwise_regression'))
 router.use('/residuals', require('./residuals'))
 router.use('/predict', require('./predict'))
+*/
 router.use('/map', require('./map'))
 
 //subject
-router.use('/uploadsubfiles', require('./uploadsubfiles'))
-router.use('/loadsubject', require('./loadsubject'))
-router.use('/subject', require('./subject'))
+//router.use('/uploadsubfiles', require('./uploadsubfiles'))
+//router.use('/loadsubject', require('./loadsubject'))
+//router.use('/subject', require('./subject'))
 
 router.use('/user', require('./user'))
 router.use('/auth', require('./login'))
@@ -222,6 +223,7 @@ function getUserFiles(req,res)
 
 }
 */
+/*
 router.get('/download/:tableName',function(req,res){
 	var tableName = req.params.tableName;
 	if(!tableName){
@@ -245,16 +247,18 @@ router.get('/download/:tableName',function(req,res){
 	  stream.on('end', done);
 	  stream.on('error', done);
 	});
-	/*
-	var stream = client.copyFrom('COPY '+ tableName+' TO STDOUT DELIMITER ',' CSV HEADER;');
+	
+	//var stream = client.copyFrom('COPY '+ tableName+' TO STDOUT DELIMITER ',' CSV HEADER;');
 
-	stream.on('error', function (err) {
-	  console.log('pg stream error: ', err);
-	});
-	r.pipe(stream)
-	*/
+	//stream.on('error', function (err) {
+	//  console.log('pg stream error: ', err);
+	//});
+	//r.pipe(stream)
+	
 });
+*/
 // return router;
+/*
 router.get('/delete',function(req,res){
 	var tableName = req.query.tableName;
 	if(!tableName){
@@ -278,18 +282,17 @@ router.get('/delete',function(req,res){
 		    res.redirect('/');
 		    //if (err) throw err;
 		    //console.log("Count: "+result.rows[0])
-		  /*  
-			res.render('index', {
-				user : req.user
-				,files: result?result.rows:[]
-			});
-			*/
+		    
+			//res.render('index', {
+			//	user : req.user
+			//	,files: result?result.rows:[]
+			//});
 
 		})
 	});
 
 });
-
+*/
 module.exports = router
 
 

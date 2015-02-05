@@ -71,18 +71,19 @@
 			<h4>Comparable sales</h4>
 		</caption>
 		<tr>
-			<th>Filename</th>
+			<th style="width: 40%">Filename</th>
 			<th>Type</th>
-			<th style="width: 40%">Date loaded</th>
-			<th>&nbsp;</th>
+			<th>Date loaded</th>
 			<th>&nbsp;</th>
 		</tr>
 		<tr ng-repeat="x in project.rows" ng-if="x.type==0">
 			<td>{{x.name}}</td>
 			<td>{{x.filetype}}</td>
 			<td>{{x.date}}</td>
-			<td><a ng-click="viewComparable(x.id)" role="button" class="btn btn-primary"><i class="glyphicon glyphicon-stats"></i> View</a></td>
-			<td><a ng-click="deleteComparable(x.id)" role="button" class="btn btn-danger delete"><i class="glyphicon glyphicon-trash"></i> Delete</a></td>
+			<td align='right'>
+			<a ng-click="viewComparable(x.id)" role="button" class="btn btn-primary"><i class="glyphicon glyphicon-stats"></i> View</a>
+			<a ng-click="deleteTable(x.id)" role="button" class="btn btn-danger delete"><i class="glyphicon glyphicon-trash"></i> Delete</a>
+			</td>
 		</tr>
 	</table>
 
@@ -96,7 +97,10 @@
 		</div>
 	</div>
 	showNewSubject?'glyphicon glyphicon-minus':'glyphicon glyphicon-plus'
+
+	
 	-->
+	<hr>
 	<div class='col-lg-2' style='width: 100%'>
 		<div id="startBtn" style='float: right'>
 			<a class="btn btn-success btn-default" ng-click="showNewSubject=!showNewSubject;open('lg','subj')"> Add subject data 
@@ -112,20 +116,22 @@
 		</caption>
 		<tr>
 			<th>Filename</th>
-			<th>Comparable table</th>
+			<!--  <th>Comparable table</th> -->
 			<th>Type</th>
 			<th style="width: 40%">Date loaded</th>
-			<th>&nbsp;</th>
+			
 			<th>&nbsp;</th>
 		</tr>
 
 		<tr ng-repeat="x in project.rows" ng-if="x.type==1">
 			<td>{{x.name}}</td>
-			<td>{{x.comp}}</td>
+			<!-- <td>{{x.comp}}</td>-->
 			<td>{{x.filetype}}</td>
 			<td>{{x.date}}</td>
-			<td><a ng-click="viewSubject(x.id)" role="button" class="btn btn-primary"><i class="glyphicon glyphicon-stats"></i> View</a></td>
-			<td><a ng-click="deleteSubject(x.id,this)" role="button" class="btn btn-danger delete"><i class="glyphicon glyphicon-trash"></i> Delete</a></td>
+			<td align='right'>
+			<a ng-click="viewSubject(x.id)" role="button" class="btn btn-primary"><i class="glyphicon glyphicon-stats"></i> View</a>
+			<a ng-click="deleteTable(x.id)" role="button" class="btn btn-danger delete"><i class="glyphicon glyphicon-trash"></i> Delete</a>
+			</td>
 		</tr>
 
 	</table>

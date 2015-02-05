@@ -3,14 +3,14 @@
 			<p>Download the resulting table as a spreadsheet</p>
 			<div class='col-lg-6'>
 				<div id="browse_app">
-					<a class="btn btn-large btn-info" id="downloadLink" ng-click="downloadTable()"> <i class="glyphicon glyphicon-cloud-download"></i> Download
+					<a class="btn btn-large btn-info" ng-click="downloadTable()"> <i class="glyphicon glyphicon-cloud-download"></i> Download
 					</a>
 				</div>
 			</div>
 			
-			<div class='col-lg-6' id="mapBtn" ng-show="summary.geomtype=='Polygon'">
-				<div id="browse_map" style="float: right">
-					<a class="btn btn-large btn-info" target=_blank> <i class="glyphicon glyphicon-globe"></i> Show on map
+			<div class='col-lg-6'  ng-show="summary.geomtype=='Polygon'">
+				<div style="float: right">
+					<a class="btn btn-large btn-info" target=_blank ng-click="showMap()"> <i class="glyphicon glyphicon-globe"></i> Show on map
 					</a>
 				</div>
 

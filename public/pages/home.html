@@ -7,7 +7,7 @@
 
 		<div class='col-lg-2' style='float: right;width:500px' >
 			<div id="startBtn" style='float:right'>
-				<a class="btn btn-default btn-continue" id="createNewProjectBtn" ng-click='showNewProject=!showNewProject'> Create new project <i class="glyphicon glyphicon-arrow-right"></i></a>
+				<a class="btn btn-success btn-default" id="createNewProjectBtn" ng-click='showNewProject=!showNewProject'> Create new project <i class="glyphicon glyphicon-plus"></i></a></i></a>
 			</div>
 			<div id="newProjectDiv" ng-show="showNewProject" style='border:1px solid #e6e6e6;padding: 5px;'>
 				<br><br>
@@ -34,12 +34,10 @@
 				<h4>My Projects</h4>
 			</caption>
 			<tr>
-				<th style="width: 20%">Name</th>
+				<th style="width: 50%">Name</th>
 				<th>State</th>
-				<th style="text-align: center; width: 20%">Created</th>
-				<th style="text-align: center; width: 40%">Last modified</th>
-
-				<th>&nbsp;</th>
+				<th style="text-align: center;">Created</th>
+				<th style="text-align: center;">Last modified</th>
 				<th>&nbsp;</th>
 			</tr>
 			<tr ng-repeat="x in project.rows">
@@ -47,8 +45,8 @@
 				<td>{{ x.state }}</td>
 				<td style="text-align: center">{{ x.created_date }}</td>
 				<td style="text-align: center">{{ x.modified_date }}</td>
-				<td><a ng-click="viewProject(x.id)" role='button' class='btn btn-primary'><i class='glyphicon glyphicon-stats'></i> Edit</a></td>
-				<td><a ng-click="deleteProject(x.id,this)" role='button' class='btn btn-danger delete'><i class='glyphicon glyphicon-trash'></i> Delete</a></td>
+				<td align='right'><a ng-click="viewProject(x.id)" role='button' class='btn btn-primary'><i class='glyphicon glyphicon-stats'></i> Edit</a>
+				<a ng-click="deleteProject(x.id,this)" role='button' class='btn btn-danger delete'><i class='glyphicon glyphicon-trash'></i> Delete</a></td>
 			</tr>
 		</table>
 

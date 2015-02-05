@@ -1,4 +1,4 @@
-
+/*
 $(document).ready( function() {
 
     $("#inputs").click(function(evt){
@@ -6,6 +6,7 @@ $(document).ready( function() {
     	$("#fupload").toggle();
     	$("#files").val("");
     });
+*/    
     var map = new L.Map('map');//, {center: center, zoom: 12, maxZoom: 20});
     map.fitBounds([
                    [extent[1],extent[0]],
@@ -32,5 +33,5 @@ $(document).ready( function() {
 
 	L.control.scale({metric:false}).addTo(map);
 
-});
+//});
   

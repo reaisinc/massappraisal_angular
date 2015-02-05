@@ -58,6 +58,17 @@ maApp.config(function($routeProvider,$locationProvider) {
 		templateUrl : 'pages/stepwise_regression.html',
 		controller  : 'stepwise_regressionController'
 	})
+	// route for the residuals page
+	.when('/projects/:id/tables/:tid/residuals', {
+		templateUrl : 'pages/residuals.html',
+		controller  : 'residualsController'
+	})
+	// route for the predict page
+	.when('/projects/:id/tables/:tid/predict', {
+		templateUrl : 'pages/predict.html',
+		controller  : 'predictController'
+	})
+
 	// route for the contact page
 	.when('/contact', {
 		templateUrl : 'pages/contact.html',
@@ -151,34 +162,6 @@ maApp.controller('mainController', function($rootScope,$scope, $http, $location)
 		else $location.path(getURL(id+"/subject",1));
 	};
 
-	$scope.deleteTable = function (id,a) {
-		// $location.path("/project/"+id);
-		$http.delete('/projects/'+this.pid+'/tables/'+id)
-		.success(function(data, status, headers, config) {
-			// remove tr from table
-			// remove tr from table
-			var index = -1;		
-			for( var i = 0; i < $scope.project.rows.length; i++ ) {
-				if( $scope.project.rows[i].id === id ) {
-					index = i;
-					break;
-				}
-			}
-			if( index === -1 ) {
-				alert( "Something gone wrong" );
-			}
-			$scope.project.rows.splice( index, 1 );						
-
-		})
-		.error(function(data, status, headers, config ){ 
-			// console.log( errorThrown );
-			if(status==404)$location.path("/login")
-			$scope.errMsg="Unable to remove this table";
-			// $("#events-result").show().html("Project name is already in use.
-			// Please select a different name")
-		});
-	};
-
 	// correlation
 	$scope.viewCorrelation = function() {
 		// "/projects/"+$rootScope.pid+"/tables/"+$rootScope.tid+"/correlation"
@@ -194,7 +177,14 @@ maApp.controller('mainController', function($rootScope,$scope, $http, $location)
 		$location.path(getURL("stepwise_regression"));
 		// $location.path("/projects/"+$rootScope.pid+"/tables/"+$rootScope.tid+"/stepwise_regression");
 	};
-
+	// residuals	
+	$scope.viewResiduals = function () {
+		$location.path(getURL("residuals"));
+	};
+	//predict
+	$scope.viewPredictions = function () {
+		$location.path(getURL("predict"));
+	};
 
 	// if(!sessionStorage.getItem("username"))
 	// {
@@ -245,36 +235,36 @@ maApp.controller('ModalInstanceCtrl', function ($scope,$location,$http,$modalIns
 	$scope.pid =  $modalInstance.pid;
 	$scope.renderHtml = function(html_code)
 	{
-	    return $sce.trustAsHtml(html_code);
+		return $sce.trustAsHtml(html_code);
 	};
 
 	var uploader = $scope.uploader = new FileUploader({
 		url: '/upload/'+$modalInstance.pid
 	});
-//    maxFileSize: 250000000,
-//    acceptFileTypes: /(\.|\/)(shp|shx|dbf|prj|zip|csv|xls|xlsx)$/i
+//	maxFileSize: 250000000,
+//	acceptFileTypes: /(\.|\/)(shp|shx|dbf|prj|zip|csv|xls|xlsx)$/i
 
 //	FILTERS
 	//1048576; // 1024 * 1024 | Math.pow(2,20); | 0x100000
 	uploader.filters.push(
-	{
-		name: 'sizefilter',
-		fn: function (item) { 
-			return item.size <= 250000000; 
-		}
-	});
+			{
+				name: 'sizefilter',
+				fn: function (item) { 
+					return item.size <= 250000000; 
+				}
+			});
 
 	uploader.filters.push(
-	{
-		name: 'typefilter',
-		fn: function (item) {
-			//doesn't work below
-			//var type = '|' + item.type.slice(item.type.lastIndexOf('/') + 1) + '|';
-            //return '|shp|shx|dbf|prj|zip|csv|xls|xlsx|'.indexOf(type) !== -1;			
-			
-			return !uploader.hasHTML5 ? true : /\/(shp|shx|dbf|prj|zip|csv|xls|xlsx)$/.test(item.type); 
-		}
-	});
+			{
+				name: 'typefilter',
+				fn: function (item) {
+					//doesn't work below
+					//var type = '|' + item.type.slice(item.type.lastIndexOf('/') + 1) + '|';
+					//return '|shp|shx|dbf|prj|zip|csv|xls|xlsx|'.indexOf(type) !== -1;			
+
+					return !uploader.hasHTML5 ? true : /\/(shp|shx|dbf|prj|zip|csv|xls|xlsx)$/.test(item.type); 
+				}
+			});
 
 	/*
 	uploader.filters.push({
@@ -285,7 +275,7 @@ maApp.controller('ModalInstanceCtrl', function ($scope,$location,$http,$modalIns
 			//return this.queue.length < 10;
 		}
 	});
-	*/
+	 */
 //	CALLBACKS
 	uploader.onWhenAddingFileFailed = function(item /* {File|FileLikeObject} */, filter, options) {
 		console.info('onWhenAddingFileFailed', item, filter, options);
@@ -360,7 +350,7 @@ maApp.controller('projectController', function($rootScope,$scope,$http,$location
 			templateUrl: 'pages/uploadfiles.html',
 			controller: 'ModalInstanceCtrl',
 			size: size
-			
+
 		});
 		modalInstance.source=source;
 		modalInstance.soilscompleted=false;
@@ -375,10 +365,37 @@ maApp.controller('projectController', function($rootScope,$scope,$http,$location
 		});
 
 	};
+	$scope.deleteTable = function (id) {
+		// $location.path("/project/"+id);
+		$http.delete('/projects/'+this.pid+'/tables/'+id)
+		.success(function(data, status, headers, config) {
+			// remove tr from table
+			// remove tr from table
+			var index = -1;		
+			for( var i = 0; i < $scope.project.rows.length; i++ ) {
+				if( $scope.project.rows[i].id === id ) {
+					index = i;
+					break;
+				}
+			}
+			if( index === -1 ) {
+				alert( "Something gone wrong" );
+			}
+			$scope.project.rows.splice( index, 1 );						
+
+		})
+		.error(function(data, status, headers, config ){ 
+			// console.log( errorThrown );
+			if(status==404)$location.path("/login")
+			else $scope.errMsg="Unable to remove this table";
+			// $("#events-result").show().html("Project name is already in use.
+			// Please select a different name")
+		});
+	};
 
 });
 
-maApp.controller('summaryController', function($rootScope,$scope,$http,$location) {
+maApp.controller('summaryController', function($rootScope,$scope,$http,$location,$window) {
 	$scope.selectField = function(field,ch) {
 		console.log(field)
 		$http.put(getURL("summary"),{ name:field, field: 'include',value: ch?1:0})
@@ -388,13 +405,10 @@ maApp.controller('summaryController', function($rootScope,$scope,$http,$location
 		.error(function(data, status, headers, config) {
 			// log error
 			if(status==404)$location.path("/login")
-		});
-
-		
+		});		
 		// $http.put("/projects/update?name="+name+"&field="+field+"&value="+value,function(data){
 		// console.log(data);
 		// });
-
 	};
 	$scope.selectId = function(field,value) {
 		console.log(field)
@@ -419,14 +433,33 @@ maApp.controller('summaryController', function($rootScope,$scope,$http,$location
 			if(status==404)$location.path("/login")
 		});
 
-	};    
+	};
+	$scope.downloadTable = function() {
+		var url = getURL("download");
+		$window.open(url);
+		/*
+		$http.get(getURL("download")).
+		success(function(data, status, headers, config) {
+			console.log("Download successful")
+		}).
+		error(function(data, status, headers, config) {
+			// log error
+			if(status==404)$location.path("/login")
+			console.log("Error in download: " + data)
+		});			
+		 */
+	}
+	$scope.showMap = function() {
+		var url = getURL("map");
+		$window.open(url);
+	}
 
 	$http.get($location.$$url).
 	success(function(data, status, headers, config) {
 		$scope.id=1;
 		$scope.depvar=1;
 		$scope.summary = data;
-		
+
 		// hide
 	}).
 	error(function(data, status, headers, config) {
@@ -434,6 +467,7 @@ maApp.controller('summaryController', function($rootScope,$scope,$http,$location
 		if(status==404)$location.path("/login")
 	});			
 });
+
 maApp.controller('subjectController', function($rootScope,$scope,$http,$location) {
 	$http.get($location.$$url).
 	success(function(data, status, headers, config) {
@@ -468,6 +502,7 @@ maApp.controller('correlationController', function($rootScope,$scope,$http,$loca
 			tmpdata.push({name:i,include:data.names[i],valid:vif,vals:vals});
 		}
 		$scope.correlation = tmpdata;
+		//console.log(tmpdata);
 	}).
 	error(function(data, status, headers, config) {
 		// log error
@@ -514,7 +549,50 @@ maApp.controller('stepwise_regressionController', function($scope,$http,$locatio
 		if(status==404)$location.path("/login")
 	});			
 });
+
 maApp.controller('residualsController', function($scope,$http,$location) {
+	$http.get($location.$$url).
+	success(function(data, status, headers, config) {
+		$scope.residuals = data;
+		$scope.totalItems = data.total;
+		$scope.currentPage = 0;
+		$scope.getData(0);
+	}).
+	error(function(data, status, headers, config) {
+		// log error
+		if(status==404)$location.path("/login")
+	});
+	$scope.tableURL = $location.$$url.slice(0,-10);
+
+	$scope.getData = function(page){
+		$http.get($scope.tableURL+"?offset="+($scope.maxSize*page)+"&limit="+$scope.maxSize).
+		success(function(data, status, headers, config) {
+			$scope.tabledata = data.rows;
+		}).
+		error(function(data, status, headers, config) {
+			// log error
+			if(status==404)$location.path("/login")
+		});
+	}
+	$scope.setPage = function (pageNo) {
+		$scope.currentPage = pageNo;
+	};
+
+	$scope.pageChanged = function() {
+		//$log.log('Page changed to: ' + $scope.currentPage);
+		$scope.tabledata=null;
+		$scope.getData($scope.currentPage);
+		
+	};
+
+	$scope.maxSize = 15;
+	//$scope.bigTotalItems = 15;
+	//$scope.bigCurrentPage = 0;
+	
+
+});
+
+maApp.controller('predictController', function($scope,$http,$location) {
 	$http.get($location.$$url).
 	success(function(data, status, headers, config) {
 		$scope.table = data;
@@ -541,7 +619,7 @@ maApp.filter('radio', function() {
 /*
             maxFileSize: 250000000,
             acceptFileTypes: /(\.|\/)(shp|shx|dbf|prj|zip|csv|xls|xlsx)$/i
-*/ 
+ */ 
 function getFileStatus($scope,$http){
 	var url ="/load/" + $scope.pid ;
 	var params={step:1,fileName:$scope.filename};
@@ -550,7 +628,7 @@ function getFileStatus($scope,$http){
 	$http.get(url,{params:params})
 	.success(function(data,status,headers,config) {
 		$scope.err=false;
-		
+
 		//id,name,state,created_date,modified_date
 		//$scope.newfile={id:999,name:data['Layer name'],type:data.file,state:'az',created_date:new Date().toString(),modified_date:new Date().toString()};
 
@@ -581,7 +659,7 @@ function getFileStatus($scope,$http){
 		}
 	})
 	.error(function(data,status,headers,config){
-		
+
 	});
 }
 
@@ -608,7 +686,7 @@ function checkStep($scope,$http,url,params){
 		}
 		var idName;
 		if(data.id){
-			 params['idName']=data.id[0].name;
+			params['idName']=data.id[0].name;
 			// sessionStorage.setItem("idName",idName);
 		}
 		data.step++;

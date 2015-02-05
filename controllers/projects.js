@@ -5,7 +5,8 @@ var pg = require("pg");
 router.use(function(req, res, next) {
 	if (!req.isAuthenticated()) { 
 		console.log("redirecting");
-		// res.redirect('/login');
+		
+		//res.redirect('/login');
 		res.status(404).json({err:"Not logged in"})
 		return; 
 	}
@@ -14,11 +15,6 @@ router.use(function(req, res, next) {
 //read list of projects
 router.get('/',  function(req, res){
 	getUserProjects(req,res);
-});
-
-//read list of tables from a project
-router.get('/:pid/tables',  function(req, res){
-	getUserFiles(req,res);
 });
 
 //create project
@@ -31,13 +27,34 @@ router.post('/:pid',  function(req, res){
 	updateProject(req,res);
 });
 
+//read list of tables from a project
+router.get('/:pid/tables',  function(req, res){
+	getUserFiles(req,res);
+});
+
 //delete project
 router.delete('/:pid',  function(req, res){
 	deleteProject(req,res);	
 });
+
+//get table
+router.get('/:pid/tables/:tid',  function(req, res){
+	getTable(req,res);	
+});
+
 //delete table
 router.delete('/:pid/tables/:tid',  function(req, res){
 	deleteTable(req,res);	
+});
+
+//show map
+router.get('/:pid/tables/:tid/map',  function(req, res){
+	showMap(req,res);	
+});
+
+//download table
+router.get('/:pid/tables/:tid/download',  function(req, res){
+	downloadTable(req,res);
 });
 
 //table summary
@@ -177,8 +194,40 @@ function deleteProject(req,res){
 			// getUserFiles(req,res);
 		})
 	});
-
 }
+
+function deleteTable(req,res){
+	var pid = parseInt(req.params.pid);
+	var tid = parseInt(req.params.tid);
+
+	// var sql="select column_name from information_schema.columns where
+	// table_schema='"+req.user.shortName+"' and table_name = '"+tableName+"'
+	// and column_name not
+	// in('id','ogc_fid','wkb_geometry','id','shape_leng','shape_area','_acres_total')
+	// and data_type in('numeric','double
+	// precision','float','integer','decimal')";
+	var sql="select name from "+req.user.shortName+".tables where id="+tid;
+	console.log(sql);
+	pg.connect(global.conString,function(err, client, release) {
+		if (err){ res.json({"err":"No connection to database;"});throw err;}
+		// strip off extension
+		client.query(sql, function(err, result) {
+			// add the schema to the tablename
+			// console.log(result);
+			var tableName = result.rows[0].name;
+			var baseTableName=tableName;
+			tableName = req.user.shortName+"." + baseTableName;
+			var sql=["drop table if exists "+tableName,"drop table if exists "+ tableName + "_stats", "drop table if exists "+ tableName + "_soils", "drop table if exists "+ tableName + "_vars","delete from "+req.user.shortName+".tables where pid="+pid+" and id="+tid];
+			console.log(sql);
+			client.query(sql.join(";"), function(err, result) {
+				if (err){ res.json({"err":"Unable to delete table;"});throw err;}
+				release()
+				res.json({msg:"success"})
+			})
+		});
+	});
+}
+
 function getUserProjects(req,res)
 {
 	// res.writeHead(200, {"Content-Type": "application/json"});
@@ -249,7 +298,7 @@ function tableSummary(req, res){
 								names[ result.rows[i].name ][ j ]=result.rows[i][j];
 							}
 						}
-						*/
+						 */
 						results=result.rows;
 						res.json({"fields":results,status:names,"geomtype":geomtype});
 					}
@@ -538,7 +587,60 @@ function tableSWRegression(req, res){
 	});	
 };
 
-function tableResiduals(req, res){
+function tableResiduals(req,res){
+
+	var pid = parseInt(req.params.pid);
+	var tid = parseInt(req.params.tid);
+	var sql="select name from "+req.user.shortName + ".tables where id="+tid;
+	console.log(sql);
+	pg.connect(global.conString,function(err, client, release) {
+		if (err){ res.json({"err":"No connection to database;"});throw err;}
+		// strip off extension
+		client.query(sql, function(err, result) {
+			var tableName = result.rows[0].name;
+			var sql="select name from " + req.user.shortName + "." + tableName + "_vars where (include=1 or id=1) order by id desc,depvar desc,name asc";
+
+			//strip off extension
+			client.query(sql, function(err, result) {
+				if(err)console.log(err);
+				//add the schema to the tablename
+				tableName = req.user.shortName+"."+ tableName+'_stats';
+				var cols=[];
+				var depvar;
+				var id=result.rows[0].name;
+
+				console.log(result.rows);
+				for(var i = 1; i < result.rows.length;i++){
+					if(result.rows[i].name.charAt(0) == result.rows[i].name.charAt(0).toUpperCase())
+						result.rows[i].name='"' + result.rows[i].name + '"';
+					else if(result.rows[i].name.indexOf(" ")!=-1)
+						result.rows[i].name='"' + result.rows[i].name + '"';// as '+ result.rows[i].name.replace(/ /g,"_");
+					if(depvar)cols.push(result.rows[i].name);
+					else depvar=result.rows[i].name
+				}
+				if(req.query.nosw)
+					var sql = "select r_regression_variables as vals from public.r_regression_variables('" + depvar + "','" + cols.join(",") + "','" + tableName + "',0,0)";// s("+out.join(",")+")";
+				else
+					var sql = "select r_step_regression_variables as vals from public.r_step_regression_variables('" + depvar + "','" + cols.join(",") + "','" + tableName + "',0,0)";// s("+out.join(",")+")";
+				console.log(sql);
+				client.query(sql, function(err, result) {
+					if(err)console.log(err);
+					console.log(result.rows);
+					var vars=JSON.parse(result.rows[0].vals);
+					var sql="select count(*) as total from " + tableName;
+					console.log(sql);
+					client.query(sql, function(err, result) {
+						if(err)console.log(err);
+						release();
+						res.json({id:id,vars:vars,total:parseInt(result.rows[0].total)});				    
+					});
+				});
+			});
+		});
+	});
+}
+
+function getTable(req,res){
 	console.log(req.params.pid);
 
 	var pid = parseInt(req.params.pid);
@@ -547,9 +649,10 @@ function tableResiduals(req, res){
 	console.log(sql);
 	pg.connect(global.conString,function(err, client, release) {
 		if (err){ res.json({"err":"No connection to database;"});throw err;}
-		client.query(sql, function(err, result) {	
+		client.query(sql, function(err, result) {
+			if (err){ res.json({"err":"Unable to find table;"});throw err;}
 			var tableName = result.rows[0].name;
-			var sql="select name from " + req.user.shortName + "." + tableName + "_vars where (include=1 or id=1) order by id desc,depvar desc,name asc";
+			var sql="select name,type from " + req.user.shortName + "." + tableName + "_vars where (include=1 or id=1) order by id desc,depvar desc,name asc";
 			var total = req.query.total;
 
 			console.log(sql);
@@ -566,6 +669,7 @@ function tableResiduals(req, res){
 						result.rows[i].name='"' + result.rows[i].name + '"';
 					else if(result.rows[i].name.indexOf(" ")!=-1)
 						result.rows[i].name='"' + result.rows[i].name + '"';// as '+ result.rows[i].name.replace(/ /g,"_");
+					if(result.rows[i].type=='numeric')result.rows[i].name="round("+result.rows[i].name + "::numeric,2) as " + result.rows[i].name;
 					cols.push(result.rows[i].name);
 				}
 				//count(*) OVER() AS total,
@@ -580,6 +684,62 @@ function tableResiduals(req, res){
 			});
 		});
 	});
-
 };
+function downloadTable(req,res){
+	var pid = parseInt(req.params.pid);
+	var tid = parseInt(req.params.tid);
+
+	var sql="select name from "+req.user.shortName+".tables where id="+tid;
+	console.log(sql);
+	pg.connect(global.conString,function(err, client, release) {
+		if (err){ res.json({"err":"No connection to database;"});throw err;}
+		// strip off extension
+		client.query(sql, function(err, result) {
+			var tableName = result.rows[0].name;
+
+			res.setHeader('Content-disposition', 'attachment; filename='+tableName+'.csv');
+			res.writeHead(200, {
+				'Content-Type': 'text/csv'
+			});
+			tableName = req.user.shortName + "." + tableName + "_stats";
+			console.log("Downloading: " + tableName);
+			var copyTo = require('pg-copy-streams').to; //doesn't work with native pg
+			pg.connect(global.conString,function(err, client, done) {
+				if (err){ res.json({"err":"No connection to database;"});throw err;}
+				var stream = client.query(copyTo('COPY '+ tableName+" TO STDOUT DELIMITER ',' CSV HEADER;"));
+				//stream.pipe(process.stdout);
+				stream.pipe(res);
+				stream.on('end', done);
+				stream.on('error', done);
+			});
+		});
+	});
+}
+function showMap(req,res){
+	var pid = parseInt(req.params.pid);
+	var tid = parseInt(req.params.tid);
+
+	var sql="select name from "+req.user.shortName+".tables where id="+tid;
+	pg.connect(global.conString,function(err, client, release) {
+		client.query(sql, function(err, result) {
+			if(err)console.log(err);
+			var tableName = result.rows[0].name;
+			var sql="select replace(replace(substring(box2d(st_transform(st_setsrid(st_extent(wkb_geometry),3857),4326))::text,5),' ',','),')','') as extent from "+req.user.shortName + "." + tableName;
+			//var sql="select replace(replace(substr(st_astext((st_centroid(st_extent(wkb_geometry)))),7),' ',','),')','') as extent from "+req.user.shortName + "." + req.query.tableName;
+			console.log(sql);
+			client.query(sql, function(err, result) {
+				if (err){ res.json({"err":"No connection to database;"});throw err;}
+				console.log(result.rows);
+				res.render('map', {
+					user : req.user,
+					layerName: tableName,
+					extent:result.rows[0].extent
+				});
+				release()
+			})
+		})
+	})
+
+}
+
 module.exports = router;
