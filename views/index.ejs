@@ -1,0 +1,174 @@
+<!DOCTYPE HTML>
+<html lang="en">
+<head>
+<!-- Force latest IE rendering engine or ChromeFrame if installed -->
+<!--[if IE]>
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<![endif]-->
+<meta charset="utf-8">
+<title>Mass Appraisal Soils</title>
+<meta name="description" content="File Upload widget with multiple file selection, drag&amp;drop support, progress bars, validation and preview images, audio and video for jQuery. Supports cross-domain, chunked and resumable file uploads and client-side image resizing. Works with any server-side platform (PHP, Python, Ruby on Rails, Java, Node.js, Go etc.) that supports standard HTML form file uploads.">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!-- Bootstrap styles -->
+<link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css">
+<link rel="stylesheet" href="css/bootstrap-table.min.css">
+<!-- Generic page styles -->
+<link rel="stylesheet" href="css/style.css">
+<!-- CSS adjustments for browsers with JavaScript disabled -->
+
+<style>
+.form-signin {
+	max-width: 330px;
+	padding: 15px;
+	margin: 0 auto;
+}
+
+.form-signin .form-signin-heading, .form-signin .checkbox {
+	margin-bottom: 10px;
+}
+
+.form-signin .checkbox {
+	font-weight: normal;
+}
+
+.form-signin .form-control {
+	position: relative;
+	height: auto;
+	-webkit-box-sizing: border-box;
+	-moz-box-sizing: border-box;
+	box-sizing: border-box;
+	padding: 10px;
+	font-size: 16px;
+}
+
+.form-signin .form-control:focus {
+	z-index: 2;
+}
+
+.form-signin input[type="email"] {
+	margin-bottom: -1px;
+	border-bottom-right-radius: 0;
+	border-bottom-left-radius: 0;
+}
+
+.form-signin input[type="password"] {
+	margin-bottom: 10px;
+	border-top-left-radius: 0;
+	border-top-right-radius: 0;
+}
+
+div.col-lg-12 {
+	padding-left: 0;
+	text-align: center;
+}
+
+td.col {
+	font-weight: bold;
+}
+
+#startBtn {
+//	text-align:center;
+}
+#signinContainer {
+	display: block;
+}
+a.center{text-align:center}
+p.name{float:right}
+#newProjectDiv{display:none;width:200px}
+#frm{padding:20px;border:1px solid gray}
+#events-result{display:none;}
+</style>
+
+</head>
+<body>
+<div class="navbar navbar-default navbar-fixed-top">
+    <div class="container">
+        <div class="navbar-header">
+            <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-fixed-top .navbar-collapse">
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="/">Mass Appraisal Soils Analyzer</a>
+        </div>
+        <div class="navbar-collapse collapse">
+					<p class='name'>Logged in as: <a href='/account'><%= user.displayName %></a> &nbsp;&nbsp;<a href='/logout'>Logout</a></p>        
+				</div>
+    </div>
+</div>
+
+<div class="container">
+<!--
+    <h1>Mass Appraisal</h1>
+    <h4>Welcome, <= user.displayName >.</h4>
+-->    
+    <div class="jumbotron">
+        The <b>Mass Appraisal Soils Analyzer</b> provides an easy tool for doing statistical analysis on a set of comparable sales in order to create a multiple regression formula that can be used to determine the most probable sales price of a subject property (or properties).
+	<br><br>        
+    To get started, click on the "Create new project" button.    
+    </div>
+    
+    <div class='col-lg-10'>
+
+    </div>
+
+    <div class='col-lg-2'>
+    <div id="startBtn">
+       <a class="btn btn-default btn-continue" id="createNewProjectBtn"> Create new project <i class="glyphicon glyphicon-arrow-right"></i></a>
+    </div>
+    <div id="newProjectDiv">
+    <br>
+    	<form id='frm'>
+       	Project name <input type='text' name='name'/><br>
+       	Location <select name='state'><option value='az'>Arizona</option><option value='wa'>Washington</option></select><br><br>
+       	<input type='submit' value='Create'/>
+       </form>
+       <div class="alert alert-success" id="events-result"></div>
+    </div>
+
+    </div>
+    
+    
+		<br><br>
+		<table class="table" id="projTable">
+		<caption><h4>My Projects</h4></caption>
+                <tr>
+                    <th>Name</th>
+                    <th>State</th>
+                    <th style="text-align:center;width:40%">Created</th>
+                    <th style="text-align:center;width:40%">Last modified</th>
+                    
+                    <th>&nbsp;</th>
+                    <th>&nbsp;</th>
+                </tr>                               
+    	</table>
+
+    <br><br>
+    <div class="panel panel-default">
+        <div class="panel-heading">
+            <h3 class="panel-title">Notes</h3>
+        </div>
+        <div class="panel-body">
+            <ul>
+                <li>You must have a Google account before using this tool.</li>
+            </ul>
+        </div>
+    </div>
+</div><!-- /container -->
+
+
+<script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+<!-- The jQuery UI widget factory, can be omitted if jQuery UI is already included -->
+<script src="js/vendor/jquery.ui.widget.js"></script>
+<!-- Bootstrap JS is not required, but included for the responsive demo navigation -->
+<script src="//netdna.bootstrapcdn.com/bootstrap/3.2.0/js/bootstrap.min.js"></script>
+<script src="/js/index.js"></script>
+<!-- The main application script -->
+
+
+<!-- The XDomainRequest Transport is included for cross-domain file deletion for IE 8 and IE 9 -->
+<!--[if (gte IE 8)&(lt IE 10)]>
+<script src="js/cors/jquery.xdr-transport.js"></script>
+<![endif]-->
+</body> 
+</html>

@@ -1,0 +1,147 @@
+<!DOCTYPE HTML>
+<html lang="en">
+<head>
+<!-- Force latest IE rendering engine or ChromeFrame if installed -->
+<!--[if IE]>
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<![endif]-->
+<meta charset="utf-8">
+<title>Mass Appraisal Soils</title>
+<meta name="description" content="File Upload widget with multiple file selection, drag&amp;drop support, progress bars, validation and preview images, audio and video for jQuery. Supports cross-domain, chunked and resumable file uploads and client-side image resizing. Works with any server-side platform (PHP, Python, Ruby on Rails, Java, Node.js, Go etc.) that supports standard HTML form file uploads.">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!-- Bootstrap styles -->
+<link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css">
+<!-- Generic page styles -->
+<link rel="stylesheet" href="css/style.css">
+<!-- CSS adjustments for browsers with JavaScript disabled -->
+
+<style>
+.bs-wizard {margin-top: 40px;}
+#continueBtn{display:none}
+p.name{float:right}
+/*Form Wizard*/
+.bs-wizard {border-bottom: solid 1px #e0e0e0; padding: 0 0 10px 0;}
+.bs-wizard > .bs-wizard-step {padding: 0; position: relative;}
+.bs-wizard > .bs-wizard-step + .bs-wizard-step {}
+.bs-wizard > .bs-wizard-step .bs-wizard-stepnum {color: #595959; font-size: 16px; margin-bottom: 5px;}
+.bs-wizard > .bs-wizard-step .bs-wizard-info {color: #999; font-size: 14px;}
+.bs-wizard > .bs-wizard-step > .bs-wizard-dot {position: absolute; width: 30px; height: 30px; display: block; background: #fbe8aa; top: 45px; left: 50%; margin-top: -15px; margin-left: -15px; border-radius: 50%;} 
+.bs-wizard > .bs-wizard-step > .bs-wizard-dot:after {content: ' '; width: 14px; height: 14px; background: #fbbd19; border-radius: 50px; position: absolute; top: 8px; left: 8px; } 
+.bs-wizard > .bs-wizard-step > .progress {position: relative; border-radius: 0px; height: 8px; box-shadow: none; margin: 20px 0;}
+.bs-wizard > .bs-wizard-step > .progress > .progress-bar {width:0px; box-shadow: none; background: #fbe8aa;}
+.bs-wizard > .bs-wizard-step.complete > .progress > .progress-bar {width:100%;}
+.bs-wizard > .bs-wizard-step.active > .progress > .progress-bar {width:50%;}
+.bs-wizard > .bs-wizard-step:first-child.active > .progress > .progress-bar {width:0%;}
+.bs-wizard > .bs-wizard-step:last-child.active > .progress > .progress-bar {width: 100%;}
+.bs-wizard > .bs-wizard-step.disabled > .bs-wizard-dot {background-color: #f5f5f5;}
+.bs-wizard > .bs-wizard-step.disabled > .bs-wizard-dot:after {opacity: 0;}
+.bs-wizard > .bs-wizard-step:first-child  > .progress {left: 50%; width: 50%;}
+.bs-wizard > .bs-wizard-step:last-child  > .progress {width: 50%;}
+.bs-wizard > .bs-wizard-step.disabled a.bs-wizard-dot{ pointer-events: none; }
+/*END Form Wizard*/
+</style>
+
+</head>
+<body>
+<div class="navbar navbar-default navbar-fixed-top">
+    <div class="container">
+        <div class="navbar-header">
+            <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-fixed-top .navbar-collapse">
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="/">Mass Appraisal Soils Analyzer</a>
+        </div>
+        <div class="navbar-collapse collapse">
+						<p class='name'>Logged in as: <a href='/account' id='username'></a> &nbsp;&nbsp;<a href='/logout'>Logout</a></p>        
+        </div>
+    </div>
+</div>
+<div class="container">
+<!--
+    <h1>Mass Appraisal File Upload</h1>
+    <h2 class="lead">Merge comparable sales with soils data analysis</h2>
+    <br>
+-->    
+    <div class="jumbotron">
+        <p>Click the Start processing button to begin.  Please wait while your data is loaded into the database and processed.  This may take several minutes depending on the size of your input file.</p>
+        <h4>Loading file:</h4> <div id="fileName"></div>
+    </div>
+    <br>
+    <!-- The file upload form used as target for the file upload widget completed,active and disabled-->
+    <div class="row fileupload-buttonbar">
+				<div class="col-lg-10">
+                <button type="submit" class="btn btn-primary start" id="startBtn">
+                    <i class="glyphicon glyphicon-upload"></i>
+                    <span>Start processing</span>
+                </button>
+                </div>
+                
+                <div class='col-lg-2'>
+                <span id="fileName"></span>
+                <a href="/summary" class="btn btn-default btn-continue" id="continueBtn"> Continue <i class="glyphicon glyphicon-arrow-right"></i></a>
+            	</div>
+    </div>
+    <div class="row bs-wizard" style="border-bottom:0;" id="stepsWizard">
+                
+                <div class="col-xs-3 bs-wizard-step disabled" id="step2">
+                  <div class="text-center bs-wizard-stepnum">Step 1</div>
+                  <div class="progress"><div class="progress-bar"></div></div>
+                  <a href="#" class="bs-wizard-dot"></a>
+                  <div class="bs-wizard-info text-center">Loading data into database</div>
+                </div>
+                
+                <div class="col-xs-3 bs-wizard-step disabled" id="step3"><!-- complete -->
+                  <div class="text-center bs-wizard-stepnum">Step 2</div>
+                  <div class="progress"><div class="progress-bar"></div></div>
+                  <a href="#" class="bs-wizard-dot"></a>
+                  <div class="bs-wizard-info text-center">Verifying valid spatial data and unique identifier</div>
+                </div>
+                
+                <div class="col-xs-3 bs-wizard-step disabled" id="step4"><!-- complete -->
+                  <div class="text-center bs-wizard-stepnum">Step 3</div>
+                  <div class="progress"><div class="progress-bar"></div></div>
+                  <a href="#" class="bs-wizard-dot"></a>
+                  <div class="bs-wizard-info text-center">Creating intersections with soils data</div>
+                </div>
+                
+                <div class="col-xs-3 bs-wizard-step disabled" id="step5"><!-- active -->
+                  <div class="text-center bs-wizard-stepnum">Step 4</div>
+                  <div class="progress"><div class="progress-bar"></div></div>
+                  <a href="#" class="bs-wizard-dot"></a>
+                  <div class="bs-wizard-info text-center"> Creating summary</div>
+                </div>
+            </div>
+
+
+    <br>
+    <div class="panel panel-default">
+        <div class="panel-heading">
+            <h3 class="panel-title">Upload Notes</h3>
+        </div>
+        <div class="panel-body">
+            <ul>
+                <li>Input data is loaded into the database where it is checked for valid polygons.</li> 
+                <li>The polygons are then intersected with the USDA Soils (SSURGO) polygons to determine the map units within each parcel.</li>
+                <li>A summary table is created containing selected fields from the soils tables (mapunit, muaggatt, component and values index).</li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+
+<script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+<!-- The jQuery UI widget factory, can be omitted if jQuery UI is already included -->
+<script src="js/vendor/jquery.ui.widget.js"></script>
+<!-- Bootstrap JS is not required, but included for the responsive demo navigation -->
+<script src="//netdna.bootstrapcdn.com/bootstrap/3.2.0/js/bootstrap.min.js"></script>
+<!-- The main application script -->
+<script src="js/loadtable.js"></script>
+
+<!-- The XDomainRequest Transport is included for cross-domain file deletion for IE 8 and IE 9 -->
+<!--[if (gte IE 8)&(lt IE 10)]>
+<script src="js/cors/jquery.xdr-transport.js"></script>
+<![endif]-->
+</body> 
+</html>

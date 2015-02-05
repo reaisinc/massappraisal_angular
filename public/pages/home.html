@@ -1,0 +1,71 @@
+<div class="container">
+	<div class="jumbotron">
+		The Mass Appraisal Soils Analyzer provides an easy tool for doing statistical analysis on a set of comparable sales in order to create a multiple regression formula that can be used to determine the most probable sales price of a subject property (or properties). <br> <br> You must have
+		an Gmail account to use this tool.
+	</div>
+	<div ng-show="project.user">
+
+		<div class='col-lg-2' style='float: right;width:500px' >
+			<div id="startBtn" style='float:right'>
+				<a class="btn btn-default btn-continue" id="createNewProjectBtn" ng-click='showNewProject=!showNewProject'> Create new project <i class="glyphicon glyphicon-arrow-right"></i></a>
+			</div>
+			<div id="newProjectDiv" ng-show="showNewProject" style='border:1px solid #e6e6e6;padding: 5px;'>
+				<br><br>
+				<form id='frm' style='padding: 5px' ng-submit="createProject(this)">
+					<table class='table'>
+					<tr><td>Project name</td><td> <input class='input' type='text' name='name' style='width:100%' /></td></tr>
+					<tr><td> Location </td>
+					<td>
+					<select name='state'>
+					<option value='az'>Arizona</option>
+					<option value='wa'>Washington</option>
+					</select> </td></tr>
+					<tr><td> <input class='button' type='submit' value='Create' /></td></tr>
+					</table>
+				</form>
+				<div class="alert alert-success" id="events-result" ng-show="errMsg">{{errMsg}}</div>
+			</div>
+
+		</div>
+
+		<br> <br>
+		<table class="table" id="projTable">
+			<caption>
+				<h4>My Projects</h4>
+			</caption>
+			<tr>
+				<th style="width: 20%">Name</th>
+				<th>State</th>
+				<th style="text-align: center; width: 20%">Created</th>
+				<th style="text-align: center; width: 40%">Last modified</th>
+
+				<th>&nbsp;</th>
+				<th>&nbsp;</th>
+			</tr>
+			<tr ng-repeat="x in project.rows">
+				<td>{{ x.name }}</td>
+				<td>{{ x.state }}</td>
+				<td style="text-align: center">{{ x.created_date }}</td>
+				<td style="text-align: center">{{ x.modified_date }}</td>
+				<td><a ng-click="viewProject(x.id)" role='button' class='btn btn-primary'><i class='glyphicon glyphicon-stats'></i> Edit</a></td>
+				<td><a ng-click="deleteProject(x.id,this)" role='button' class='btn btn-danger delete'><i class='glyphicon glyphicon-trash'></i> Delete</a></td>
+			</tr>
+		</table>
+
+	</div>
+
+	<br> <br>
+	<div class="panel panel-default">
+		<div class="panel-heading">
+			<h3 class="panel-title">Notes</h3>
+		</div>
+		<div class="panel-body">
+			<ul>
+				<li>You must have a Google account before using this tool.</li>
+			</ul>
+		</div>
+	</div>
+</div>
+<!-- /container -->
+
+

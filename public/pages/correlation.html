@@ -1,0 +1,114 @@
+<style>
+div.col-lg-2{padding-left:0}
+td.col{font-weight:bold}
+a.flt-right{float:right}
+p.name{float:right}
+li.disabled{color:gray}
+td.red{background-color:red}
+td.blue{background-color:blue}
+td.green{background-color:green}
+table.clrs{
+width:300px;
+border:1px solid #ddd;
+cellpadding:10;
+cellspacing:20;
+}
+table.clrs td {border:1px solid #ddd;padding:5px;}
+</style>
+
+
+<div class="container">
+    <div class="jumbotron">
+        <h4>Correlation matrix</h4> 
+The correlation matrix can be used to identify the independent variables that should be included in the multiple regression analysis.
+<ul>
+<li>1.	Select independent variables that have a high degree of correlation with the dependent variable</li>
+<li>2.	Eliminate independent variables that have a high degree of correlation with other independent variables (collinear variables).</li>
+</ul>
+
+Note:  Correlation does not prove “cause and effect”.  Correlation can be spurious.  When selecting variables for multiple regression analysis there must be clear evidence that both “cause and effect” and correlation exists between dependent and independent variables.
+
+<table class='clrs'>
+<caption>Hints</caption>
+<tr><td style='background-color:#dff0d8;width:50px;'>&nbsp;</td><td>  Good choice</td></tr>
+<tr><td style='background-color:#fcf8e3;width:50px;'>&nbsp;</td><td>  Check collinearity</td></tr>
+<tr><td style='background-color:#f2dede;width:50px;'>&nbsp;</td><td>  Low correlation with dependent variable</td></tr>
+</table>
+
+    </div>
+    <div class='col-lg-2'>
+        <!--<a href="/configure" class="btn btn-default btn-continue" id="previousBtn"><i class="glyphicon glyphicon-arrow-left"></i> Return to configuration </a>-->
+        <a ng-click="viewComparable()" class="btn btn-default btn-continue" id="previousBtn"><i class="glyphicon glyphicon-arrow-left"></i> Return to summary </a>
+    </div>
+    <div class='col-lg-4'>
+        <button type="submit" class="btn btn-primary start" id="refreshBtn">
+            <span class='btn-primary'>Refresh table</span>
+        </button>
+    </div>
+    
+    <div class='col-lg-6'>
+       <a ng-click="viewRegression()" class="btn btn-default btn-continue flt-right" id="continueBtn"> Continue to regression <i class="glyphicon glyphicon-arrow-right"></i></a>
+    </div>
+    
+	<br>
+    <br>
+
+    <div ng-show="!correlation" id='loader'><img src="img/spinner_mac.gif"> Loading table.....  Please wait</div>
+    
+	<table ng-show='correlation' class='table table-striped table-bordered'>
+		<th>&nbsp;</th>
+		<th>&nbsp;</th>
+		<th ng-repeat="col in correlation">{{ col.name }}</th>
+		<tr ng-repeat="row in correlation">
+			<td><input type='checkbox' ng-model="row.include" ng-change="selectField(row.name)"  ng-checked="row.include" ></td>
+			<td style='text-align:right' ng-class='{warning: row.valid}' style='font-weight:bold'>{{row.name}}</td>
+			<td style='text-align:right' ng-class='{warning: row.valid}' ng-repeat="c in row.vals">{{ c }}</td>
+		</tr>
+	</table>
+
+    <br>
+    <div class="panel panel-default">
+        <div class="panel-heading">
+            <h3 class="panel-title">Correlation Notes</h3>
+        </div>
+        <div class="panel-body">
+            <ul>
+                <li><a target=_blank href="http://en.wikipedia.org/wiki/Correlation_and_dependence">Correlation</a> measures the relationships between variables.</li>
+<li>
+The correlation matrix shows the direction (inverse or direct) and degree (measured from -1 to +1) of correlation that exists between all of the variables.  
+</li>
+<li>Correlation coefficients range from -1 to +1.  A negative (-) coefficient indicates an inverse (as one variable increases the other decreases) relationship.  A positive coefficient (+) indicates a direct (as one variable increases the other increases) relationship.  
+</li><li>
+The closer a correlation coefficient is to +1 or -1 the greater the degree of correlation. A correlation coefficient of 0.00 indicates zero correlation.
+</li>               
+<li>
+Correlation does not mean causation!  Just because two variables are correlated does not mean they are causal. There is always the problem of lurking variables that may explain both variables. This is sometimes called spuriousness. Examples:
+<ul>
+<li>Taller children have higher standardized test scores. (taller children are older)</li>
+<li>Children with higher IQ scores get better grades. (Such children come from advantaged family backgrounds)</li>
+<li>Widows/Widowers have higher death rates than married people. (widows are older than married people on average)</li>
+</ul>
+ </li>
+ <li>
+<b> What is multicollinearity?</b>
+ <br>
+Collinearity (or multicollinearity) is the undesirable situation where the correlations among the independent variables are strong.
+<br><br>
+In some cases, multiple regression results may seem paradoxical. For instance, the model may fit the data well (high F-Test), even though none of the X variables has a statistically significant impact on explaining Y. How is this possible? When two X variables are highly correlated, they both convey essentially the same information.  When this happens, the X variables are collinear and the results show multicollinearity.
+To help you assess multicollinearity, SPSS tells you the Variance Inflation Factor (VIF) that measures multicollinearity in the model.
+<br><br>
+<b>Why is multicollinearity a problem?</b>
+ <br>
+Multicollinearity increases the standard errors of the coefficients. Increased standard errors in turn means that coefficients for some independent variables may be found not to be significantly different from 0, whereas without multicollinearity and with lower standard errors, these same coefficients might have been found to be significant and the researcher may not have come to null findings in the first place.
+ <br><br>
+In other words, multicollinearity misleadingly inflates the standard errors. Thus, it makes some variables statistically insignificant while they should be otherwise significant.
+ <br><br>
+ It is like two or more people singing loudly at the same time. One cannot discern which is which. They offset each other.
+</li>
+ 
+            </ul>
+        </div>
+    </div>
+</div>
+
+

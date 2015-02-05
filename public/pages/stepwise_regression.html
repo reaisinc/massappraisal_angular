@@ -1,0 +1,99 @@
+<style>
+div.col-lg-2{padding-left:0}
+td.col{font-weight:bold}
+a.flt-right{float:right}
+p.name{float:right}
+table.summaryTable{height:60px}
+#statsTable{font-size:small;}
+.jumbotron{padding-top:18px !important;padding-bottom:18px !important;}
+li.disabled{color:gray}
+</style>
+<div class="container">
+	<div class="jumbotron">
+		<div class="row">
+			<div class="col-md-4">
+				<h4>Stepwise regression summary</h4>
+				<div id="summary">
+					<b>Formula: </b>{{swregression.names[0]}} = {{swregression.coef[0]['Estimate']}} <span ng-repeat="row in swregression.coef track by $index" ng-if="$index>0"> {{$index}} + {{swregression.names[$index]}} * {{row['Estimate']}}</span>
+				</div>
+				<br>
+				<div style="width: 300px">
+					<table class='table table-striped table-bordered'>
+						<tr>
+							<td>R Squared</td>
+							<td style='text-align: right'>{{swregression.rsquared}}</td>
+						</tr>
+						<tr>
+							<td>Adjusted R Squared</td>
+							<td style='text-align: right'>{{swregression.adjrsquared}}</td>
+						</tr>
+						<tr>
+							<td>Standard Error</td>
+							<td style='text-align: right'>{{swregression.stderr}}</td>
+						</tr>
+						<tr>
+							<td>F statistic</td>
+							<td style='text-align: right'>{{swregression.fstats.value}}</td>
+						</tr>
+					</table>
+				</div>
+			</div>
+			<div class="col-md-8">
+				<img id="plotimg">
+			</div>
+		</div>
+	</div>
+	<!-- end jumbotron -->
+
+	<div class='col-lg-2'>
+		<a ng-click="viewRegression()" class="btn btn-default btn-continue" id="previousBtn"><i class="glyphicon glyphicon-arrow-left"></i> Return to regression </a>
+	</div>
+
+	<div class='col-lg-10'>
+		<a ng-click="viewResiduals()" class="btn btn-default btn-continue flt-right" id="continueBtn"> Continue to residuals output <i class="glyphicon glyphicon-arrow-right"></i></a>
+	</div>
+
+	<br> <br>
+
+	<div ng-show="!swregression" id='loader'>
+		<img src="img/spinner_mac.gif"> Loading table..... Please wait
+	</div>
+	<table data-cache="false" id="summaryTable" ng-show='swregression' class='table table-striped table-bordered'>
+		<thead>
+			<tr>
+				<th data-field="name">Field name</th>
+				<th data-field="Estimate" data-align="right">Estimate</th>
+				<th data-field="Std. Error" data-align="right">Std. Error</th>
+				<th data-field="t value" data-align="right">t value</th>
+				<th data-field="Pr(>|t|)" data-align="right">Pr(>|t|)</th>
+			</tr>
+		</thead>
+		<tbody>
+			<tr ng-repeat="row in swregression.coef">
+				<td style='text-align: left' style='font-weight:bold'>{{row['name']}}</td>
+				<td style='text-align: right' style='font-weight:bold'>{{row['Estimate']}}</td>
+				<td style='text-align: right' style='font-weight:bold'>{{row['Std. Error']}}</td>
+				<td style='text-align: right' style='font-weight:bold'>{{row['t value']}}</td>
+				<td style='text-align: right' style='font-weight:bold'>{{row['Pr(>|t|)']}}</td>
+
+			</tr>
+		</tbody>
+	</table>
+
+	<br>
+	<div class="panel panel-default">
+		<div class="panel-heading">
+			<h3 class="panel-title">Stepwise Regression Notes</h3>
+		</div>
+		<div class="panel-body">
+			<ul>
+				<li><a target=_blank href='http://en.wikipedia.org/wiki/Stepwise_regression'>Stepwise regression</a> includes regression models in which the choice of predictive variables is carried out by an automatic procedure.</li>
+				<li>Stepwise regression removes variables until the model can't be improved any further.</li>
+				<li>Stepwise regression shouldn't replace subject matter expertise.</li>
+				<li>The Coefficient of Determination (R^2) is the relationship between the error from the mean (no price variance is explained) and the error from the regression (the adjustment factors explain the price variance).</li>
+			</ul>
+		</div>
+	</div>
+</div>
+
+

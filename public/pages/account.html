@@ -1,0 +1,35 @@
+<div class="container">
+    <h2 class="lead">User information</h2>
+
+<table class="table table-condensed table-bordered">
+<tr><td>Name  </td><td>{{ user.displayName }}</td></tr>
+<tr><td>Email  </td><td>{{ user._json.email }}</td></tr>
+<tr><td>Gender  </td><td>{{ user._json.gender }}</td></tr>
+<tr><td>ID    </td><td>{{ user.id }}</td></tr>
+<tr><td>Provider    </td><td>{{ user.provider }}</td></tr>
+
+<tr><td>Photo  </td><td><img src='{{ user._json.picture }}'></td></tr>
+
+<!--
+   { provider: 'google',
+     id: '111028451305834352504',
+     displayName: 'Steve Hale',
+     name: { familyName: 'Hale', givenName: 'Steve' },
+     emails: [ [Object] ],
+     _raw: '{\n "id": "111028451305834352504",\n "email": "reaisincva@gmail.com",\n "verified_email": true,\n "name": "Steve Hale",\n "given_name": "Steve",\n "
+family_name": "Hale",\n "picture": "https://lh3.googleusercontent.com/-XdUIqdMkCWA/AAAAAAAAAAI/AAAAAAAAAAA/4252rscbv5M/photo.jpg",\n "gender": "male",\n "locale
+": "en"\n}\n',
+     _json:
+      { id: '111028451305834352504',
+        email: 'reaisincva@gmail.com',
+        verified_email: true,
+        name: 'Steve Hale',
+        given_name: 'Steve',
+        family_name: 'Hale',
+        picture: 'https://lh3.googleusercontent.com/-XdUIqdMkCWA/AAAAAAAAAAI/AAAAAAAAAAA/4252rscbv5M/photo.jpg',
+        gender: 'male',
+        locale: 'en' } },
+-->        
+</table>
+
+</div>

@@ -1,0 +1,144 @@
+
+<style>
+.my-drop-zone {
+	border: dotted 3px lightgray;
+}
+
+.nv-file-over {
+	border: dotted 3px red;
+} /* Default class applied to drop zones on over */
+.another-file-over-class {
+	border: dotted 3px green;
+}
+
+.dim {
+	height: 100%;
+	width: 100%;
+	position: fixed;
+	left: 0;
+	top: 0;
+	z-index: 1 !important;
+	background-color: black;
+	filter: alpha(opacity = 75); /* internet explorer */
+	-khtml-opacity: 0.75; /* khtml, old safari */
+	-moz-opacity: 0.75; /* mozilla, netscape */
+	opacity: 0.75; /* fx, safari, opera */
+}
+</style>
+
+<div class="container">
+	<div class="jumbotron">
+		<h4>
+			Upload comparable sales and use the <a href='http://www.nrcs.usda.gov/wps/portal/nrcs/detail/soils/survey/?cid=nrcs142p2_053627'>USDA SSURGO (Soils) database</a> to identify independent variables to use for mass appraisal.
+		</h4>
+		Before uploading data files, please note:
+		<ul>
+			<li>Make sure you use meaningful names for your field names to help identify them during the regression process.</li>
+			<li>Regression uses a variable Y, called the response, output or dependent variable.</li>
+			<li>It also uses one or more predictor, input, independent or explanatory variables, X<sub>1</sub> ... X<sub>p</sub></li>
+			<li>Regression only works with numeric data, so you may need to convert strings to numbers.</li>
+			<li>Make sure you don't have missing data. Valid data files are CSV, Excel, ESRI Shapefile and ESRI File Geodatabases.</li>
+			<li>For ESRI Shapefiles (spatial data), make sure you have a .prj file identifying the projection.</li>
+			<li>Non spatial data is allowed, but won't take advantage of the soils data.</li>
+		</ul>
+
+	</div>
+	{{ project.name }}
+	<!--  
+    <div class='col-lg-10'>
+    <h4>Project:  {{ project.name }}</h4> 
+    </div>
+    <div class='col-lg-2'>
+    <div id="startBtn">
+       <a ng-click="addComparable()" class="btn btn-default btn-continue" id="continueBtn"> Add new comparable data <i class="glyphicon glyphicon-arrow-right"></i></a>
+    </div>
+    </div>
+    showNewProject?'glyphicon glyphicon-minus':'glyphicon glyphicon-plus'"
+    showNewProject?'btn btn-danger btn-default':'btn btn-success btn-default'
+    -->
+	<div class='col-lg-2' style='width: 100%'>
+		<div id="startBtn" style='float: right'>
+			<a class="btn btn-success btn-default" ng-click="showNewProject=!showNewProject;open('lg','comp')"> Add comparable data 
+			<i class="glyphicon glyphicon-plus"></i></a>		
+		</div>
+
+	</div>
+
+	<br> <br>
+
+	<table class="table">
+		<caption>
+			<h4>Comparable sales</h4>
+		</caption>
+		<tr>
+			<th>Filename</th>
+			<th>Type</th>
+			<th style="width: 40%">Date loaded</th>
+			<th>&nbsp;</th>
+			<th>&nbsp;</th>
+		</tr>
+		<tr ng-repeat="x in project.rows" ng-if="x.type==0">
+			<td>{{x.name}}</td>
+			<td>{{x.filetype}}</td>
+			<td>{{x.date}}</td>
+			<td><a ng-click="viewComparable(x.id)" role="button" class="btn btn-primary"><i class="glyphicon glyphicon-stats"></i> View</a></td>
+			<td><a ng-click="deleteComparable(x.id)" role="button" class="btn btn-danger delete"><i class="glyphicon glyphicon-trash"></i> Delete</a></td>
+		</tr>
+	</table>
+
+	<br> <br>
+	<!-- 
+	<div class='col-lg-10'></div>
+	<div class='col-lg-2'>
+
+		<div id="startSubBtn">
+			<a href="/uploadsubfiles/{{project.project}}" class="btn btn-default btn-continue" id="continueSubBtn"> Add new subject data <i class="glyphicon glyphicon-arrow-right"></i></a>
+		</div>
+	</div>
+	showNewSubject?'glyphicon glyphicon-minus':'glyphicon glyphicon-plus'
+	-->
+	<div class='col-lg-2' style='width: 100%'>
+		<div id="startBtn" style='float: right'>
+			<a class="btn btn-success btn-default" ng-click="showNewSubject=!showNewSubject;open('lg','subj')"> Add subject data 
+			<i class="glyphicon glyphicon-plus"></i></a>
+		</div>
+	</div>	
+
+	<br> <br>
+
+	<table class="table">
+		<caption>
+			<h4>Subject properties</h4>
+		</caption>
+		<tr>
+			<th>Filename</th>
+			<th>Comparable table</th>
+			<th>Type</th>
+			<th style="width: 40%">Date loaded</th>
+			<th>&nbsp;</th>
+			<th>&nbsp;</th>
+		</tr>
+
+		<tr ng-repeat="x in project.rows" ng-if="x.type==1">
+			<td>{{x.name}}</td>
+			<td>{{x.comp}}</td>
+			<td>{{x.filetype}}</td>
+			<td>{{x.date}}</td>
+			<td><a ng-click="viewSubject(x.id)" role="button" class="btn btn-primary"><i class="glyphicon glyphicon-stats"></i> View</a></td>
+			<td><a ng-click="deleteSubject(x.id,this)" role="button" class="btn btn-danger delete"><i class="glyphicon glyphicon-trash"></i> Delete</a></td>
+		</tr>
+
+	</table>
+	<br> <br>
+	<div class="panel panel-default">
+		<div class="panel-heading">
+			<h3 class="panel-title">Notes</h3>
+		</div>
+		<div class="panel-body">
+			<ul>
+				<li>Prepare your data prior to uploading.</li>
+			</ul>
+		</div>
+	</div>
+</div>
+<!-- /container -->

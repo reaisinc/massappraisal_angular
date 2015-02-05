@@ -1,0 +1,93 @@
+<!DOCTYPE HTML>
+<html lang="en">
+<head>
+<!-- Force latest IE rendering engine or ChromeFrame if installed -->
+<!--[if IE]>
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<![endif]-->
+<meta charset="utf-8">
+<title>Mass Appraisal Soils</title>
+<meta name="description" content="File Upload widget with multiple file selection, drag&amp;drop support, progress bars, validation and preview images, audio and video for jQuery. Supports cross-domain, chunked and resumable file uploads and client-side image resizing. Works with any server-side platform (PHP, Python, Ruby on Rails, Java, Node.js, Go etc.) that supports standard HTML form file uploads.">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!-- Bootstrap styles -->
+<link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css">
+<link rel="stylesheet" href="css/bootstrap-table.min.css">
+<!-- Generic page styles -->
+<link rel="stylesheet" href="css/style.css">
+<!-- CSS adjustments for browsers with JavaScript disabled -->
+
+<style>
+div.col-lg-2{padding-left:0}
+td.col{font-weight:bold}
+a.flt-right{float:right}
+p.name{float:right}
+</style>
+
+</head>
+<body>
+<div class="navbar navbar-default navbar-fixed-top">
+    <div class="container">
+        <div class="navbar-header">
+            <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-fixed-top .navbar-collapse">
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="/">Mass Appraisal Soils Analyzer</a>
+        </div>
+        <div class="navbar-collapse collapse">
+					<p class='name'>Logged in as: <a href='/account'><%= user.displayName %></a> &nbsp;&nbsp;<a href='/logout'>Logout</a></p>        </div>
+    </div>
+</div>
+<div class="container">
+    <h2 class="lead">User information</h2>
+
+<table class="table table-condensed table-bordered">
+<tr><td>Name  </td><td><%= user.displayName %></td></tr>
+<tr><td>Email  </td><td><%= user._json.email %></td></tr>
+<tr><td>Gender  </td><td><%= user._json.gender %></td></tr>
+<tr><td>ID    </td><td><%= user.id %></td></tr>
+<tr><td>Provider    </td><td><%= user.provider %></td></tr>
+
+<tr><td>Photo  </td><td><img src='<%= user._json.picture %>'></td></tr>
+<!--
+   { provider: 'google',
+     id: '111028451305834352504',
+     displayName: 'Steve Hale',
+     name: { familyName: 'Hale', givenName: 'Steve' },
+     emails: [ [Object] ],
+     _raw: '{\n "id": "111028451305834352504",\n "email": "reaisincva@gmail.com",\n "verified_email": true,\n "name": "Steve Hale",\n "given_name": "Steve",\n "
+family_name": "Hale",\n "picture": "https://lh3.googleusercontent.com/-XdUIqdMkCWA/AAAAAAAAAAI/AAAAAAAAAAA/4252rscbv5M/photo.jpg",\n "gender": "male",\n "locale
+": "en"\n}\n',
+     _json:
+      { id: '111028451305834352504',
+        email: 'reaisincva@gmail.com',
+        verified_email: true,
+        name: 'Steve Hale',
+        given_name: 'Steve',
+        family_name: 'Hale',
+        picture: 'https://lh3.googleusercontent.com/-XdUIqdMkCWA/AAAAAAAAAAI/AAAAAAAAAAA/4252rscbv5M/photo.jpg',
+        gender: 'male',
+        locale: 'en' } },
+-->        
+</table>
+
+</div>
+
+
+<script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+<!-- The jQuery UI widget factory, can be omitted if jQuery UI is already included -->
+<script src="js/vendor/jquery.ui.widget.js"></script>
+<!-- Bootstrap JS is not required, but included for the responsive demo navigation -->
+<script src="//netdna.bootstrapcdn.com/bootstrap/3.2.0/js/bootstrap.min.js"></script>
+<script src="js/bootstrap-table.min.js"></script>
+<!-- The main application script -->
+
+
+<!-- The XDomainRequest Transport is included for cross-domain file deletion for IE 8 and IE 9 -->
+<!--[if (gte IE 8)&(lt IE 10)]>
+<script src="js/cors/jquery.xdr-transport.js"></script>
+<![endif]-->
+</body> 
+</html>
+

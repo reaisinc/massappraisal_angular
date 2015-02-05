@@ -1,0 +1,104 @@
+
+<style>
+div.col-lg-2{padding-left:0}
+td.col{font-weight:bold}
+a.flt-right{float:right}
+p.name{float:right}
+table.summaryTables{height:60px}
+#statsTable{font-size:small;}
+.jumbotron{padding-top:18px !important;padding-bottom:18px !important;}
+li.disabled{color:gray}
+
+</style>
+<div class="container">
+	<div class="jumbotron">
+		<div class="row">
+			<div class="col-md-4">
+				<h4>Regression summary</h4>
+				<div id="summary">
+					<b>Formula: </b>{{regression.names[0]}} = {{regression.coef[0]['Estimate']}} <span ng-repeat="row in regression.coef track by $index" ng-if="$index>0"> {{$index}} + {{regression.names[$index]}} * {{row['Estimate']}}</span>
+				</div>
+				<br>
+				<div style="width: 300px">
+					<table class='table table-striped table-bordered'>
+
+						<tr>
+							<td>R Squared
+							</td>
+							<td style='text-align: right'>{{regression.rsquared}}</td>
+						</tr>
+						<tr>
+							<td>Adjusted R Squared</td>
+							<td style='text-align: right'>{{regression.adjrsquared}}</td>
+						</tr>
+						<tr>
+							<td>Standard Error</td>
+							<td style='text-align: right'>{{regression.stderr}}</td>
+						</tr>
+						<tr>
+							<td>F statistic</td>
+							<td style='text-align: right'>{{regression.fstats.value}}</td>
+						</tr>
+
+					</table>
+				</div>
+			</div>
+			<div class="col-md-8">
+				<img id="plotimg">
+			</div>
+		</div>
+	</div>
+	<!-- end jumbotron -->
+
+
+	<div class='col-lg-2'>
+		<a ng-click="viewCorrelation()" class="btn btn-default btn-continue" id="previousBtn"><i class="glyphicon glyphicon-arrow-left"></i> Return to correlation matrix </a>
+	</div>
+
+	<div class='col-lg-10'>
+		<a ng-click="viewStepwiseRegression()" class="btn btn-default btn-continue flt-right" id="continueBtn"> Continue to stepwise regression <i class="glyphicon glyphicon-arrow-right"></i></a>
+	</div>
+
+	<br> <br>
+	<div ng-show="!regression" id='loader'>
+		<img src="img/spinner_mac.gif"> Loading table..... Please wait
+	</div>
+	<table data-cache="false" id="summaryTable" ng-show='regression' class='table table-striped table-bordered'>
+		<thead>
+			<tr>
+				<th data-field="name">Field name</th>
+				<th data-field="Estimate" data-align="right">Estimate</th>
+				<th data-field="Std. Error" data-align="right">Std. Error</th>
+				<th data-field="t value" data-align="right">t value</th>
+				<th data-field="Pr(>|t|)" data-align="right">Pr(>|t|)</th>
+			</tr>
+		</thead>
+		<tbody>
+			<tr ng-repeat="row in regression.coef">
+				<td style='text-align: left' style='font-weight:bold'>{{row['name']}}</td>
+				<td style='text-align: right' style='font-weight:bold'>{{row['Estimate']}}</td>
+				<td style='text-align: right' style='font-weight:bold'>{{row['Std. Error']}}</td>
+				<td style='text-align: right' style='font-weight:bold'>{{row['t value']}}</td>
+				<td style='text-align: right' style='font-weight:bold'>{{row['Pr(>|t|)']}}</td>
+
+			</tr>
+		</tbody>
+	</table>
+
+	<br>
+	<div class="panel panel-default">
+		<div class="panel-heading">
+			<h3 class="panel-title">Regression Notes</h3>
+		</div>
+		<div class="panel-body">
+			<ul>
+				<li>The regression is performed on all variables that have been included for this dataset.</li>
+				<li>Variables can be removed by going back to the configuration page and unchecking the variables to remove.</li>
+				<li>Stepwise regression will attempt to delete variables until the model can no longer be improved</li>
+				<li>The Coefficient of Determination (R^2) is the relationship between the error from the mean (no price variance is explained) and the error from the regression (the adjustment factors explain the price variance).</li>
+			</ul>
+		</div>
+	</div>
+</div>
+
+

@@ -1,0 +1,111 @@
+<!DOCTYPE HTML>
+<html lang="en">
+<head>
+<!-- Force latest IE rendering engine or ChromeFrame if installed -->
+<!--[if IE]>
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<![endif]-->
+<meta charset="utf-8">
+<title>Mass Appraisal Soils Map</title>
+<meta name="description" content="File Upload widget with multiple file selection, drag&amp;drop support, progress bars, validation and preview images, audio and video for jQuery. Supports cross-domain, chunked and resumable file uploads and client-side image resizing. Works with any server-side platform (PHP, Python, Ruby on Rails, Java, Node.js, Go etc.) that supports standard HTML form file uploads.">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!-- Bootstrap styles -->
+<link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css">
+<!--
+<link rel="stylesheet" href="css/bootstrap-table.min.css">
+-->
+<!-- Generic page styles -->
+<link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="css/leaflet.css">
+</head>
+<script>
+//var center = [<%= extent %>];
+//new L.LatLng(<%= extent %>);
+var extent = [<%= extent %>];
+var layerName = '<%= layerName %>';
+</script>
+<style>
+#map {
+    width: 100%; 
+    height: 100%; 
+}
+
+body {
+    padding: 0;
+    margin: 0;
+}
+
+html, body, #map {
+    height: 100%;
+}
+a.flt-right{float:right}
+p.name{float:right}
+li.disabled{color:gray}
+</style>
+<body>
+
+<div class="navbar navbar-default navbar-fixed-top">
+    <div class="container">
+        <div class="navbar-header">
+            <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-fixed-top .navbar-collapse">
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="/">Mass Appraisal Soils Analyzer</a>
+        </div>
+        <div class="navbar-collapse collapse">
+			<p class='name'>Logged in as: <a href='/account'><%= user.displayName %></a> &nbsp;&nbsp;<a href='/logout'>Logout</a></p>        
+		</div>
+    </div>
+<div class="container">
+		  <ol class="breadcrumb" style="float:left;display:inline">
+		  <li><a href="/">Home</a></li>
+			<li class='disabled'>Upload files</li>
+  			<li class='disabled'>Load data</li>
+			<li><a href="/summary">Summary</a></li>
+			<li>Map</li>
+			<!--<li><a href="/configure">Configure data</a></li>--> 	  
+		  <li><a href="/correlation">Correlation matrix</a></li>
+		  <li><a href="/regression">Regression</a></li>
+		  <li><a href="/stepwise_regression">Stepwise regression</a></li>
+		  <li><a href="/residuals">Residuals</a></li>
+		  <li><a href="/predict">Predictions</a></li>
+			</ol>
+</div>
+
+</div>
+
+
+<div id="map"></div>
+<!--
+<div id="filter-container">
+        <form class="form-search" class="noSelect" onSubmit="addCsvMarkers(); return false;">
+            <a href="#" id="clear" class="leaflet-popup-close-button">&#215;</a>
+            <div class="input-append">
+                <input type="text" id="filter-string" class="input-medium search-query search-box" autocomplete="off" title='Enter parcel id to find on map'>
+                <button type="submit" class="btn search-box"><i class="icon-search"></i></button>
+                
+            </div>
+        </form>
+        <div id="search-results" class="leaflet-control-attribution leaflet-control pull-right"></div>
+</div>
+-->
+
+<script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+<!-- The jQuery UI widget factory, can be omitted if jQuery UI is already included -->
+<script src="js/vendor/jquery.ui.widget.js"></script>
+<script src="js/leaflet.js"></script>
+<!-- Bootstrap JS is not required, but included for the responsive demo navigation -->
+<script src="//netdna.bootstrapcdn.com/bootstrap/3.2.0/js/bootstrap.min.js"></script>
+<!--
+<script src="js/bootstrap-table.min.js"></script>
+-->
+<!-- The main application script -->
+<script src="js/map.js"></script>
+
+
+
+    
+</body>
+</html>
