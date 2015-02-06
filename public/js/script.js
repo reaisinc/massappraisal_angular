@@ -64,7 +64,7 @@ maApp.config(function($routeProvider,$locationProvider) {
 		controller  : 'residualsController'
 	})
 	// route for the predict page
-	.when('/projects/:id/tables/:tid/predict', {
+	.when('/projects/:id/tables/:tid/predictions', {
 		templateUrl : 'pages/predict.html',
 		controller  : 'predictController'
 	})
@@ -80,7 +80,15 @@ maApp.config(function($routeProvider,$locationProvider) {
 maApp.factory('Data', function () {
 	return { message: "I'm data from a service" };
 });
-
+maApp.filter('numformat', function($filter) {
+	return function(input, type) {
+		var out=input;
+		//$filter('currency')(amount, symbol, fractionSize)
+		if(type=='currency')out=$filter('currency')(out);
+		else if(type=='numeric')out=$filter('number',2)(out);
+		return out;
+	};
+});
 //create the controller and inject Angular's $scope
 maApp.controller('mainController', function($rootScope,$scope, $http, $location) {
 	$scope.showNewProject=false;
@@ -183,7 +191,7 @@ maApp.controller('mainController', function($rootScope,$scope, $http, $location)
 	};
 	//predict
 	$scope.viewPredictions = function () {
-		$location.path(getURL("predict"));
+		$location.path(getURL("predictions"));
 	};
 
 	// if(!sessionStorage.getItem("username"))
@@ -479,36 +487,62 @@ maApp.controller('subjectController', function($rootScope,$scope,$http,$location
 	});			
 });
 maApp.controller('correlationController', function($rootScope,$scope,$http,$location) {
-	$http.get($location.$$url).
-	success(function(data, status, headers, config) {
-		var tmpdata=[];
-		var c=0;
-		$scope.id=1;
-		for(var i in data.names)
-		{
-			var vif=0;
-			if(c>0){
-				vif=1;
-				for(var j in data.results.vif){
-					if(data.results.vif[j]==i){
-						vif=0;
-						break;
+
+	$scope.selectField = function(field,ch) {
+		console.log(field)
+		$http.put(getURL("correlation"),{ name:field, field: 'include',value: ch?1:0})
+		.success(function(data, status, headers, config) {
+			console.log(data);
+		})
+		.error(function(data, status, headers, config) {
+			// log error
+			if(status==404)$location.path("/login")
+		});		
+		// $http.put("/projects/update?name="+name+"&field="+field+"&value="+value,function(data){
+		// console.log(data);
+		// });
+	};
+	$scope.refreshTable = function() {
+		$scope.correlation=null;
+		$scope.getData();
+	}
+	$scope.getData = function(){
+		$http.get($location.$$url).
+		success(function(data, status, headers, config) {
+			var tmpdata=[];
+			$scope.id=1;
+			for(var i in data.names)
+			{
+				var vif=0;
+				if(i>0){
+					vif=1;
+					if(data.results.cor[0][data.names[i].name]<0.4)
+						data.names[i].cls='danger';
+					else{
+						data.names[i].cls='warning';
+						for(var j in data.results.vif){
+							if(data.results.vif[j]==data.names[i].name){
+								data.names[i].cls='success';
+								break;
+							}
+						}
 					}
 				}
+				var vals=[];
+				for(var j in data.names)vals.push(data.results.cor[i][data.names[j].name]);
+				tmpdata.push({field:data.names[i],vals:vals});
 			}
-			var vals=[];
-			for(var j in data.names)vals.push(data.results.cor[c][j]);
-			c++;
-			tmpdata.push({name:i,include:data.names[i],valid:vif,vals:vals});
-		}
-		$scope.correlation = tmpdata;
-		//console.log(tmpdata);
-	}).
-	error(function(data, status, headers, config) {
-		// log error
-		if(status==404)$location.path("/login")
-	});			
+			$scope.correlation = tmpdata;
+			console.log(tmpdata);
+		}).
+		error(function(data, status, headers, config) {
+			// log error
+			if(status==404)$location.path("/login")
+		});	
+	}
+	$scope.getData();
 });
+/*
 maApp.directive('dollarChangeDirective', function ($timeout) {
 	return {
 		link: function ($scope, element, attrs) {
@@ -522,7 +556,7 @@ maApp.directive('dollarChangeDirective', function ($timeout) {
 		}
 	}
 });
-
+ */
 maApp.controller('regressionController', function($scope,$http,$location) {
 	$http.get($location.$$url).
 	success(function(data, status, headers, config) {
@@ -551,23 +585,26 @@ maApp.controller('stepwise_regressionController', function($scope,$http,$locatio
 });
 
 maApp.controller('residualsController', function($scope,$http,$location) {
-	$http.get($location.$$url).
-	success(function(data, status, headers, config) {
-		$scope.residuals = data;
-		$scope.totalItems = data.total;
-		$scope.currentPage = 0;
-		$scope.getData(0);
-	}).
-	error(function(data, status, headers, config) {
-		// log error
-		if(status==404)$location.path("/login")
-	});
+	$scope.useSW=false;
+	$scope.getResiduals=function(){
+		$http.get($location.$$url+($scope.useSW?"?nosw=1":"")).
+		success(function(data, status, headers, config) {
+			$scope.residuals = data;
+			$scope.totalItems = data.total;
+			$scope.currentPage = 0;
+			$scope.getData(0);
+		}).
+		error(function(data, status, headers, config) {
+			// log error
+			if(status==404)$location.path("/login")
+		});
+	}
 	$scope.tableURL = $location.$$url.slice(0,-10);
 
 	$scope.getData = function(page){
-		$http.get($scope.tableURL+"?offset="+($scope.maxSize*page)+"&limit="+$scope.maxSize).
+		$http.get($scope.tableURL+"?offset="+($scope.maxSize*page)+"&limit="+$scope.maxSize+($scope.useSW?"&nosw=1":"")).
 		success(function(data, status, headers, config) {
-			$scope.tabledata = data.rows;
+			$scope.residualsdata = $scope.processData(data.rows);
 		}).
 		error(function(data, status, headers, config) {
 			// log error
@@ -582,25 +619,110 @@ maApp.controller('residualsController', function($scope,$http,$location) {
 		//$log.log('Page changed to: ' + $scope.currentPage);
 		$scope.tabledata=null;
 		$scope.getData($scope.currentPage);
-		
+
 	};
 
 	$scope.maxSize = 15;
 	//$scope.bigTotalItems = 15;
 	//$scope.bigCurrentPage = 0;
-	
+	$scope.toggleRegression=function()
+	{
+		$scope.getResiduals();
+		$scope.currentPage=0;
+		$scope.pageChanged();
+	}
 
+	$scope.calc=function (row)
+	{
+		var ret=$scope.residuals.vars.coef[0].Estimate;
+		for(var i=1;i<$scope.residuals.vars.names.length;i++)
+		{
+			ret += $scope.residuals.vars.coef[i].Estimate * row[$scope.residuals.vars.names[i]];
+		}
+		return ret;
+	}
+
+	$scope.processData = function(data){
+		var depvar=$scope.residuals.vars.names[0];
+		if(!$scope.residualscolumns){
+			var id=$scope.residuals.id.trim();//.replace(/"/g,"")
+			$scope.residualcolumns=[id,depvar,"Predicted "+depvar,"Range - Lower "+depvar,"Range - Higher "+depvar,"Sale price within range"];
+			$scope.residualsfields=[id,depvar,depvar+"_pred",depvar+"_lwr",depvar+"_hgr",depvar+"_inrng"];
+			$scope.residuals.names[depvar]='currency';
+			$scope.residuals.names[depvar+"_pred"]='currency';
+			$scope.residuals.names[depvar+"_lwr"]='currency';
+			$scope.residuals.names[depvar+"_hgr"]='currency';
+			for(var i in data[0]){
+				if(i!=id&&i!=depvar){
+					$scope.residualcolumns.push(i);
+					$scope.residualsfields.push(i);
+				}
+			}
+		}
+		//(col,key) in residualsdata[0] track by $index
+		for(var i=0;i<data.length;i++){
+			data[i][depvar]          = data[i][depvar]; 	
+			data[i][depvar+"_pred"]  = $scope.calc(data[i]);
+			data[i][depvar+"_lwr"]   = data[i][depvar+"_pred"] - $scope.residuals.vars.stderr;
+			data[i][depvar+"_hgr"]   = data[i][depvar+"_pred"] + $scope.residuals.vars.stderr;
+			data[i][depvar+"_inrng"] =  (data[i][depvar]<data[i][depvar+'_pred']+$scope.residuals.vars.stderr && data[i][depvar]>data[i][depvar+'_pred']-$scope.residuals.vars.stderr)?"Yes":"No";
+		}
+		return data;
+	}
+	$scope.getResiduals();
 });
 
-maApp.controller('predictController', function($scope,$http,$location) {
-	$http.get($location.$$url).
-	success(function(data, status, headers, config) {
-		$scope.table = data;
-	}).
-	error(function(data, status, headers, config) {
-		// log error
-		if(status==404)$location.path("/login")
-	});			
+maApp.controller('predictController', function($scope,$http,$location,$filter) {
+	$scope.getData=function(){
+		$http.get($location.$$url).
+		success(function(data, status, headers, config) {
+			$scope.predictions = data;
+			/*
+		var columns=[];//{field:"name",title:"",align:"right",class:"col"}];
+		var dummyvals=[];
+		var obj={};
+		data.vars.names[0]=data.vars.names[0].replace(/\"/g," ").trim();//.replace(/ /g,"_");
+		$scope.coeff[data.vars.names[0]]=parseFloat(data.vars.coef[0]['Estimate']);
+		//skip first field since it's the price
+		for(var i=1;i<data.vars.names.length;i++)
+		{
+			data.vars.names[i]=data.vars.names[i].replace(/\"/g," ").trim();//.replace(/ /g,"_");
+			//columns.push({field:data.vars.names[i],title:data.vars.names[i],align:"right",formatter:nameFormatter});
+			obj[data.vars.names[i]]=data.vars.names[i];
+			coeff[data.vars.names[i]]=parseFloat(data.vars.coef[i]['Estimate']);
+		}
+
+		//dummyvals.push(obj);
+
+		$scope.predictions = data;
+			 */
+		}).
+		error(function(data, status, headers, config) {
+			// log error
+			//if(status==404)$location.path("/login")
+		});		
+	}
+	$scope.getData();
+	$scope.calculatePrediction=function(){
+		var result=0.0;
+		var frm=document.forms['predfrm'];
+		try{
+			for(var i in $scope.predictions.vars.coef)
+			{
+				if(frm.elements[i])
+				{
+					if( frm.elements[i].type=='text')
+						result += parseFloat(frm.elements[i].value.replace(/,/g,'')) * parseFloat($scope.predictions.vars.coef[i].Estimate);
+					//console.log(this.elements[i].value +" * " +  coeff[i] );
+				}
+				else result+=parseFloat($scope.predictions.vars.coef[i].Estimate);
+			}
+		}catch(e){console.log(e);}
+		//console.log(priceFormatter(result));
+		//		if(type=='currency')out=$filter('currency')(out);
+		//else if(type=='numeric')out=$filter('number',2)(out);
+		$scope.prediction="Predicted price: "+ $filter('currency')(result) ;
+	}	
 });
 
 

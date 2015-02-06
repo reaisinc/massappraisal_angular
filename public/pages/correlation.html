@@ -41,7 +41,7 @@ Note:  Correlation does not prove “cause and effect”.  Correlation can be sp
         <a ng-click="viewComparable()" class="btn btn-default btn-continue" id="previousBtn"><i class="glyphicon glyphicon-arrow-left"></i> Return to summary </a>
     </div>
     <div class='col-lg-4'>
-        <button type="submit" class="btn btn-primary start" id="refreshBtn">
+        <button type="submit" ng-click="refreshTable()" class="btn btn-primary start" id="refreshBtn">
             <span class='btn-primary'>Refresh table</span>
         </button>
     </div>
@@ -58,11 +58,11 @@ Note:  Correlation does not prove “cause and effect”.  Correlation can be sp
 	<table ng-show='correlation' class='table table-striped table-bordered'>
 		<th>&nbsp;</th>
 		<th>&nbsp;</th>
-		<th ng-repeat="col in correlation">{{ col.name }}</th>
-		<tr ng-repeat="row in correlation">
-			<td><input type='checkbox' ng-model="row.include" ng-change="selectField(row.name)"  ng-checked="row.include" ></td>
-			<td style='text-align:right' ng-class='{warning: row.valid}' style='font-weight:bold'>{{row.name}}</td>
-			<td style='text-align:right' ng-class='{warning: row.valid}' ng-repeat="c in row.vals  track by $index">{{ c || '0' }}</td>
+		<th ng-repeat="col in correlation track by $index">{{ col.field.name }}</th>
+		<tr ng-repeat="row in correlation track by $index">
+			<td><input type='checkbox' ng-model="row.field.include" ng-change="selectField(row.field.name)"  ng-checked="row.field.include" ></td>
+			<td style='text-align:right;font-weight:bold' class='{{row.field.cls}}'>{{row.field.name}}</td>
+			<td style='text-align:right' class='{{row.field.cls}}' ng-repeat="c in row.vals  track by $index">{{ c || '0' }}</td>
 		</tr>
 	</table>
 

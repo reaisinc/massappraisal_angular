@@ -72,7 +72,7 @@ router.get('/:pid/tables/:tid/correlation',  function(req, res){
 });
 //table correlation update
 router.put('/:pid/tables/:tid/correlation',  function(req, res){
-	tableCorrelation(req,res);	
+	updateTableSummary(req,res);	
 });
 
 //table regression
@@ -87,6 +87,12 @@ router.get('/:pid/tables/:tid/stepwise_regression',  function(req, res){
 router.get('/:pid/tables/:tid/residuals',  function(req, res){
 	tableResiduals(req,res);	
 });
+//table predictions
+router.get('/:pid/tables/:tid/predictions',  function(req, res){
+	tablePredictions(req,res);	
+});
+
+
 
 //delete project (alt - not used)
 router.get('/:pid/delete',  function(req, res){
@@ -371,7 +377,7 @@ function tableCorrelation(req, res){
 				if(err)console.log(err);
 				// add the schema to the tablename
 				// release()
-				var names={};
+				var names=[];
 				tableName = req.user.shortName+"."+ tableName+'_stats';
 				var cols=[];
 				var depvar;
@@ -379,7 +385,8 @@ function tableCorrelation(req, res){
 				// console.log(result.rows);
 				for(var i in result.rows){
 					if(!depvar)depvar=result.rows[i].name;
-					names[result.rows[i].name]=result.rows[i].include;
+					//names[result.rows[i].name]=result.rows[i].include;
+					names.push({name:result.rows[i].name,include:result.rows[i].include,vif:0})
 					if(result.rows[i].name.charAt(0) == result.rows[i].name.charAt(0).toUpperCase())
 						result.rows[i].name='"' + result.rows[i].name + '"';
 					else if(result.rows[i].name.indexOf(" ")!=-1)
@@ -396,7 +403,8 @@ function tableCorrelation(req, res){
 				console.log(sql);
 				client.query(sql, function(err, result) {
 					release()
-					res.writeHead(200, {"Content-Type": "application/json"});
+					
+					//res.writeHead(200, {"Content-Type": "application/json"});
 					res.end('{"depvar":"'+depvar+'","names":'+JSON.stringify(names)+',"results":'+result.rows[0].vars+"}");
 					// res.json({"names":names,"results":result.rows[0].vars});
 					// res.writeHead(200, {"Content-Type": "application/json"});
@@ -407,33 +415,6 @@ function tableCorrelation(req, res){
 	})	
 };
 
-function updateCorrelation(req,res){
-	if(req.query.field && req.query.name)
-	{
-		var vals=null;
-		if(req.query.name=='all'){
-			var sql="update " + req.user.shortName + "." + tableName + "_vars set include=" + parseInt(req.query.value);// +",include="+parseInt(req.query.value);
-		}
-		else if(req.query.field=='cinclude'){
-			var sql="update " + req.user.shortName + "." + tableName + "_vars set include=$1 where name=$2";// ,include=$1
-			vals=[req.query.value,req.query.name];
-		}
-
-		console.log(sql + ": " + vals);
-		pg.connect(global.conString,function(err, client, release) {
-			if (err){ res.end(JSON.stringify({"err":"No connection to database;"}));throw err;}
-			// strip off extension
-			client.query(sql, vals, function(err, result) {
-				release();
-				if(err)console.log(err);
-				res.end("success");
-				// res.end(JSON.stringify(result.rows));
-			});
-		});
-		return;
-	}
-
-}
 //table regression
 function tableRegression(req, res){
 	console.log(req.params.pid);
@@ -598,7 +579,7 @@ function tableResiduals(req,res){
 		// strip off extension
 		client.query(sql, function(err, result) {
 			var tableName = result.rows[0].name;
-			var sql="select name from " + req.user.shortName + "." + tableName + "_vars where (include=1 or id=1) order by id desc,depvar desc,name asc";
+			var sql="select name,type from " + req.user.shortName + "." + tableName + "_vars where (include=1 or id=1) order by id desc,depvar desc,name asc";
 
 			//strip off extension
 			client.query(sql, function(err, result) {
@@ -608,9 +589,12 @@ function tableResiduals(req,res){
 				var cols=[];
 				var depvar;
 				var id=result.rows[0].name;
+				var names={};
+				names[result.rows[0].name]=result.rows[0].type;
 
 				console.log(result.rows);
 				for(var i = 1; i < result.rows.length;i++){
+					names[result.rows[i].name]=result.rows[i].type;
 					if(result.rows[i].name.charAt(0) == result.rows[i].name.charAt(0).toUpperCase())
 						result.rows[i].name='"' + result.rows[i].name + '"';
 					else if(result.rows[i].name.indexOf(" ")!=-1)
@@ -632,14 +616,72 @@ function tableResiduals(req,res){
 					client.query(sql, function(err, result) {
 						if(err)console.log(err);
 						release();
-						res.json({id:id,vars:vars,total:parseInt(result.rows[0].total)});				    
+						res.json({id:id,names:names,vars:vars,total:parseInt(result.rows[0].total)});				    
 					});
 				});
 			});
 		});
 	});
 }
+function tablePredictions(req,res){
+	var pid = parseInt(req.params.pid);
+	var tid = parseInt(req.params.tid);
+	var sql="select name from "+req.user.shortName + ".tables where id="+tid;
+	console.log(sql);
+	pg.connect(global.conString,function(err, client, release) {
+		if (err){ res.json({"err":"No connection to database;"});throw err;}
+		client.query(sql, function(err, result) {
+			if (err){ res.json({"err":"Unable to find table;"});throw err;}
+			var tableName = result.rows[0].name;
+			var sql="select name from " + req.user.shortName + "." + tableName + "_vars where (include=1 or id=1) order by id desc,depvar desc,name asc";
+			console.log(sql);
+			//strip off extension
+			client.query(sql, function(err, result) {
+				if(err)console.log(err);
+				//add the schema to the tablename
+				tableName = req.user.shortName+"."+ tableName+'_stats';
+				var cols=[];
+				var depvar;
+				var id=result.rows[0].name;
 
+				//var out=["name text"];
+				for(var i = 1; i < result.rows.length;i++){
+					if(result.rows[i].name.charAt(0) == result.rows[i].name.charAt(0).toUpperCase())
+						result.rows[i].name='"' + result.rows[i].name + '"';
+					else if(result.rows[i].name.indexOf(" ")!=-1)
+						result.rows[i].name='"' + result.rows[i].name + '"';// as '+ result.rows[i].name.replace(/ /g,"_");
+					if(depvar)cols.push(result.rows[i].name);
+					else depvar=result.rows[i].name
+				}
+
+				//var sql='select '+corr.join(",")+' from '+tableName+"_stats";
+				//var sql = "select replace(column1,'`','') as fieldname,column2 as estimate,column3 as stderr,column4 as tval,column5 as pr from public.r_lm_summary('" + cols.join(",") + "','" + tableName + "')";
+				//var sql = "select * from public.r_table_cor('" + cols.join(",") + "','" + tableName + "') s("+out.join(",")+")";
+				//'id,sale_price,parcel_ac,parcel_lv,parcel_bv,parcel_tv,sale_acres,sale_ppa,elevation,climate_zn,_acres_total as acres_total,"Slope","Elevation","Prod Index","Range Potential","Drought Index","All Crop Prod Index"', 'reaisincva.homesites_stats');
+				if(req.query.nosw)
+					var sql = "select r_regression_variables as vals from public.r_regression_variables('" + depvar + "','" + cols.join(",") + "','" + tableName + "',0,0)";// s("+out.join(",")+")";
+				else
+					var sql = "select r_step_regression_variables as vals from public.r_step_regression_variables('" + depvar + "','" + cols.join(",") + "','" + tableName + "',0,0)";// s("+out.join(",")+")";
+
+				//var sql = "select * from public.r_table_stepwise_regression_variables('" + cols.join(",") + "','" + tableName + "')";// s("+out.join(",")+")";
+				console.log(sql);
+				//pg.connect(global.conString,function(err, client, release) {
+				//if (err){ res.end(JSON.stringify({"err":"No connection to database;"}));throw err;}
+				//strip off extension
+				client.query(sql, function(err, result) {
+					if(err)console.log(err);
+					console.log(result.rows);
+					release();
+					//var vars=JSON.parse(result.rows[0].vals);
+					res.end("{\"vars\":"+result.rows[0].vals+"}");
+					//res.end(JSON.stringify({id:id,vars:vars}));
+				});
+				//});		  	
+			});	
+
+		});
+	});
+}
 function getTable(req,res){
 	console.log(req.params.pid);
 
