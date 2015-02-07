@@ -44,7 +44,7 @@ function createUser(username){
 	         "GRANT SELECT,INSERT, DELETE ON "+username+".tables TO dbuser",
 	         "GRANT SELECT,USAGE,UPDATE ON "+username+".tables_id_seq TO dbuser",
 
-	         "CREATE TABLE "+username+".projects( id serial NOT NULL, username varchar(200),create_date timestamp without time zone, last_modified timestamp without time zone,name varchar(200) NOT NULL,state varchar(2) NOT NULL, primary key(name,state))	WITH (	  OIDS=FALSE	)",
+	         "CREATE TABLE "+username+".projects( id serial NOT NULL, username varchar(200),created_date timestamp without time zone, modified_date timestamp without time zone,name varchar(200) NOT NULL,state varchar(2) NOT NULL, primary key(name,state))	WITH (	  OIDS=FALSE	)",
 	         "ALTER TABLE "+username+".projects OWNER TO postgres",
 	         "GRANT ALL ON TABLE "+username+".projects TO postgres",
 	         "GRANT SELECT,INSERT, DELETE ON TABLE "+username+".projects TO dbuser",
