@@ -145,7 +145,7 @@ function getUserFiles(req,res)
 		// console.log(vals);
 		client.query(sql, function(err, result) {
 			release()
-			if(err)console.log(err);
+			if(err){console.log(err);res.json({err:err.toString()});throw err;}
 			// console.log(result);
 			var name=result.rows[0].name;
 			result.rows.splice(0,1);
