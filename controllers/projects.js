@@ -150,7 +150,7 @@ function getUserFiles(req,res)
 			var name=result.rows[0].name;
 			result.rows.splice(0,1);
 			// res.send(JSON.stringify({user:req.user.displayName,project:req.params.projectName,rows:result.rows?result.rows:[]}))
-			res.json({id:id,name:name,rows:result.rows?result.rows:[]});
+			res.json({id:id,name:name,rows:result&&result.rows?result.rows:[]});
 
 			// if (err) throw err;
 			// console.log("Count: "+result.rows[0])
@@ -244,7 +244,7 @@ function getUserProjects(req,res)
 		client.query(sql, function(err, result) {
 			release()
 			// res.send(JSON.stringify({user:req.user.displayName,rows:result.rows?result.rows:[]}));
-			res.json({user:req.user.displayName,rows:result.rows?result.rows:[]});
+			res.json({user:req.user.displayName,rows:result&&result.rows?result.rows:[]});
 		})
 	});
 }
