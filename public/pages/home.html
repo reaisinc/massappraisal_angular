@@ -7,13 +7,13 @@
 
 		<div class='col-lg-2' style='float: right;width:500px' >
 			<div id="startBtn" style='float:right'>
-				<a class="btn btn-success btn-default" id="createNewProjectBtn" ng-click='showNewProject=!showNewProject'> Create new project <i class="glyphicon glyphicon-plus"></i></a></i></a>
+				<a class="btn btn-success btn-default" id="createNewProjectBtn" ng-click='showNewProject=!showNewProject'> Create new model <i class="glyphicon glyphicon-plus"></i></a></i></a>
 			</div>
 			<div id="newProjectDiv" ng-show="showNewProject" style='border:1px solid #e6e6e6;padding: 5px;'>
 				<br><br>
 				<form id='newprojfrm' style='padding: 5px' ng-submit="createProject()">
 					<table class='table'>
-					<tr><td>Project name</td><td> <input class='input' type='text' name='name' style='width:100%' /></td></tr>
+					<tr><td>Appraisal model name</td><td> <input class='input' type='text' name='name' style='width:100%' /></td></tr>
 					<tr><td> Location </td>
 					<td>
 					<select name='state'>
@@ -31,10 +31,10 @@
 		<br> <br>
 		<table class="table" id="projTable">
 			<caption>
-				<h4>My Projects</h4>
+				<h4>My Appraisal Models</h4>
 			</caption>
 			<tr>
-				<th style="width: 50%">Name</th>
+				<th>Name</th>
 				<th>State</th>
 				<th style="text-align: center;">Created</th>
 				<th style="text-align: center;">Last modified</th>

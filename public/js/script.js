@@ -38,11 +38,6 @@ maApp.config(function($routeProvider,$locationProvider) {
 		templateUrl : 'pages/summary.html',
 		controller  : 'summaryController'
 	})
-	// route for the subject page
-	.when('/projects/:id/tables/:tid/subject', {
-		templateUrl : 'pages/subject.html',
-		controller  : 'subjectController'
-	})
 	// route for the correlation page
 	.when('/projects/:id/tables/:tid/correlation', {
 		templateUrl : 'pages/correlation.html',
@@ -67,6 +62,11 @@ maApp.config(function($routeProvider,$locationProvider) {
 	.when('/projects/:id/tables/:tid/predictions', {
 		templateUrl : 'pages/predict.html',
 		controller  : 'predictController'
+	})
+	// route for the subject page
+	.when('/projects/:id/tables/:tid/subject', {
+		templateUrl : 'pages/subject.html',
+		controller  : 'subjectController'
 	})
 
 	// route for the contact page
@@ -194,6 +194,10 @@ maApp.controller('mainController', function($rootScope,$scope, $http, $location)
 	//predict
 	$scope.viewPredictions = function () {
 		$location.path(getURL("predictions"));
+	};
+	//subject
+	$scope.addSubjectProperty = function () {
+		$location.path(getURL("subject"));
 	};
 
 	// if(!sessionStorage.getItem("username"))
