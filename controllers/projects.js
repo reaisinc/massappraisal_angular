@@ -102,7 +102,7 @@ router.get('/:pid/delete',  function(req, res){
 function createProject(req,res)
 {
 	if(!req.query.name || !req.query.state){
-		req.json({err:"No project name and state specified"})
+		res.json({err:"No project name and state specified"})
 		return;
 	}
 
