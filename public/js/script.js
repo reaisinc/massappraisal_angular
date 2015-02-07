@@ -107,13 +107,15 @@ maApp.controller('mainController', function($rootScope,$scope, $http, $location)
 
 	// projects
 	$scope.createProject = function () {
-		var name=this.name;
+		var frm=documents.forms['newprojfrm'];
+		var name=frm.name.value;
 		if(name==''){
 			this.errMsg="Please enter a project name";
 			return false;
 		}		
+		var state=frm.state.options[frm.state.selectedIndex].value;
 		// see if name already taken, else create it
-		$http.put('/projects', { name:name, state: this.state })
+		$http.put('/projects', { name:name, state: state })
 		.success(function(data, status, headers, config) {
 			$location.path("/projects/"+data.id+"/tables");
 		})
