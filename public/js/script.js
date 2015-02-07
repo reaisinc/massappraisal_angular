@@ -107,7 +107,7 @@ maApp.controller('mainController', function($rootScope,$scope, $http, $location)
 
 	// projects
 	$scope.createProject = function () {
-		var frm=documents.forms['newprojfrm'];
+		var frm=document.forms['newprojfrm'];
 		var name=frm.name.value;
 		if(name==''){
 			this.errMsg="Please enter a project name";
