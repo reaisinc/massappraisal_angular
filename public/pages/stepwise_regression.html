@@ -9,6 +9,18 @@ table.summaryTable{height:60px}
 li.disabled{color:gray}
 </style>
 <div class="container">
+		  <ol class="breadcrumb" style="float:left">
+			<li><a ng-click="gotoUrl('',3)">Data</a></li>	
+			<li><a ng-click="gotoUrl('summary')">Summary</a></li>
+		  	<li><a ng-click="gotoUrl('correlation')">Correlation matrix</a></li>
+		  	<li><a ng-click="gotoUrl('regression')">Regression</a></li>
+		  	<li>Stepwise regression</li>
+		  	<li><a ng-click="gotoUrl('residuals')">Residuals</a></li>
+		  	<li><a ng-click="gotoUrl('predictions')">Predictions</a></li>
+		  	<li><a ng-click="gotoUrl('subject')">Subject property</a></li>
+		</ol>
+		<br><br>
+
 	<div class="jumbotron">
 		<div class="row">
 			<div class="col-md-11">
@@ -45,11 +57,11 @@ li.disabled{color:gray}
 	</div>
 	<!-- end jumbotron -->
 
-	<div class='col-lg-2'>
+	<div class='col-lg-6 col-xs-6'>
 		<a ng-click="viewRegression()" class="btn btn-default btn-continue" id="previousBtn"><i class="glyphicon glyphicon-arrow-left"></i> Return to regression </a>
 	</div>
 
-	<div class='col-lg-10'>
+	<div class='col-lg-6 col-xs-6 text-right'>
 		<a ng-click="viewResiduals()" class="btn btn-default btn-continue flt-right" id="continueBtn"> Continue to residuals output <i class="glyphicon glyphicon-arrow-right"></i></a>
 	</div>
 

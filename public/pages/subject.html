@@ -1,180 +1,78 @@
-<!DOCTYPE HTML>
-<html lang="en">
-<head>
-<!-- Force latest IE rendering engine or ChromeFrame if installed -->
-<!--[if IE]>
-<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
-<![endif]-->
-<meta charset="utf-8">
-<title>Mass Appraisal Soils</title>
-<meta name="description" content="File Upload widget with multiple file selection, drag&amp;drop support, progress bars, validation and preview images, audio and video for jQuery. Supports cross-domain, chunked and resumable file uploads and client-side image resizing. Works with any server-side platform (PHP, Python, Ruby on Rails, Java, Node.js, Go etc.) that supports standard HTML form file uploads.">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<!-- Bootstrap styles -->
-<link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css">
-<link rel="stylesheet" href="css/bootstrap-table.min.css">
-<!-- Generic page styles -->
-<link rel="stylesheet" href="css/style.css">
-<!-- CSS adjustments for browsers with JavaScript disabled -->
-
 <style>
-a.flt-right{float:right}
-div.col-lg-2{padding-left:0}
-p.name{float:right}
-li.disabled{color:gray}
-#mapBtn{display:none}
-#summaryTable{display:none}
+a.flt-right {
+	float: right
+}
+
+div.col-lg-2 {
+	padding-left: 0
+}
+
+p.name {
+	float: right
+}
+
+li.disabled {
+	color: gray
+}
+
+#mapBtn {
+	display: none
+}
+
+#summaryTable {
+	display: none
+}
 </style>
 
-<script>
-<% if(tableName){ %>
-//sessionStorage.setItem("tablename", "<%= tableName %>");
-<% } %>
-var maurl="/summary/<%= projectName %>/<%= tableName %>";
-</script>
-
-</head>
-<body>
-<div class="navbar navbar-default navbar-fixed-top">
-    <div class="container">
-        <div class="navbar-header">
-            <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-fixed-top .navbar-collapse">
-                <span class="icon-bar"></span>
-                <span class="icon-bar"></span>
-                <span class="icon-bar"></span>
-            </button>
-            <a class="navbar-brand" href="/">Mass Appraisal Soils Analyzer</a>
-        </div>
-        <div class="navbar-collapse collapse">
-        	<p class='name'>Logged in as: <a href='/account' id='username'></a> &nbsp;&nbsp;<a href='/logout'>Logout</a></p>
-        </div>
-    </div>
-</div>
 <div class="container">
-<!--
-    <h1>Mass Appraisal File Upload</h1>
-    <h2 class="lead">Merge comparable sales with soils data analysis</h2>
-    <br>
--->
-		  <ol class="breadcrumb" style="float:left;display:inline">
-			<li><a href="/">Home</a></li>
-			<li><a href="/project">Project</a></li>	
+	<ol class="breadcrumb" style="float: left">
+		<li><a ng-click="gotoUrl('',3)">Data</a></li>
+		<li><a ng-click="gotoUrl('summary')">Summary</a></li>
+		<li><a ng-click="gotoUrl('correlation')">Correlation matrix</a></li>
+		<li><a ng-click="gotoUrl('regression')">Regression</a></li>
+		<li><a ng-click="gotoUrl('stepwise_regression')">Stepwise regression</a></li>
+		<li><a ng-click="gotoUrl('residuals')">Residuals</a></li>
+		<li><a ng-click="gotoUrl('predictions')">Predictions</a></li>
+		<li>Subject property</li>
+	</ol>
+	<br>
+	<br>
 
-			<li class='disabled'>Upload files</li>
-  			<li class='disabled'>Load data</li>
-			<li>Summary</li>
-  			<!--<li><a href="/configure">Configure data</a></li>--> 	  
-		  <li><a href="/correlation">Correlation matrix</a></li>
-		  <li><a href="/regression">Regression</a></li>
-		  <li><a href="/stepwise_regression">Stepwise regression</a></li>
-		  <li><a href="/residuals">Residuals</a></li>
-		  <li><a href="/predict">Predictions</a></li>
-			</ol>
-<br><br>
+	<div class="jumbotron">
+	<h4>Subject property</h4>
+	Before uploading subject property data, please follow the checklist below:
+	<ol>
+	<li>Must contain the following fields: {{fields}}</li>
+	<li ng-visible="isSpatial">Must be in ESRI Shapefile format</li>
+	<li ng-visible="!isSpatial">Must be in table format (Excel, Comma-separated values (CSV))</li>
+	<li>Are you uploading a single subject property or multiple (ie. mass appraisal)</li>
+	</ol>
+	</div>
 
-    <div class="jumbotron">
-        <p>Download the resulting table as a spreadsheet</p>
-		<div class='col-lg-6'>
-        <div id="browse_app">
-  			<a class="btn btn-large btn-info" id="downloadLink">
-  			<i class="glyphicon glyphicon-cloud-download"></i>
-  			Download</a>
+	<div class='col-lg-6 col-xs-6'>
+		<a ng-click="viewPredictions()" class="btn btn-default btn-continue" id="previousBtn"><i class="glyphicon glyphicon-arrow-left"></i> Return to predictions</a>
+	</div>
+
+	<div class='col-lg-6 col-xs-6 text-right'>
+		<a class="btn btn-default btn-continue flt-right" id="continueBtn" ng-click="viewReports()"> Continue to reports <i class="glyphicon glyphicon-arrow-right"></i></a>
+	</div>
+
+	<br>
+	<br>
+
+
+	<br>
+	<div class="panel panel-default">
+		<div class="panel-heading">
+			<h3 class="panel-title">Subject Notes</h3>
 		</div>
+		<div class="panel-body">
+			<ul>
+				<li>The minimum, maximum, average and standard deviation is calculated for each of the default columns.</li>
+				<li>Click the Download button to download a spreadsheet to complete the analysis in Excel.</li>
+				<li>The spreadsheet contains the source data and the added soils information (slope, elevation, etc).</li>
+				<li>Click Continue to do the analysis online.</li>
+			</ul>
 		</div>
-		<div class='col-lg-6' id="mapBtn">
-        <div id="browse_map" style="float:right">
-  			<a class="btn btn-large btn-info" target=_blank>
-  			<i class="glyphicon glyphicon-globe"></i>
-  			Show on map</a>
-		</div>
-        		
-		</div>
-		<!-- 
-        <button type="submit" class="btn btn-primary start" id="downloadBtn">
-            
-            <a id='downloadLink' target=_blank href='#'><span class='btn-primary'>Download</span></a>
-        </button>
-    -->
-		<br><br>
-		<div>
-		
-        Before continuing, you need to specify which field is the dependent variable.  Usually this will be the sales price.  A new field "oid" is added that is guaranteed to be unique, but you may wish to specify a different field as your unique identifier.  This unique identifier is used when printing out the residuals.
-        <br>
-        Check the boxes next to the numeric fields you wish to include in the regression analysis.
-        </div>
-
-    </div>
-    
-    <div class='col-lg-2'>
-        <a href="/uploadfiles" class="btn btn-default btn-continue" id="previousBtn"><i class="glyphicon glyphicon-arrow-left"></i> Return to file upload </a>
-    </div>
-    
-    <div class='col-lg-10'>
-       <span id="fileName"></span>
-       <!--<a href="/configure" class="btn btn-default btn-continue flt-right" id="continueBtn"> Continue to configuration <i class="glyphicon glyphicon-arrow-right"></i></a>-->
-       <a href="/correlation" class="btn btn-default btn-continue flt-right" id="continueBtn"> Continue to correlation matrix <i class="glyphicon glyphicon-arrow-right"></i></a>
-    </div>
-
-    <br><br>
-	<div id='loader'><img src="img/spinner_mac.gif"> Loading table.....  Please wait</div>
-	<table data-height="399" data-cache="false" data-search="true" id="summaryTable">
-	    <thead>
-	        <tr>
-	        	<th data-align="center" data-checkbox="true" data-field="include" data-formatter="stateFormatter" data-events="includeEvents" data-width="1" >Include  </th>
-	        	<th data-align="center" data-field="id" data-formatter="idRadioFormatter" data-width="1">ID</th>
-	        	<th data-align="center" data-field="depvar" data-formatter="depVarRadioFormatter" data-width="1">Dependent var</th>
-	        
-	        	  <th data-field="name">Name</th>
-	        	  <!--
-	        	  <th data-field="vars" data-align="right">Item number</th>
-	            <th data-field="n" data-align="right">Number of cases</th>
-	            -->
-	            <th data-field="min" data-align="right">Minimum</th>
-	            <th data-field="max" data-align="right">Maximum</th>
-	            <th data-field="sd" data-align="right">Standard Deviation</th>
-	            <th data-field="median" data-align="right">Median</th>
-				<th data-field="se" data-align="right">Standard error</th>
-	            <th data-field="mean" data-align="right">Mean</th>
-	            <!--
-	            <th data-field="trimmed" data-align="right">Trimmed mean</th>
-	            <th data-field="mad" data-align="right">Median absolute deviation</th>
-	            <th data-field="range" data-align="right">Range</th>
-	            -->
-	            
-	            
-	            
-	        </tr>
-	    </thead>
-	</table>
-
-    <br>
-    <div class="panel panel-default">
-        <div class="panel-heading">
-            <h3 class="panel-title">Summary Notes</h3>
-        </div>
-        <div class="panel-body">
-            <ul>
-                <li>The minimum, maximum, average and standard deviation is calculated for each of the default columns.</li>
-                <li>Click the Download button to download a spreadsheet to complete the analysis in Excel.</li> 
-                <li>The spreadsheet contains the source data and the added soils information (slope, elevation, etc).</li>
-                <li>Click Continue to do the analysis online.</li>
-            </ul>
-        </div>
-    </div>
+	</div>
 </div>
-
-
-<script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
-<!-- The jQuery UI widget factory, can be omitted if jQuery UI is already included -->
-<script src="js/vendor/jquery.ui.widget.js"></script>
-<!-- Bootstrap JS is not required, but included for the responsive demo navigation -->
-<script src="//netdna.bootstrapcdn.com/bootstrap/3.2.0/js/bootstrap.min.js"></script>
-<script src="js/bootstrap-table.min.js"></script>
-<!-- The main application script -->
-<script src="js/summary.js"></script>
-
-<!-- The XDomainRequest Transport is included for cross-domain file deletion for IE 8 and IE 9 -->
-<!--[if (gte IE 8)&(lt IE 10)]>
-<script src="js/cors/jquery.xdr-transport.js"></script>
-<![endif]-->
-</body> 
-</html>

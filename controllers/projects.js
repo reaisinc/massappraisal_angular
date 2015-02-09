@@ -91,6 +91,11 @@ router.get('/:pid/tables/:tid/residuals',  function(req, res){
 router.get('/:pid/tables/:tid/predictions',  function(req, res){
 	tablePredictions(req,res);	
 });
+//subject
+router.get('/:pid/tables/:tid/subject',  function(req, res){
+	tableSubject(req,res);	
+});
+
 
 
 
@@ -682,6 +687,53 @@ function tablePredictions(req,res){
 		});
 	});
 }
+
+function tableSubject(req,res){
+	console.log(req.params.pid);
+
+	var pid = parseInt(req.params.pid);
+	var tid = parseInt(req.params.tid);
+	var sql="select name from "+req.user.shortName + ".tables where id="+tid;
+	console.log(sql);
+	pg.connect(global.conString,function(err, client, release) {
+		if (err){ res.json({"err":"No connection to database;"});throw err;}
+		client.query(sql, function(err, result) {
+			if (err){ res.json({"err":"Unable to find table;"});throw err;}
+			var tableName = result.rows[0].name;
+			var sql="select name,type from " + req.user.shortName + "." + tableName + "_vars where (include=1 or id=1) order by id desc,depvar desc,name asc";
+			var total = req.query.total;
+
+			console.log(sql);
+			//strip off extension
+			client.query(sql, function(err, result) {
+				if(err)console.log(err);
+				//add the schema to the tablename
+				tableName = req.user.shortName+"."+ tableName+'_stats';
+				var cols=[];
+				//var out=["name text"];
+				console.log(result.rows);
+				for(var i in result.rows){
+					if(result.rows[i].name.charAt(0) == result.rows[i].name.charAt(0).toUpperCase())
+						result.rows[i].name='"' + result.rows[i].name + '"';
+					else if(result.rows[i].name.indexOf(" ")!=-1)
+						result.rows[i].name='"' + result.rows[i].name + '"';// as '+ result.rows[i].name.replace(/ /g,"_");
+					if(result.rows[i].type=='numeric')result.rows[i].name="round("+result.rows[i].name + "::numeric,2) as " + result.rows[i].name;
+					cols.push(result.rows[i].name);
+				}
+				//count(*) OVER() AS total,
+				var sql="select "+ cols.join(",") + " from " + tableName + "" + " offset " + (req.query.offset?req.query.offset:0) + "  limit " + (req.query.limit?req.query.limit:100);
+				console.log(sql);
+				client.query(sql, function(err, result) {
+					if(err)console.log(err);
+					release();
+					if(!total)total=result.rows.length;
+					res.json({total:total,rows:result.rows});				    
+				});
+			});
+		});
+	});
+}
+
 function getTable(req,res){
 	console.log(req.params.pid);
 

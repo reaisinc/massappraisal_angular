@@ -196,9 +196,15 @@ maApp.controller('mainController', function($rootScope,$scope, $http, $location)
 		$location.path(getURL("predictions"));
 	};
 	//subject
-	$scope.addSubjectProperty = function () {
+	$scope.viewSubjectProperty = function () {
 		$location.path(getURL("subject"));
 	};
+
+	//goto using breadcrumbs
+	$scope.gotoUrl = function (name,len) {
+		$location.path(getURL(name,len));
+	};
+
 
 	// if(!sessionStorage.getItem("username"))
 	// {
@@ -482,16 +488,6 @@ maApp.controller('summaryController', function($rootScope,$scope,$http,$location
 	});			
 });
 
-maApp.controller('subjectController', function($rootScope,$scope,$http,$location) {
-	$http.get($location.$$url).
-	success(function(data, status, headers, config) {
-		$scope.project = data;
-	}).
-	error(function(data, status, headers, config) {
-		if(status==404)$location.path("/login")
-		// log error
-	});			
-});
 maApp.controller('correlationController', function($rootScope,$scope,$http,$location) {
 
 	$scope.selectField = function(field,ch) {
@@ -731,6 +727,16 @@ maApp.controller('predictController', function($scope,$http,$location,$filter) {
 	}	
 });
 
+maApp.controller('subjectController', function($rootScope,$scope,$http,$location) {
+	$http.get($location.$$url).
+	success(function(data, status, headers, config) {
+		$scope.subject = data;
+	}).
+	error(function(data, status, headers, config) {
+		if(status==404)$location.path("/login")
+		// log error
+	});			
+});
 
 maApp.filter('checkbox', function() {
 	return function() {

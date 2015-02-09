@@ -48,6 +48,17 @@ li.disabled {
 }
 </style>
 <div class="container">
+		  <ol class="breadcrumb" style="float:left">
+			<li><a ng-click="gotoUrl('',3)">Data</a></li>	
+			<li><a ng-click="gotoUrl('summary')">Summary</a></li>
+		  	<li><a ng-click="gotoUrl('correlation')">Correlation matrix</a></li>
+		  	<li><a ng-click="gotoUrl('regression')">Regression</a></li>
+		  	<li><a ng-click="gotoUrl('stepwise_regression')">Stepwise regression</a></li>
+		  	<li><a ng-click="gotoUrl('residuals')">Residuals</a></li>
+		  	<li>Predictions</li>
+		  	<li><a ng-click="gotoUrl('subject')">Subject property</a></li>
+		</ol>
+		<br><br>
 
 
 	<div class="jumbotron">
@@ -91,11 +102,11 @@ li.disabled {
 		</div>
 	</div>
 	<!-- end jumbotron -->
-	<div class='col-lg-2'>
+	<div class='col-lg-6 col-xs-6'>
 		<a ng-click="viewResiduals()" class="btn btn-default btn-continue" id="previousBtn"><i class="glyphicon glyphicon-arrow-left"></i> Return to residuals </a>
 	</div>
-	<div class='col-lg-10'>
-		<a ng-click="addSubject()" class="btn btn-default btn-continue flt-right"> Add subject property <i class="glyphicon glyphicon-arrow-right"></i></a>
+	<div class='col-lg-6 col-xs-6 text-right'>
+		<a ng-click="viewSubjectProperty()" class="btn btn-default btn-continue flt-right"> Add subject property <i class="glyphicon glyphicon-arrow-right"></i></a>
 	</div>
 	
 	<br><br>

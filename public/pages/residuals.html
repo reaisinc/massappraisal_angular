@@ -33,6 +33,18 @@ li.disabled {
 }
 </style>
 <div class="container">
+		  <ol class="breadcrumb" style="float:left">
+			<li><a ng-click="gotoUrl('',3)">Data</a></li>	
+			<li><a ng-click="gotoUrl('summary')">Summary</a></li>
+		  	<li><a ng-click="gotoUrl('correlation')">Correlation matrix</a></li>
+		  	<li><a ng-click="gotoUrl('regression')">Regression</a></li>
+		  	<li><a ng-click="gotoUrl('stepwise_regression')">Stepwise regression</a></li>
+		  	<li>Residuals</li>
+		  	<li><a ng-click="gotoUrl('predictions')">Predictions</a></li>
+		  	<li><a ng-click="gotoUrl('subject')">Subject property</a></li>
+		</ol>
+		<br><br>
+
 	<div class="jumbotron">
 		<h4>Residuals output</h4>
 		<table width='100%'>
@@ -83,11 +95,11 @@ li.disabled {
 		</table>
 	</div>
 
-	<div class='col-lg-2'>
+	<div class='col-lg-6 col-xs-6'>
 		<a ng-click="viewStepwiseRegression()" class="btn btn-default btn-continue"><i class="glyphicon glyphicon-arrow-left"></i> Return to stepwise regression </a>
 	</div>
 
-	<div class='col-lg-10'>
+	<div class='col-lg-6 col-xs-6 text-right'>
 		<a ng-click="viewPredictions()" class="btn btn-default btn-continue flt-right"> Continue to predictions <i class="glyphicon glyphicon-arrow-right"></i></a>
 	</div>
 

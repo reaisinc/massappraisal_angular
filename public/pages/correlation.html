@@ -18,6 +18,18 @@ table.clrs td {border:1px solid #ddd;padding:5px;}
 
 
 <div class="container">
+		  <ol class="breadcrumb" style="float:left">
+			<li><a ng-click="gotoUrl('',3)">Data</a></li>	
+			<li><a ng-click="gotoUrl('summary')">Summary</a></li>
+		  	<li>Correlation matrix</li>
+		  	<li><a ng-click="gotoUrl('regression')">Regression</a></li>
+		  	<li><a ng-click="gotoUrl('stepwise_regression')">Stepwise regression</a></li>
+		  	<li><a ng-click="gotoUrl('residuals')">Residuals</a></li>
+		  	<li><a ng-click="gotoUrl('predictions')">Predictions</a></li>
+		  	<li><a ng-click="gotoUrl('subject')">Subject property</a></li>
+		</ol>
+		<br><br>
+
     <div class="jumbotron">
         <h4>Correlation matrix</h4> 
 The correlation matrix can be used to identify the independent variables that should be included in the multiple regression analysis.
