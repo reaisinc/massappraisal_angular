@@ -11,13 +11,11 @@ maApp.config(function($routeProvider,$locationProvider) {
 		templateUrl : 'pages/home.html',
 		controller  : 'mainController'
 	})
-
 	// route for the about page
 	.when('/about', {
 		templateUrl : 'pages/about.html',
 		controller  : 'aboutController'
 	})
-
 	// route for the login page
 	.when('/login', {
 		templateUrl : 'pages/login.html',
@@ -67,6 +65,11 @@ maApp.config(function($routeProvider,$locationProvider) {
 	.when('/projects/:id/tables/:tid/subject', {
 		templateUrl : 'pages/subject.html',
 		controller  : 'subjectController'
+	})
+	// route for the report page
+	.when('/projects/:id/tables/:tid/report/:sid', {
+		templateUrl : 'pages/report.html',
+		controller  : 'reportController'
 	})
 
 	// route for the contact page
@@ -199,6 +202,10 @@ maApp.controller('mainController', function($rootScope,$scope, $http, $location)
 	$scope.viewSubjectProperty = function () {
 		$location.path(getURL("subject"));
 	};
+	//subject report
+	$scope.viewSubjectReport = function () {
+		$location.path(getURL("report"));
+	};
 
 	//goto using breadcrumbs
 	$scope.gotoUrl = function (name,len) {
@@ -253,86 +260,13 @@ maApp.controller('ModalInstanceCtrl', function ($scope,$location,$http,$modalIns
 	$scope.soilscompleted=false;
 	$scope.soilsprogress=0;
 	$scope.pid =  $modalInstance.pid;
+	$scope.tid =  $modalInstance.tid;
+	$scope.maxSteps = $modalInstance.maxSteps;
 	$scope.renderHtml = function(html_code)
 	{
 		return $sce.trustAsHtml(html_code);
 	};
-
-	var uploader = $scope.uploader = new FileUploader({
-		url: '/upload/'+$modalInstance.pid
-	});
-//	maxFileSize: 250000000,
-//	acceptFileTypes: /(\.|\/)(shp|shx|dbf|prj|zip|csv|xls|xlsx)$/i
-
-//	FILTERS
-	//1048576; // 1024 * 1024 | Math.pow(2,20); | 0x100000
-	uploader.filters.push(
-			{
-				name: 'sizefilter',
-				fn: function (item) { 
-					return item.size <= 250000000; 
-				}
-			});
-
-	uploader.filters.push(
-			{
-				name: 'typefilter',
-				fn: function (item) {
-					//doesn't work below
-					//var type = '|' + item.type.slice(item.type.lastIndexOf('/') + 1) + '|';
-					//return '|shp|shx|dbf|prj|zip|csv|xls|xlsx|'.indexOf(type) !== -1;			
-
-					return !uploader.hasHTML5 ? true : /\/(shp|shx|dbf|prj|zip|csv|xls|xlsx)$/.test(item.type); 
-				}
-			});
-
-	/*
-	uploader.filters.push({
-		name: 'customFilter',
-		fn: function(item  {File|FileLikeObject} , options) {
-			var type = '|' + item.type.slice(item.type.lastIndexOf('/') + 1) + '|';
-            return '|shp|shx|dbf|prj|zip|csv|xls|xlsx|'.indexOf(type) !== -1;			
-			//return this.queue.length < 10;
-		}
-	});
-	 */
-//	CALLBACKS
-	uploader.onWhenAddingFileFailed = function(item /* {File|FileLikeObject} */, filter, options) {
-		console.info('onWhenAddingFileFailed', item, filter, options);
-	};
-	uploader.onAfterAddingFile = function(fileItem) {
-		console.info('onAfterAddingFile', fileItem);
-	};
-	uploader.onAfterAddingAll = function(addedFileItems) {
-		console.info('onAfterAddingAll', addedFileItems);
-	};
-	uploader.onBeforeUploadItem = function(item) {
-		console.info('onBeforeUploadItem', item);
-	};
-	uploader.onProgressItem = function(fileItem, progress) {
-		console.info('onProgressItem', fileItem, progress);
-	};
-	uploader.onProgressAll = function(progress) {
-		console.info('onProgressAll', progress);
-	};
-	uploader.onSuccessItem = function(fileItem, response, status, headers) {
-		console.info('onSuccessItem', fileItem, response, status, headers);
-	};
-	uploader.onErrorItem = function(fileItem, response, status, headers) {
-		console.info('onErrorItem', fileItem, response, status, headers);
-	};
-	uploader.onCancelItem = function(fileItem, response, status, headers) {
-		console.info('onCancelItem', fileItem, response, status, headers);
-	};
-	uploader.onCompleteItem = function(fileItem, response, status, headers) {
-		$scope.filename=fileItem.file.name;
-		console.info('onCompleteItem', fileItem, response, status, headers);
-	};
-	uploader.onCompleteAll = function() {
-		console.info('onCompleteAll');
-		$scope.filename=this.queue[0]._file.name;
-		getFileStatus($scope,$http);
-	};
+	$scope.uploader=createUploader($scope,$http,FileUploader,$modalInstance);
 
 	$scope.processSoils = function() {
 		getSoilsStatus($scope,$http);
@@ -375,6 +309,7 @@ maApp.controller('projectController', function($rootScope,$scope,$http,$location
 		modalInstance.source=source;
 		modalInstance.soilscompleted=false;
 		modalInstance.pid=$scope.pid;
+		modalInstance.maxSteps=$scope.maxSteps=6;
 		modalInstance.result.then(function (newfile) {
 			//$scope.selected = selectedItem;
 			//insert file into list of layers
@@ -529,7 +464,9 @@ maApp.controller('correlationController', function($rootScope,$scope,$http,$loca
 							}
 						}
 					}
+					
 				}
+				else data.names[i].cls='info';
 				var vals=[];
 				for(var j in data.names)vals.push(data.results.cor[i][data.names[j].name]);
 				tmpdata.push({field:data.names[i],vals:vals});
@@ -727,15 +664,78 @@ maApp.controller('predictController', function($scope,$http,$location,$filter) {
 	}	
 });
 
-maApp.controller('subjectController', function($rootScope,$scope,$http,$location) {
+maApp.controller('subjectController', function($rootScope,$scope,$http,$location,$modal) {
+
 	$http.get($location.$$url).
 	success(function(data, status, headers, config) {
 		$scope.subject = data;
+
 	}).
 	error(function(data, status, headers, config) {
 		if(status==404)$location.path("/login")
 		// log error
-	});			
+	});
+	$scope.list = function(){
+		$http.get($location.$$url+"/tables").
+		success(function(data, status, headers, config) {
+			$scope.subject = data;
+			$scope.pid=data.pid;
+			$scope.tid=data.tid;
+		}).
+		error(function(data, status, headers, config) {
+			// log error
+			if(status==404)$location.path("/login")
+		});
+	}
+	$scope.list();
+	$scope.open = function (size, source) {
+		var modalInstance = $modal.open({
+			templateUrl: 'pages/uploadfiles.html',
+			controller: 'ModalInstanceCtrl',
+			size: size
+		});
+		modalInstance.source=source;
+		modalInstance.soilscompleted=false;
+		modalInstance.pid=$scope.pid;
+		modalInstance.tid=$scope.tid;
+		modalInstance.maxSteps=$scope.maxSteps=7;
+		modalInstance.result.then(function (newfile) {
+			//$scope.selected = selectedItem;
+			//insert file into list of layers
+			$scope.list();
+		}, function () {
+			//$log.info('Modal dismissed at: ' + new Date());
+			console.log('Modal dismissed at: ' + new Date());
+		});
+	};
+	$scope.deleteTable = function (id) {
+		// $location.path("/project/"+id);
+		$http.delete('/projects/'+this.pid+'/tables/'+id)
+		.success(function(data, status, headers, config) {
+			// remove tr from table
+			// remove tr from table
+			var index = -1;		
+			for( var i = 0; i < $scope.project.rows.length; i++ ) {
+				if( $scope.project.rows[i].id === id ) {
+					index = i;
+					break;
+				}
+			}
+			if( index === -1 ) {
+				alert( "Something gone wrong" );
+			}
+			$scope.project.rows.splice( index, 1 );						
+
+		})
+		.error(function(data, status, headers, config ){ 
+			// console.log( errorThrown );
+			if(status==404)$location.path("/login")
+			else $scope.errMsg="Unable to remove this table";
+			// $("#events-result").show().html("Project name is already in use.
+			// Please select a different name")
+		});
+	};
+
 });
 
 maApp.filter('checkbox', function() {
@@ -756,12 +756,15 @@ maApp.filter('radio', function() {
  */ 
 function getFileStatus($scope,$http){
 	var url ="/load/" + $scope.pid ;
+	if($scope.tid)url+="/tables/"+$scope.tid;
 	var params={step:1,fileName:$scope.filename};
 	if($scope.source=='subj')params['subj']=1;
 	$scope.hasStatus=true;
+
 	$http.get(url,{params:params})
 	.success(function(data,status,headers,config) {
 		$scope.err=false;
+		$scope.id=data.id;
 
 		//id,name,state,created_date,modified_date
 		//$scope.newfile={id:999,name:data['Layer name'],type:data.file,state:'az',created_date:new Date().toString(),modified_date:new Date().toString()};
@@ -798,10 +801,12 @@ function getFileStatus($scope,$http){
 }
 
 function getSoilsStatus($scope,$http){
-	var url ="/load/" + $scope.pid;
+	var url ="/load/" + $scope.pid+($scope.tid?"/tables/"+$scope.tid:"");
 	//var url = "/load/" + fileName+ "?step=2";
 	$scope.soilsprogress=0;
-	checkStep($scope,$http,url,{step:2,fileName:$scope.filename,tableName:$scope.tableName});
+	var params={step:2,fileName:$scope.filename,tableName:$scope.tableName};
+	if($scope.id)params.id=$scope.id;
+	checkStep($scope,$http,url,params);
 }
 
 function checkStep($scope,$http,url,params){
@@ -818,17 +823,20 @@ function checkStep($scope,$http,url,params){
 
 			return;
 		}
-		var idName;
 		if(data.id){
-			params['idName']=data.id[0].name;
+			params["id"]=data.id;
+		}
+		var idName;
+		if(data.idname){
+			params['idName']=data.idname[0].name;
 			// sessionStorage.setItem("idName",idName);
 		}
 		data.step++;
-		$scope.soilsprogress+=25;
+		$scope.soilsprogress += (100/($scope.maxSteps-2));
 		//var param = (idName?"&idName="+idName:"");
 		//if(data.step==3)param+=($scope.filetype?"&type="+$scope.filetype:"")+($scope.geomtype?"&stype="+$scope.geomtype:"");
 
-		if(data.step<6){
+		if(data.step<$scope.maxSteps){
 			params.step=data.step;
 			setTimeout(function(){
 				checkStep($scope,$http,url,params);
@@ -841,4 +849,82 @@ function checkStep($scope,$http,url,params){
 	.error(function(data,status,headers,config){
 	});
 
+}
+function createUploader($scope,$http,FileUploader,$modalInstance){
+	var uploader = $scope.uploader = new FileUploader({
+		url: '/upload/'+$modalInstance.pid+($modalInstance.tid?"/tables/"+$modalInstance.tid:"")
+	});
+//	maxFileSize: 250000000,
+//	acceptFileTypes: /(\.|\/)(shp|shx|dbf|prj|zip|csv|xls|xlsx)$/i
+
+//	FILTERS
+	//1048576; // 1024 * 1024 | Math.pow(2,20); | 0x100000
+	uploader.filters.push(
+			{
+				name: 'sizefilter',
+				fn: function (item) { 
+					return item.size <= 250000000; 
+				}
+			});
+
+	uploader.filters.push(
+			{
+				name: 'typefilter',
+				fn: function (item) {
+					//doesn't work below
+					//var type = '|' + item.type.slice(item.type.lastIndexOf('/') + 1) + '|';
+					//return '|shp|shx|dbf|prj|zip|csv|xls|xlsx|'.indexOf(type) !== -1;			
+
+					return !uploader.hasHTML5 ? true : /\/(shp|shx|dbf|prj|zip|csv|xls|xlsx)$/.test(item.type); 
+				}
+			});
+
+	/*
+	uploader.filters.push({
+		name: 'customFilter',
+		fn: function(item  {File|FileLikeObject} , options) {
+			var type = '|' + item.type.slice(item.type.lastIndexOf('/') + 1) + '|';
+            return '|shp|shx|dbf|prj|zip|csv|xls|xlsx|'.indexOf(type) !== -1;			
+			//return this.queue.length < 10;
+		}
+	});
+	 */
+//	CALLBACKS
+	uploader.onWhenAddingFileFailed = function(item /* {File|FileLikeObject} */, filter, options) {
+		console.info('onWhenAddingFileFailed', item, filter, options);
+	};
+	uploader.onAfterAddingFile = function(fileItem) {
+		console.info('onAfterAddingFile', fileItem);
+	};
+	uploader.onAfterAddingAll = function(addedFileItems) {
+		console.info('onAfterAddingAll', addedFileItems);
+	};
+	uploader.onBeforeUploadItem = function(item) {
+		console.info('onBeforeUploadItem', item);
+	};
+	uploader.onProgressItem = function(fileItem, progress) {
+		console.info('onProgressItem', fileItem, progress);
+	};
+	uploader.onProgressAll = function(progress) {
+		console.info('onProgressAll', progress);
+	};
+	uploader.onSuccessItem = function(fileItem, response, status, headers) {
+		console.info('onSuccessItem', fileItem, response, status, headers);
+	};
+	uploader.onErrorItem = function(fileItem, response, status, headers) {
+		console.info('onErrorItem', fileItem, response, status, headers);
+	};
+	uploader.onCancelItem = function(fileItem, response, status, headers) {
+		console.info('onCancelItem', fileItem, response, status, headers);
+	};
+	uploader.onCompleteItem = function(fileItem, response, status, headers) {
+		$scope.filename=fileItem.file.name;
+		console.info('onCompleteItem', fileItem, response, status, headers);
+	};
+	uploader.onCompleteAll = function() {
+		console.info('onCompleteAll');
+		$scope.filename=this.queue[0]._file.name;
+		getFileStatus($scope,$http);
+	};
+	return uploader;
 }

@@ -37,7 +37,7 @@ function createUser(username){
 	         "GRANT SELECT ON ALL TABLES IN SCHEMA "+username+" TO dbuser",
 	         "GRANT SELECT ON ALL SEQUENCES IN SCHEMA "+username+" TO dbuser",
 	         "GRANT SELECT,INSERT,DELETE ON SCHEMA "+username+" TO dbuser",
-	         "CREATE TABLE "+username+".tables( id serial NOT NULL, name character varying(200) primary key, pid int,filename varchar(200), geometrytype character varying(50), filetype character varying(50),  date_loaded timestamp without time zone, comp int default 0, type int default 0	)	WITH (	  OIDS=FALSE	)",
+	         "CREATE TABLE "+username+".tables( id serial NOT NULL, name character varying(200), alias varchar(200),pid int,tid int,filename varchar(200), geometrytype character varying(50), filetype character varying(50),  date_loaded timestamp without time zone, comp int default 0, type int default 0	)	WITH (	  OIDS=FALSE	)",
 	         "ALTER TABLE "+username+".tables OWNER TO postgres",
 	         "GRANT ALL ON TABLE "+username+".tables TO postgres",
 	         "GRANT SELECT,INSERT, DELETE ON TABLE "+username+".tables TO dbuser",

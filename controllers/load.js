@@ -30,6 +30,14 @@ router.get('/',  function(req, res){
 });
 */
 router.get('/:pid',  function(req, res){
+	runSteps(req,res);
+});
+
+router.get('/:pid/tables/:tid',  function(req, res){
+	runSteps(req,res);
+});
+
+function runSteps(req,res){
 	//res.writeHead(200, {"Content-Type": "application/json"});
 	var fileName=req.query.fileName;
 	if(!fileName){
@@ -41,29 +49,38 @@ router.get('/:pid',  function(req, res){
 	}
 	var tableName=req.query.tableName?req.query.tableName.replace(/\W/g, '').toLowerCase():null;
 	var pid=parseInt(req.params.pid);
+	var tid=req.params.tid?parseInt(req.params.tid):null;
+	var id = req.query.id?parseInt(req.query.id):null;
+	if(id)tableName+=id;
+	
 	res.setTimeout(0); 
 	if(req.query.step == 1){
-		getOgrInfo(req,res,pid,fileName);
+		getOgrInfo(req,res,pid,tid,fileName);
 	}
 	// step two: load into database. OBJ! must have a schema created in the
 	// database for the user, ex: create schema userShortName;
 	else if(req.query.step == 2) {
-		execOgr2ogr(req,res,pid,fileName,tableName);
+		execOgr2ogr(req,res,pid,tid,id,fileName,tableName);
 	}
 	else if(req.query.step == 3) {
-		cleanTable(req,res,pid,fileName,tableName);
+		cleanTable(req,res,pid,tid,id,fileName,tableName);
 	}
 	// step four: load into database
 	else if(req.query.step == 4) {
-		createSoilsTable(req,res,pid,fileName,tableName);
+		createSoilsTable(req,res,pid,tid,id,fileName,tableName);
 	}
 	// step five: load into database
 	else if(req.query.step == 5) {
-		createStatsTable(req,res,pid,fileName,tableName);
+		createStatsTable(req,res,pid,tid,id,fileName,tableName);
 	}
-});
-
-function getOgrInfo(req,res,pid,fileName){
+	// step six: check subject data
+	else if(req.query.step == 6) {
+		//createStatsTable(req,res,pid,fileName,tableName);
+		checkSubjectProperty(req,res,pid,tid,id,fileName,tableName)
+	}
+	
+}
+function getOgrInfo(req,res,pid,tid,fileName){
 	var filePath=__dirname + "/../public/files/" + req.user.shortName + "/" + pid + '/' + fileName;
 	var fs = require('fs');
 	// make user upload folder if it doesn't exist
@@ -87,6 +104,8 @@ function getOgrInfo(req,res,pid,fileName){
 		}
 		// console.log(data)
 		console.log("Layer name: " + data["Layer name"]);
+		//var alias=fileName.slice(0,-4);
+		var alias=fileName.substr(0, fileName.lastIndexOf('.'));
 		data["Layer name"] = data["Layer name"].replace(/\W/g, '').toLowerCase();
 		try{
 			data['file']=data['file'].split("'")[1].split("`")[1];
@@ -94,17 +113,19 @@ function getOgrInfo(req,res,pid,fileName){
 		}catch(e){}
 
 		if(data.Geometry=='None'){
-			loadNonSpatial(req,res,fileName,filePath,pid,data);
+			loadNonSpatial(req,res,pid,tid,fileName,filePath,data);
 		}
 		else{ 
 			pg.connect(global.conString,function(err, client, release) {
 				if (err){ res.json({"err":"No connection to database;"});throw err;}
 				//"delete from "+req.user.shortName+".tables where name='"+data['Layer name']+"'"
-				var sql="insert into "+req.user.shortName+".tables(name,filename,pid,type,geometrytype,filetype,date_loaded) values('"+data['Layer name']+"', "+pid+","+ (req.query.subj?"1":"0") +",'"+data['Geometry']+"','" + data['file'] + "',NOW())"
+				var sql="insert into "+req.user.shortName+".tables(alias,name,filename,pid,tid,type,geometrytype,filetype,date_loaded) values('"+alias +"','" + data['Layer name'] + "','" + fileName + "'," + pid + "," + (tid?tid:"NULL") + "," + (req.query.subj?"1":"0") +",'"+data['Geometry']+"','" + data['file'] + "',NOW()) returning id"
 				console.log(sql);
 				client.query(sql, function(err, result) {
 					release()
+					//console.log(result);
 					// res.json(msg));
+					data.id=result.rows[0].id;
 					res.json(data);
 				});
 			})
@@ -112,10 +133,10 @@ function getOgrInfo(req,res,pid,fileName){
 	});
 }
 
-function execOgr2ogr(req,res,pid,fileName,tableName){
+function execOgr2ogr(req,res,pid,tid,id,fileName,tableName){
 	var filePath=__dirname + "/../public/files/" + req.user.shortName + "/"+ pid + "/" + fileName ;
 
-	console.log("Loading "+fileName+" into database");
+	console.log("Loading "+fileName+" into database as " + tableName);
 	var fs = require('fs');
 
 	if (!fs.existsSync(filePath)) {
@@ -126,6 +147,7 @@ function execOgr2ogr(req,res,pid,fileName,tableName){
 	if(/^win/.test(process.platform))
 		process.env['GDAL_DATA'] = 'C:\\PostgreSQL93\\gdal-data';
 	var step=2;
+	
 	// is it not a spatial file?
 	var opts=["-t_srs","epsg:3857","-overwrite","-lco", "DROP_TABLE=IF_EXISTS", "-lco", "WRITE_EWKT_GEOM=ON", "-nlt", "MULTIPOLYGON", "-nln",tableName];
 
@@ -147,7 +169,7 @@ function execOgr2ogr(req,res,pid,fileName,tableName){
 }
 
 //step three: load into database
-function cleanTable(req,res,pid,fileName,tableName) {
+function cleanTable(req,res,pid,tid,id,fileName,tableName) {
 	var baseTableName = tableName;
 	tableName = req.user.shortName+"."+baseTableName;
 	pg.connect(global.conString,function(err, client, release) {
@@ -239,7 +261,7 @@ function cleanTable(req,res,pid,fileName,tableName) {
 			// if (err) throw err;
 			// console.log("Count: "+result.rows[0])
 
-			var obj={"step":3,"id":result&&result.rows?result.rows:null};
+			var obj={"step":3,"idname":result&&result.rows?result.rows:null};
 			if (err) {obj['err']=err.toString();console.log(err);}
 			// res.writeHead(200, {"Content-Type": "application/json"});
 			res.json(obj);
@@ -248,7 +270,7 @@ function cleanTable(req,res,pid,fileName,tableName) {
 	})	  	
 }
 
-function createSoilsTable(req,res,pid,fileName,tableName){
+function createSoilsTable(req,res,pid,tid,id,fileName,tableName){
 	var idName = req.query.idName;
 	if(!idName)idName='oid';
 	else idName = idName.replace(/\W/g, '');
@@ -293,7 +315,7 @@ function createSoilsTable(req,res,pid,fileName,tableName){
 	})	  
 
 }
-function createStatsTable(req,res,pid,fileName,tableName){
+function createStatsTable(req,res,pid,tid,id,fileName,tableName){
 	var baseTableName = tableName;
 	tableName = req.user.shortName + "." + tableName;
 
@@ -379,42 +401,135 @@ function createStatsTable(req,res,pid,fileName,tableName){
 /*
  * Verify file upload.
  */
-function loadNonSpatial(req,res,fileName,filePath,pid,data){
+function loadNonSpatial(req,res,pid,tid,fileName,filePath,data){
 	if(/^win/.test(process.platform))
 		process.env['GDAL_DATA'] = 'C:\\PostgreSQL93\\gdal-data';
-	var tableName = data["Layer name"].replace(/\W/g, '').toLowerCase();
-	// is it not a spatial file?
-	var opts=["-overwrite","-lco", "DROP_TABLE=IF_EXISTS","-nln",tableName];
-	// var f = tableName.toLowerCase().split(".");
-	var isCSV = fileName.substring(fileName.length-3)!='dbf';
-	console.log("isCSV: " +  isCSV);
-	/*
-	 * if(f.length>1){ if(
-	 * (f[f.length-1]=='xls'||f[f.length-1]=='csv'||f[f.length-1]=='dbf'||f[f.length-1]=='xlsx')){
-	 * isCSV=f[f.length-1]!='dbf'; tableName = tableName.split(".")[0]; } }
-	 */
-	var ogr = ogr2ogr( filePath)
-	.format('PostgreSQL') 
-	.options(opts)//
-	.skipfailures()  
-	.destination(global.ogrConnString + ' active_schema='+req.user.shortName) 	
-	.exec(function (er, ret) {
-		console.log("Ogr2Ogr finished");
-		if (er){
-			console.error(er)
-			res.status(404).json({err:er});
-			return;
-		}
-		// console.log(data.toString())
-		// res.end(data.toString());
-		// var msg={"step":step,"ret":data?JSON.stringify(data):""};
-		// if(er)msg['err']="Unable to load table: "+er;
-		convertCSV2Numeric(fileName,tableName,data,pid,req,res,isCSV);
-	});
+	pg.connect(global.conString,function(err, client, release) {
+		if (err){ res.json({"err":"No connection to database;"});throw err;}
+		var sql="select nextval('"+req.user.shortName + ".tables_id_seq'::regclass) as id";
+		client.query(sql, function(err, result) {
+			var id=result.rows[0].id;
+			data['id']=id;
+			var alias=fileName.substr(0, fileName.lastIndexOf('.'));//fileName.slice(0,-4);;
+			var tableName = data["Layer name"].replace(/\W/g, '').toLowerCase()
+			var baseTableName=tableName;
+			tableName+=id;
 
+			// is it not a spatial file?
+			var opts=["-overwrite","-lco", "DROP_TABLE=IF_EXISTS","-nln",tableName];
+			// var f = tableName.toLowerCase().split(".");
+			var isCSV = fileName.substring(fileName.length-3)!='dbf';
+			console.log("isCSV: " +  isCSV);
+			/*
+			 * if(f.length>1){ if(
+			 * (f[f.length-1]=='xls'||f[f.length-1]=='csv'||f[f.length-1]=='dbf'||f[f.length-1]=='xlsx')){
+			 * isCSV=f[f.length-1]!='dbf'; tableName = tableName.split(".")[0]; } }
+			 */
+			var ogr = ogr2ogr( filePath)
+			.format('PostgreSQL') 
+			.options(opts)//
+			.skipfailures()  
+			.destination(global.ogrConnString + ' active_schema='+req.user.shortName) 	
+			.exec(function (er, ret) {
+				console.log("Ogr2Ogr finished");
+				if (er){
+					console.error(er)
+					res.status(404).json({err:er});
+					return;
+				}
+				
+				var sql="select column_name from information_schema.columns where table_schema='"+req.user.shortName+"' and table_name = '"+tableName+"' and column_name not in('ogc_fid','wkb_geometry','id','shape_leng','shape_area','_acres_total') and data_type not in('numeric','double precision','float','integer','decimal')";
+				console.log(sql);
+				// strip off extension
+				client.query(sql, function(err, result) {
+					// add the schema to the tablename
+					tableName = req.user.shortName+"."+ tableName;
+					var cols=[];
+					//console.log(result.rows);
+					for(var i in result.rows){
+						if(result.rows[i].column_name.charAt(0) == result.rows[i].column_name.charAt(0).toUpperCase())
+							result.rows[i].column_name='"' + result.rows[i].column_name + '"';
+						else if(result.rows[i].column_name.indexOf(" ")!=-1)
+							result.rows[i].column_name='"' + result.rows[i].column_name + '"';
+
+						cols.push(result.rows[i].column_name);
+						// cols.push("tonumeric('"+result.rows[i].column_name +
+						// ','"+tableName+"'))";
+					}
+					// var sql='select '+corr.join(",")+' from '+tableName+"_stats";
+					var sql = [
+					           (isCSV?"select public.tonumeric('" + cols.join("','"+tableName+"'),public.tonumeric('") + "','"+tableName+"')":"select 1")
+					           ,'drop table if exists ' + tableName + "_stats"
+					           ,"create table " + tableName+"_stats as select * from " + tableName
+					           ,"alter table " + tableName + "_stats drop if exists wkb_geometry"
+					           ,"alter table " + tableName + "_stats drop if exists ogc_fid"
+					           ,"alter table " + tableName + "_stats add oid serial"
+					           //,"delete from "+req.user.shortName+".tables where name='"+baseTableName+"'"
+					           ,"insert into "+req.user.shortName+".tables(id,alias,name,filename,pid,tid,type,geometrytype,filetype,date_loaded) values("+id+",'"+alias+"','"+baseTableName + "','"+fileName+"',"+pid+","+(tid?tid:"NULL")+"," +(req.query.subj?"1":"0") +",'"+data['Geometry']+"','" + data['file'] + "',NOW())"
+					           ,'drop table if exists ' + tableName + '_vars'
+					           // "create table " + tableName + "_vars as select 1 as
+					           // include,0 as id,0 as depvar,column_name as name from
+					           // information_schema.columns where
+					           // table_schema='"+req.user.shortName+"' and table_name
+					           // = '"+baseTableName+"_stats' and column_name not
+					           // in('wkb_geometry','shape_leng','shape_area','_acres_total')
+					           // and data_type in('numeric','double
+					           // precision','float','integer','decimal')",
+					           ,"create table " + tableName + "_vars as select 1 as include,0 as id,0 as uniqueid,0 as depvar,column_name as name,data_type as type from information_schema.columns where table_schema='"+req.user.shortName+"' and table_name = '"+baseTableName+id+"_stats' and column_name not in('wkb_geometry','shape_leng','shape_area','_acres_total')" // and
+					           // data_type
+					           // in('numeric','double
+					           // precision','float','integer','decimal')",
+					           // string fields can't be used as dependent variables
+					           ,"update " + tableName + "_vars set include=2,depvar=2 where type not in('numeric','double precision','float','integer','decimal')"
+					           // set the oid as the default unique identifier
+					           ,"update " + tableName + "_vars set include=3,id=1 where name='oid'"
+					           // set the first numeric field found as the dependent
+					           // variable
+					           ,"update " + tableName + "_vars set depvar=1 where name=(select name from "+tableName+"_vars where include=1 limit 1)"
+					           // find all the fields that have all distinct/unique
+					           // values. These are the only fields that can be used as
+					           // unique identifiers
+					           ,"select public.update_unique('"+req.user.shortName+"','" + baseTableName + id + "')"
+					           // remove the non-numeric fields that don't have all
+					           // unique values
+					           ,"delete from "+ tableName + "_vars where include=2 and uniqueid=0"
+					           ,'select count(*) as count from '+tableName+'_stats'];
+
+					// ,'drop table if exists ' + tableName + '_vars'
+					// ,"create table " + tableName + "_vars as select 1 as include,0 as
+					// id,0 as depvar,column_name as name from
+					// information_schema.columns where table_schema='"+shortName+"' and
+					// table_name = '"+baseTableName+"_stats' and column_name not
+					// in('wkb_geometry','shape_leng','shape_area','_acres_total') and
+					// data_type in('numeric','double
+					// precision','float','integer','decimal')"
+
+
+					console.log(sql);
+					client.query(sql.join(";"), function(err, result) {
+						release()
+						console.log(res.headersSent);
+						if(res.headersSent)res.end(JSON.stringify(data));
+						else
+							res.json(data);
+					});
+				})
+			})		
+			// console.log(data.toString())
+			// res.end(data.toString());
+			// var msg={"step":step,"ret":data?JSON.stringify(data):""};
+			// if(er)msg['err']="Unable to load table: "+er;
+			//convertCSV2Numeric(req,res,pid,tid,id,fileName,tableName,data,isCSV);
+		});
+	})
 }
 
-function convertCSV2Numeric(fileName,tableName,data,pid,req,res,isCSV)
+//function convertCSV2Numeric(req,res,pid,tid,id,fileName,tableName,data,isCSV)
+//{
+
+
+
+function checkSubjectProperty(req,res,pid,tid,id,fileName,tableName)
 {
 	var baseTableName=tableName;
 	var sql="select column_name from information_schema.columns where table_schema='"+req.user.shortName+"' and table_name = '"+tableName+"' and column_name not in('ogc_fid','wkb_geometry','id','shape_leng','shape_area','_acres_total') and data_type not in('numeric','double precision','float','integer','decimal')";
@@ -446,7 +561,7 @@ function convertCSV2Numeric(fileName,tableName,data,pid,req,res,isCSV)
 			           ,"alter table " + tableName + "_stats drop if exists ogc_fid"
 			           ,"alter table " + tableName + "_stats add oid serial"
 					   //,"delete from "+req.user.shortName+".tables where name='"+baseTableName+"'"
-					   ,"insert into "+req.user.shortName+".tables(name,filename,pid,type,geometrytype,filetype,date_loaded) values('"+baseTableName + "','"+fileName+"',"+pid+","+(req.query.subj?"1":"0") +",'"+data['Geometry']+"','" + data['file'] + "',NOW())"
+					   ,"insert into "+req.user.shortName+".tables(name,filename,pid,tid,type,geometrytype,filetype,date_loaded) values('"+baseTableName + "','"+fileName+"',"+pid+","+(tid?tid:"NULL")+","+(req.query.subj?"1":"0") +",'"+data['Geometry']+"','" + data['file'] + "',NOW())"
 			           ,'drop table if exists ' + tableName + '_vars'
 			           // "create table " + tableName + "_vars as select 1 as
 			           // include,0 as id,0 as depvar,column_name as name from
@@ -497,4 +612,5 @@ function convertCSV2Numeric(fileName,tableName,data,pid,req,res,isCSV)
 		})
 	})
 }
+
 module.exports = router;
