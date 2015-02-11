@@ -238,6 +238,9 @@ function cleanTable(req,res,pid,tid,id,fileName,tableName) {
 			[
 			 'update '+tableName+' set wkb_geometry=st_cleangeometry(wkb_geometry)',
 			 'alter table '+tableName+' rename column ogc_fid to oid',		 
+			 // find all possible sale date fields
+			 "select public.update_saledate('"+req.user.shortName+"','" + baseTableName + "')",
+
 			 //"select column_name FROM information_schema.columns WHERE table_name='"+baseTableName+"' and table_schema='"+req.user.shortName+"'",
 			 'drop table if exists ' + tableName + '_vars',
 			 // "create table " + tableName + "_vars as select 1
@@ -249,7 +252,8 @@ function cleanTable(req,res,pid,tid,id,fileName,tableName) {
 			 // in('wkb_geometry','shape_leng','shape_area','_acres_total')
 			 // and data_type in('numeric','double
 			 // precision','float','integer','decimal')",
-			 "create table " + tableName + "_vars as select 1 as include,1 as cinclude,0 as id,0 as uniqueid,0 as depvar,column_name as name,data_type as type from information_schema.columns where table_schema='"+req.user.shortName+"' and table_name = '"+baseTableName+"' and column_name not in('wkb_geometry','shape_leng','shape_area','_acres_total')",// and
+			 "create table " + tableName + "_vars as select 1 as include,1 as cinclude,0 as id,0 as uniqueid,0 as depvar,0 as saledate,column_name as name,data_type as type from information_schema.columns where table_schema='"+req.user.shortName+"' and table_name = '"+baseTableName+"' and column_name not in('wkb_geometry','shape_leng','shape_area','_acres_total')",// and
+
 			 // data_type
 			 // in('numeric','double
 			 // precision','float','integer','decimal')",
@@ -504,6 +508,8 @@ function loadNonSpatial(req,res,pid,tid,fileName,filePath,data){
 					// var sql='select '+corr.join(",")+' from '+tableName+"_stats";
 					var sql = [
 					           (isCSV?"select public.tonumeric('" + cols.join("','"+tableName+"'),public.tonumeric('") + "','"+tableName+"')":"select 1")
+			           		   // find all possible sale date fields
+					           ,"select public.update_saledate('"+req.user.shortName+"','" + baseTableName + id + "')"
 					           ,'drop table if exists ' + tableName + "_stats"
 					           ,"create table " + tableName+"_stats as select * from " + tableName
 					           ,"alter table " + tableName + "_stats drop if exists wkb_geometry"
@@ -520,7 +526,7 @@ function loadNonSpatial(req,res,pid,tid,fileName,filePath,data){
 					           // in('wkb_geometry','shape_leng','shape_area','_acres_total')
 					           // and data_type in('numeric','double
 					           // precision','float','integer','decimal')",
-					           ,"create table " + tableName + "_vars as select 1 as include,0 as id,0 as uniqueid,0 as depvar,column_name as name,data_type as type from information_schema.columns where table_schema='"+req.user.shortName+"' and table_name = '"+baseTableName+id+"_stats' and column_name not in('wkb_geometry','shape_leng','shape_area','_acres_total')" // and
+					           ,"create table " + tableName + "_vars as select 1 as include,0 as id,0 as uniqueid,0 as depvar,0 as saledate,column_name as name,data_type as type from information_schema.columns where table_schema='"+req.user.shortName+"' and table_name = '"+baseTableName+id+"_stats' and column_name not in('wkb_geometry','shape_leng','shape_area','_acres_total')" // and
 					           // data_type
 					           // in('numeric','double
 					           // precision','float','integer','decimal')",

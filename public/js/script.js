@@ -362,9 +362,10 @@ maApp.controller('projectController', function($rootScope,$scope,$http,$location
 });
 
 maApp.controller('summaryController', function($rootScope,$scope,$http,$location,$window) {
-	$scope.selectField = function(field,ch) {
-		console.log(field)
-		$http.put(getURL("summary"),{ name:field, field: 'include',value: ch?1:0})
+	$scope.selectField = function(field,include) {
+		//console.log(field)
+		//console.log($scope.include);
+		$http.put(getURL("summary"),{ name:field, field: 'include',value: include?1:0})
 		.success(function(data, status, headers, config) {
 			console.log(data);
 		})
@@ -376,7 +377,7 @@ maApp.controller('summaryController', function($rootScope,$scope,$http,$location
 		// console.log(data);
 		// });
 	};
-	$scope.selectId = function(field,value) {
+	$scope.selectId = function(field) {
 		console.log(field)
 		$http.put(getURL("summary"),{ name:field, field: 'id',value: 1})
 		.success(function(data, status, headers, config) {
@@ -386,9 +387,8 @@ maApp.controller('summaryController', function($rootScope,$scope,$http,$location
 			// log error
 			if(status==404)$location.path("/login")
 		});
-
 	};
-	$scope.selectDepVar = function(field,value) {
+	$scope.selectDepVar = function(field) {
 		console.log(field)
 		$http.put(getURL("summary"),{ name:field, field: 'depvar',value: 1})
 		.success(function(data, status, headers, config) {
@@ -398,8 +398,20 @@ maApp.controller('summaryController', function($rootScope,$scope,$http,$location
 			// log error
 			if(status==404)$location.path("/login")
 		});
-
 	};
+
+	$scope.selectSaleDate = function(field) {
+		console.log(field)
+		$http.put(getURL("summary"),{ name:field, field: 'saledate',value: 1})
+		.success(function(data, status, headers, config) {
+			console.log(data);
+		})
+		.error(function(data, status, headers, config) {
+			// log error
+			if(status==404)$location.path("/login")
+		});
+	};
+
 	$scope.downloadTable = function() {
 		var url = getURL("download");
 		$window.open(url);
@@ -424,6 +436,7 @@ maApp.controller('summaryController', function($rootScope,$scope,$http,$location
 	success(function(data, status, headers, config) {
 		$scope.id=1;
 		$scope.depvar=1;
+		$scope.saledate=1;
 		$scope.summary = data;
 		$scope.tableName=data.alias;
 

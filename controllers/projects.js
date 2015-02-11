@@ -306,7 +306,7 @@ function tableSummary(req, res){
 			var tableName = result.rows[0].name+tid;
 			var geomtype = result.rows[0].geometrytype;
 			var alias=result.rows[0].alias;
-			var sql="select include,id,depvar,name from " + req.user.shortName + "." + tableName + "_vars where include<5 order by id desc,depvar desc,name asc";
+			var sql="select include,id,depvar,saledate,name from " + req.user.shortName + "." + tableName + "_vars where include<5 order by id desc,depvar desc,name asc";
 			console.log(sql);
 			client.query(sql, function(err, result) {
 				tableName = req.user.shortName+"."+ tableName+'_stats';
@@ -315,7 +315,7 @@ function tableSummary(req, res){
 				// console.log(result.rows);
 				for(var i in result.rows){
 					// names[result.rows[i].name]={"include":result.rows[i].include?'true':'false',"id":result.rows[i].id?'true':'false',"depvar":result.rows[i].depvar?'true':'false'};
-					names[result.rows[i].name]={"include":result.rows[i].include,"id":result.rows[i].id,"depvar":result.rows[i].depvar};
+					names[result.rows[i].name]={"include":result.rows[i].include,"id":result.rows[i].id,"depvar":result.rows[i].depvar,"saledate":result.rows[i].saledate};
 					if(result.rows[i].name.charAt(0) == result.rows[i].name.charAt(0).toUpperCase())
 						result.rows[i].name='"' + result.rows[i].name + '"';
 					else if(result.rows[i].name.indexOf(" ")!=-1)
@@ -374,6 +374,12 @@ function updateTableSummary(req,res)
 					var sql="update " + req.user.shortName + "." + tableName + "_vars set depvar=case when name=$1 then 1 else 0 end where depvar!=2";
 					vals=[req.body.name];
 				}
+				else if(req.body.field=='saledate'){ //can't be numeric
+					//var sql="update " + req.user.shortName + "." + tableName + " set include=$1 where name=$2";
+					var sql="update " + req.user.shortName + "." + tableName + "_vars set saledate=case when name=$1 then 1 else 0 end";
+					vals=[req.body.name];
+				}
+
 				else {
 					var sql="update " + req.user.shortName + "." + tableName + "_vars set id=case when name=$1 then 1 else 0 end";
 					vals=[req.body.name];
@@ -825,21 +831,22 @@ function tableReports(req,res){
 			var tableName = result.rows[0].name+sid;
 			var alias = result.rows[0].alias;
 			var alias = result.rows[1].alias;
-			var sql="select name from " + req.user.shortName + "." + tableName + "_vars where include>0 and depvar!=1 order by id desc,name asc";
+			var sql="select name,type from " + req.user.shortName + "." + tableName + "_vars where include>0 and depvar!=1 order by id desc,name asc";
 			console.log(sql);
 			client.query(sql, function(err, result) {
 				var fields=[];
 				//for(var i in result.rows)fields.push(result.rows[i].name);
 				for(var i = 0; i < result.rows.length;i++){
-					
+
 					if(result.rows[i].name.charAt(0) == result.rows[i].name.charAt(0).toUpperCase())
 						result.rows[i].name='"' + result.rows[i].name + '"';
 					else if(result.rows[i].name.indexOf(" ")!=-1)
 						result.rows[i].name='"' + result.rows[i].name + '"';// as '+ result.rows[i].name.replace(/ /g,"_");
 					fields.push(result.rows[i].name);
 				}
-				
+
 				var sql="select " + fields.join(",") + " from " + req.user.shortName + "." + tableName + "_stats";
+				for(var i in fields)fields[i]=fields[i].replace(/\"/g,"");
 				console.log(sql);
 				client.query(sql, function(err, result) {
 					release()
