@@ -67,11 +67,15 @@ maApp.config(function($routeProvider,$locationProvider) {
 		controller  : 'subjectController'
 	})
 	// route for the report page
+	.when('/projects/:id/tables/:tid/reports/:sid', {
+		templateUrl : 'pages/ma.html',
+		controller  : 'maController'
+	})
+	// route for the report page
 	.when('/projects/:id/tables/:tid/report/:sid', {
 		templateUrl : 'pages/report.html',
 		controller  : 'reportController'
 	})
-
 	// route for the contact page
 	.when('/contact', {
 		templateUrl : 'pages/contact.html',
@@ -161,19 +165,6 @@ maApp.controller('mainController', function($rootScope,$scope, $http, $location)
 		});
 	};
 
-	// tables
-	$scope.viewComparable = function (id) {
-		// $rootScope.tid=id;
-		// $location.path("/projects/"+this.pid+"/tables/"+id+"/summary");
-		if(id)$location.path(getURL(id+"/summary",1));
-		else $location.path(getURL("summary"))
-	};
-	$scope.viewSubject = function (id) {
-		// $rootScope.tid=id;
-		// $location.path("/projects/"+$rootScope.pid+"/tables/"+id+"/subject");
-		if(id)$location.path(getURL("subject"))
-		else $location.path(getURL(id+"/subject",1));
-	};
 
 	// correlation
 	$scope.viewCorrelation = function() {
@@ -200,7 +191,7 @@ maApp.controller('mainController', function($rootScope,$scope, $http, $location)
 	};
 	//subject
 	$scope.viewSubjectProperty = function () {
-		$location.path(getURL("subject"));
+		$location.path(getURL("subject",3));
 	};
 	//subject report
 	$scope.viewSubjectReport = function () {
@@ -320,9 +311,29 @@ maApp.controller('projectController', function($rootScope,$scope,$http,$location
 		});
 
 	};
+	// tables
+	$scope.viewComparable = function (id) {
+		// $rootScope.tid=id;
+		// $location.path("/projects/"+this.pid+"/tables/"+id+"/summary");
+		if(id)$location.path(getURL(id+"/summary",1));
+		else $location.path(getURL("summary"))
+	};
+	$scope.viewSubject = function (id,numTuples) {
+		if(numTuples>0)
+		{
+			if(id)$location.path(getURL("report"))
+			else $location.path(getURL(id+"/report",1));
+		}
+		else
+		{
+			if(id)$location.path(getURL("report")+"/"+id)
+			else $location.path(getURL(id+"/report",1)+"/"+id);
+		}
+	};	
 	$scope.deleteTable = function (id) {
 		// $location.path("/project/"+id);
-		$http.delete('/projects/'+this.pid+'/tables/'+id)
+		var url='/projects/'+this.pid+'/tables/'+id;
+		$http.delete(url)
 		.success(function(data, status, headers, config) {
 			// remove tr from table
 			// remove tr from table
@@ -414,6 +425,7 @@ maApp.controller('summaryController', function($rootScope,$scope,$http,$location
 		$scope.id=1;
 		$scope.depvar=1;
 		$scope.summary = data;
+		$scope.tableName=data.alias;
 
 		// hide
 	}).
@@ -446,6 +458,8 @@ maApp.controller('correlationController', function($rootScope,$scope,$http,$loca
 	$scope.getData = function(){
 		$http.get($location.$$url).
 		success(function(data, status, headers, config) {
+			$scope.tableName=data.alias;
+			
 			var tmpdata=[];
 			$scope.id=1;
 			for(var i in data.names)
@@ -499,8 +513,9 @@ maApp.directive('dollarChangeDirective', function ($timeout) {
 maApp.controller('regressionController', function($scope,$http,$location) {
 	$http.get($location.$$url).
 	success(function(data, status, headers, config) {
-		for(var i=0;i<data.coef.length;i++)data.coef[i]['name']=data.names[i];
-		$scope.regression = data;
+		for(var i=0;i<data.vals.coef.length;i++)data.vals.coef[i]['name']=data.vals.names[i];
+		$scope.regression = data.vals;
+		$scope.tableName=data.alias;
 	}).
 	error(function(data, status, headers, config) {
 		// log error
@@ -510,12 +525,13 @@ maApp.controller('regressionController', function($scope,$http,$location) {
 maApp.controller('stepwise_regressionController', function($scope,$http,$location) {
 	$http.get($location.$$url).
 	success(function(data, status, headers, config) {
-		for(var i=0;i<data.coef.length;i++)data.coef[i]['name']=data.names[i];
-		var sum="<b>Formula: </b>" + data.names[0] + " = " + data.coef[0]['Estimate'] ;
-		for(var i=1;i<data.coef.length;i++)
-			sum += " + " +data.names[i] + " * " + data.coef[i]['Estimate'];
+		for(var i=0;i<data.vals.coef.length;i++)data.vals.coef[i]['name']=data.vals.names[i];
+		var sum="<b>Formula: </b>" + data.vals.names[0] + " = " + data.vals.coef[0]['Estimate'] ;
+		for(var i=1;i<data.vals.coef.length;i++)
+			sum += " + " +data.vals.names[i] + " * " + data.vals.coef[i]['Estimate'];
 		data.formula=sum;
-		$scope.swregression = data;
+		$scope.swregression = data.vals;
+		$scope.tableName=data.alias;
 	}).
 	error(function(data, status, headers, config) {
 		// log error
@@ -531,6 +547,7 @@ maApp.controller('residualsController', function($scope,$http,$location) {
 			$scope.residuals = data;
 			$scope.totalItems = data.total;
 			$scope.currentPage = 0;
+			$scope.tableName=data.alias;
 			$scope.getData(0);
 		}).
 		error(function(data, status, headers, config) {
@@ -616,6 +633,7 @@ maApp.controller('predictController', function($scope,$http,$location,$filter) {
 		$http.get($location.$$url).
 		success(function(data, status, headers, config) {
 			$scope.predictions = data;
+			$scope.tableName=data.alias;
 			/*
 		var columns=[];//{field:"name",title:"",align:"right",class:"col"}];
 		var dummyvals=[];
@@ -669,6 +687,7 @@ maApp.controller('subjectController', function($rootScope,$scope,$http,$location
 	$http.get($location.$$url).
 	success(function(data, status, headers, config) {
 		$scope.subject = data;
+		$scope.tableName=data.alias;
 
 	}).
 	error(function(data, status, headers, config) {
@@ -678,7 +697,7 @@ maApp.controller('subjectController', function($rootScope,$scope,$http,$location
 	$scope.list = function(){
 		$http.get($location.$$url+"/tables").
 		success(function(data, status, headers, config) {
-			$scope.subject = data;
+			$scope.tables = data;
 			$scope.pid=data.pid;
 			$scope.tid=data.tid;
 		}).
@@ -698,7 +717,7 @@ maApp.controller('subjectController', function($rootScope,$scope,$http,$location
 		modalInstance.soilscompleted=false;
 		modalInstance.pid=$scope.pid;
 		modalInstance.tid=$scope.tid;
-		modalInstance.maxSteps=$scope.maxSteps=7;
+		modalInstance.maxSteps=$scope.maxSteps=6;
 		modalInstance.result.then(function (newfile) {
 			//$scope.selected = selectedItem;
 			//insert file into list of layers
@@ -708,15 +727,30 @@ maApp.controller('subjectController', function($rootScope,$scope,$http,$location
 			console.log('Modal dismissed at: ' + new Date());
 		});
 	};
+	$scope.viewSubject = function (id,numTuples) {
+		if(numTuples>1)
+		{
+			if(id)$location.path(getURL("reports") + "/" + id)
+			else $location.path(getURL(id+"/reports",1) + "/" + id);
+		}
+		else
+		{
+			if(id)$location.path(getURL("report") + "/" + id)
+			else $location.path(getURL(id+"/report",1) + "/" + id);
+		}
+	};
+	
 	$scope.deleteTable = function (id) {
-		// $location.path("/project/"+id);
-		$http.delete('/projects/'+this.pid+'/tables/'+id)
+		//var url="" + $location.path("/project/"+id);
+		var url='/projects/'+$scope.pid+'/tables/'+id;
+		//($location.$$url+"/tables/"+id
+		$http.delete(url)
 		.success(function(data, status, headers, config) {
 			// remove tr from table
 			// remove tr from table
 			var index = -1;		
-			for( var i = 0; i < $scope.project.rows.length; i++ ) {
-				if( $scope.project.rows[i].id === id ) {
+			for( var i = 0; i < $scope.subject.rows.length; i++ ) {
+				if( $scope.subject.rows[i].id === id ) {
 					index = i;
 					break;
 				}
@@ -724,7 +758,7 @@ maApp.controller('subjectController', function($rootScope,$scope,$http,$location
 			if( index === -1 ) {
 				alert( "Something gone wrong" );
 			}
-			$scope.project.rows.splice( index, 1 );						
+			$scope.subject.rows.splice( index, 1 );						
 
 		})
 		.error(function(data, status, headers, config ){ 
@@ -737,6 +771,51 @@ maApp.controller('subjectController', function($rootScope,$scope,$http,$location
 	};
 
 });
+maApp.controller('maController', function($rootScope,$scope,$http,$location,$modal) {
+	/*
+	$http.get($location.$$url).
+	success(function(data, status, headers, config) {
+		$scope.report = data;
+		$scope.tableName=data.alias;
+
+	}).
+	error(function(data, status, headers, config) {
+		if(status==404)$location.path("/login")
+		// log error
+	});
+	*/
+	$scope.list = function(){
+		$http.get($location.$$url).
+		success(function(data, status, headers, config) {
+			$scope.subjectdata = data;
+			$scope.pid=data.pid;
+			$scope.tid=data.tid;
+			$scope.tableName = data.alias;
+		}).
+		error(function(data, status, headers, config) {
+			// log error
+			if(status==404)$location.path("/login")
+		});
+	}
+	$scope.list();
+});
+maApp.controller('reportController', function($rootScope,$scope,$http,$location,$modal) {
+
+	$http.get($location.$$url).
+	success(function(data, status, headers, config) {
+		$scope.report = data;
+		$scope.tableName=data.alias;
+
+	}).
+	error(function(data, status, headers, config) {
+		if(status==404)$location.path("/login")
+		// log error
+	});
+});
+
+
+
+
 
 maApp.filter('checkbox', function() {
 	return function() {

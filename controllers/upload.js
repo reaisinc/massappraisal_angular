@@ -19,6 +19,8 @@ var options={
 var uploader = require('../upload')(options);
 //get list of files
 router.get('/:pid',  function(req, res) {
+	upload(req,res,uploader.get);
+/*
 	var obj={};
 	var pid=parseInt(req.params.pid);
 	obj.uploadDir = __dirname + '/../public/files/' + req.user.shortName + '/' + pid;
@@ -28,9 +30,12 @@ router.get('/:pid',  function(req, res) {
 	uploader.get(req, res, function (obj) {
 		res.json(obj); 
 	});
+*/	
 });
 //upload file
 router.post('/:pid', function(req, res) {
+	upload(req,res,uploader.post);
+/*	
 	var obj={};
 	var pid=parseInt(req.params.pid); 
 	obj.uploadDir = __dirname + '/../public/files/' + req.user.shortName + '/' + pid;
@@ -40,10 +45,15 @@ router.post('/:pid', function(req, res) {
 	uploader.post(req, res, function (obj) {
 		res.json(obj); 
 	});
-
+*/
+});
+router.post('/:pid/tables/:tid', function(req, res) {
+	upload(req,res,uploader.post);
 });
 //delete file
 router.delete('/:pid/:name', function(req, res) {
+	upload(req,res,uploader.delete);
+	/*
 	var obj={};
 	var pid=parseInt(req.params.pid);
 	obj.uploadDir = __dirname + '/../public/files/' + req.user.shortName + '/' + pid;
@@ -53,8 +63,23 @@ router.delete('/:pid/:name', function(req, res) {
 	uploader.delete(req, res, function (obj) {
 		res.json(obj); 
 	});
+	*/
 });
-
+router.delete('/:pid/tables/:tid', function(req, res) {
+	upload(req,res,uploader.delete);
+});
+function upload(req,res,op){
+	var obj={};
+	var pid=parseInt(req.params.pid); 
+	obj.uploadDir = __dirname + '/../public/files/' + req.user.shortName + '/' + pid;
+	obj.uploadUrl=  '/files/' + req.user.shortName + '/' + pid + '/';
+	obj.tmpDir= __dirname + '/../tmp';
+	uploader.setPaths(obj,req);
+	op(req, res, function (obj) {
+		res.json(obj); 
+	});
+	
+} 
 module.exports = router;
 
 /*

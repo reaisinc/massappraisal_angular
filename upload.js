@@ -226,8 +226,8 @@ module.exports = function(opts) {
 
 	fileUploader.setPaths=function(opts,req){
     options.tmpDir = opts.tmpDir || __dirname + '/tmp',
-    options.uploadDir = opts.uploadDir || __dirname + '/public/files/'+req.user.shortName+'/'+req.params.pid + '/',
-    options.uploadUrl = opts.uploadUrl || '/files/'+req.user.shortName+'/'+req.params.pid + '/';
+    options.uploadDir = opts.uploadDir || __dirname + '/public/files/'+req.user.shortName+'/'+parseInt(req.params.pid) + '/' + (req.params.tid?"/table/"+parseInt(req.params.tid):""),
+    options.uploadUrl = opts.uploadUrl || '/files/'+req.user.shortName+'/'+parseInt(req.params.pid) + '/' + (req.params.tid?"/table/"+parseInt(req.params.tid):"");
 
     checkExists(opts.tmpDir);
     checkExists(opts.uploadDir);

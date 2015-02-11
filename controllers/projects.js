@@ -107,6 +107,20 @@ router.get('/:pid/tables/:tid/subject/:sid',  function(req, res){
 router.delete('/:pid/tables/:tid/subject/:sid',  function(req, res){
 	deleteSubject(req,res);	
 });
+//subject table report single
+router.get('/:pid/tables/:tid/report/:sid',  function(req, res){
+	reportSubject(req,res);	
+});
+router.get('/:pid/tables/:tid/report/:sid/row/:id',  function(req, res){
+	reportSubject(req,res);	
+});
+
+//subject table reports - mass appraisal
+router.get('/:pid/tables/:tid/reports/:sid',  function(req, res){
+	tableReports(req,res);	
+});
+
+
 
 //delete project (alt - not used)
 router.get('/:pid/delete',  function(req, res){
@@ -153,7 +167,7 @@ function getUserFiles(req,res)
 		// table_schema = '"+req.user.shortName+"' and table_name not like
 		// '%_stats' and table_name not like '%_soils' and table_name not like
 		// '%_vars'";
-		var sql="select name from "+req.user.shortName + ".projects where id="+id+";select id,alias,type,comp,case when filetype IS NULL then 'Unknown' else filetype end,to_char(date_loaded, 'Month DD, YYYY') as date  from "+req.user.shortName + ".tables where pid="+id;
+		var sql="select name from "+req.user.shortName + ".projects where id="+id+";select id,alias,type,numtuples,case when filetype IS NULL then 'Unknown' else filetype end,to_char(date_loaded, 'Month DD, YYYY') as date  from "+req.user.shortName + ".tables where pid="+id;
 
 		console.log(sql);
 		// console.log(vals);
@@ -514,7 +528,7 @@ function tableRegression(req, res){
 					// console.log(result.rows);
 					release();
 
-					res.end(result.rows[0].vals);
+					res.end('{"alias":"'+alias+'","vals":'+result.rows[0].vals+'}');
 				});
 			});		  	
 		});	
@@ -586,7 +600,8 @@ function tableSWRegression(req, res){
 					if(err)console.log(err);
 					// console.log(result.rows);
 					release();
-					res.end(result.rows[0].vals);
+					res.end('{"alias":"'+alias+'","vals":'+result.rows[0].vals+'}');
+					//res.end(result.rows[0].vals);
 				});
 			});		  	
 		});
@@ -642,7 +657,7 @@ function tableResiduals(req,res){
 					client.query(sql, function(err, result) {
 						if(err)console.log(err);
 						release();
-						res.json({id:id,names:names,vars:vars,total:parseInt(result.rows[0].total)});				    
+						res.json({alias:alias,id:id,names:names,vars:vars,total:parseInt(result.rows[0].total)});				    
 					});
 				});
 			});
@@ -700,7 +715,7 @@ function tablePredictions(req,res){
 					console.log(result.rows);
 					release();
 					//var vars=JSON.parse(result.rows[0].vals);
-					res.end("{\"vars\":"+result.rows[0].vals+"}");
+					res.end('{"alias":"'+alias+'","vars":'+result.rows[0].vals+'}');
 					//res.end(JSON.stringify({id:id,vars:vars}));
 				});
 				//});		  	
@@ -709,41 +724,79 @@ function tablePredictions(req,res){
 		});
 	});
 }
+/*
+ * Get subject data metadata for this comparable  
+ * 
+*/
 
 function tableSubject(req,res){
-	console.log(req.params.pid);
-
 	var pid = parseInt(req.params.pid);
 	var tid = parseInt(req.params.tid);
-	var sql="select name,geometrytype,type from "+req.user.shortName + ".tables where id="+tid;
+	//var sid = parseInt(req.params.sid);
+	var sql="select name,alias,numtuples from "+req.user.shortName + ".tables where id="+tid;
 	console.log(sql);
 	pg.connect(global.conString,function(err, client, release) {
 		if (err){ res.json({"err":"No connection to database;"});throw err;}
+		// strip off extension
 		client.query(sql, function(err, result) {
-			if (err){ res.json({"err":"Unable to find table;"});throw err;}
 			var tableName = result.rows[0].name+tid;
-			var info=result.rows[0];
-			var sql="select name,type from " + req.user.shortName + "." + tableName + "_vars where include=1 and depvar=0 order by name asc";
-			console.log(sql);
+			var alias=result.rows[0].alias;
+			var sql="select name,type from " + req.user.shortName + "." + tableName + "_vars where (include=1 or id=1) order by id desc,depvar desc,name asc";
+
 			//strip off extension
 			client.query(sql, function(err, result) {
-				//add the schema to the tablename
-				var fields=[];
-				for(var i in result.rows)fields.push(result.rows[i].name)
 				if(err)console.log(err);
-				release();
-				res.json({info:info,fields:fields.join(", "),vars:result.rows});
+				//add the schema to the tablename
+				tableName = req.user.shortName+"."+ tableName+'_stats';
+				var cols=[];
+				var depvar;
+				var id=result.rows[0].name;
+				var names={};
+				names[result.rows[0].name]=result.rows[0].type;
+
+				console.log(result.rows);
+				for(var i = 1; i < result.rows.length;i++){
+					names[result.rows[i].name]=result.rows[i].type;
+					if(result.rows[i].name.charAt(0) == result.rows[i].name.charAt(0).toUpperCase())
+						result.rows[i].name='"' + result.rows[i].name + '"';
+					else if(result.rows[i].name.indexOf(" ")!=-1)
+						result.rows[i].name='"' + result.rows[i].name + '"';// as '+ result.rows[i].name.replace(/ /g,"_");
+					if(depvar)cols.push(result.rows[i].name);
+					else depvar=result.rows[i].name
+				}
+				if(req.query.nosw)
+					var sql = "select r_regression_variables as vals from public.r_regression_variables('" + depvar + "','" + cols.join(",") + "','" + tableName + "',0,0)";// s("+out.join(",")+")";
+				else
+					var sql = "select r_step_regression_variables as vals from public.r_step_regression_variables('" + depvar + "','" + cols.join(",") + "','" + tableName + "',0,0)";// s("+out.join(",")+")";
+				console.log(sql);
+				client.query(sql, function(err, result) {
+					if(err)console.log(err);
+					console.log(result.rows);
+					var vars=JSON.parse(result.rows[0].vals);
+					var sql="select count(*) as total from " + tableName;
+					console.log(sql);
+					client.query(sql, function(err, result) {
+						if(err)console.log(err);
+						release();
+						res.json({alias:alias,id:id,names:names,vars:vars,total:parseInt(result.rows[0].total)});				    
+					});
+				});
 			});
 		});
 	});
 }
+/*
+ * Get list of all subject data tables for this comparable  
+ * 
+*/
+
 function getSubjectTables(req,res){
 	pg.connect(global.conString,function(err, client, release) {
 		if (err){ res.json({"err":"No connection to database;"});throw err;}
 		var field="project";
 		var pid=parseInt(req.params.pid);
 		var tid=parseInt(req.params.tid);
-		var sql="select id,name,type,comp,case when filetype IS NULL then 'Unknown' else filetype end,to_char(date_loaded, 'Month DD, YYYY') as date  from "+req.user.shortName + ".tables where type=1 and pid="+pid+" and tid="+tid;
+		var sql="select id,name,type,numtuples,case when filetype IS NULL then 'Unknown' else filetype end,to_char(date_loaded, 'Month DD, YYYY') as date  from "+req.user.shortName + ".tables where type=1 and pid="+pid+" and tid="+tid;
 
 		console.log(sql);
 		client.query(sql, function(err, result) {
@@ -754,10 +807,195 @@ function getSubjectTables(req,res){
 	});
 	
 }
+/*
+ * Print multiple rows in subject file  
+ * 
+*/
+function tableReports(req,res){
+	var pid = parseInt(req.params.pid);
+	var tid = parseInt(req.params.tid);
+	var sid = parseInt(req.params.sid);
+	pg.connect(global.conString,function(err, client, release) {
+		if (err){ res.json({"err":"No connection to database;"});throw err;}
+		//var sql="select id,name,type,numtuples,case when filetype IS NULL then 'Unknown' else filetype end,to_char(date_loaded, 'Month DD, YYYY') as date  from "+req.user.shortName + ".tables where type=1 and pid="+pid+" and tid="+tid;
+		var sql=["select name,geometrytype,type,alias from "+req.user.shortName + ".tables where id=" + sid,"select alias from "+req.user.shortName + ".tables where id=" + tid];
+		console.log(sql);
+		client.query(sql.join(";"), function(err, result) {
+			if(err){console.log(err);res.json({err:err.toString()});throw err;}
+			var tableName = result.rows[0].name+sid;
+			var alias = result.rows[0].alias;
+			var alias = result.rows[1].alias;
+			var sql="select name from " + req.user.shortName + "." + tableName + "_vars where include>0 and depvar!=1 order by id desc,name asc";
+			console.log(sql);
+			client.query(sql, function(err, result) {
+				var fields=[];
+				//for(var i in result.rows)fields.push(result.rows[i].name);
+				for(var i = 0; i < result.rows.length;i++){
+					
+					if(result.rows[i].name.charAt(0) == result.rows[i].name.charAt(0).toUpperCase())
+						result.rows[i].name='"' + result.rows[i].name + '"';
+					else if(result.rows[i].name.indexOf(" ")!=-1)
+						result.rows[i].name='"' + result.rows[i].name + '"';// as '+ result.rows[i].name.replace(/ /g,"_");
+					fields.push(result.rows[i].name);
+				}
+				
+				var sql="select " + fields.join(",") + " from " + req.user.shortName + "." + tableName + "_stats";
+				console.log(sql);
+				client.query(sql, function(err, result) {
+					release()
+					if(err){console.log(err);res.json({err:err.toString()});throw err;}
+					res.json({pid:pid,tid:tid,sid:sid,fields:fields,alias:alias,rows:result&&result.rows?result.rows:[]});
+				});
+			})
+		})
+	});
+}
+/*
+ * Create report for single subject  
+ * 
+*/
 
-function listSubject(req,res){
-	
-}	
+function reportSubject(req,res){
+	var pid = parseInt(req.params.pid);
+	var tid = parseInt(req.params.tid);
+	var sid = parseInt(req.params.sid);
+	var id = req.params.id?parseInt(req.params.id):null;
+	var sql=["select name,alias from "+req.user.shortName + ".tables where id="+sid,"select name,alias from "+req.user.shortName + ".tables where id="+tid];
+	console.log(sql);
+	pg.connect(global.conString,function(err, client, release) {
+		if (err){ res.json({"err":"No connection to database;"});throw err;}
+		client.query(sql.join(";"), function(err, result) {
+			if (err){ res.json({"err":"Unable to find table;"});throw err;}
+			var tableName = result.rows[1].name+tid;
+			var subtableName = result.rows[0].name+sid;
+			var alias=result.rows[0].alias;
+			var alias=result.rows[1].alias;
+			var sql="select name from " + req.user.shortName + "." + tableName + "_vars where (include=1 or id=1) order by id desc,depvar desc,name asc";
+			console.log(sql);
+			//strip off extension
+			client.query(sql, function(err, result) {
+				if(err)console.log(err);
+				//add the schema to the tablename
+				tableName = req.user.shortName+"."+ tableName+'_stats';
+				var cols=[];
+				var depvar;
+				var id=result.rows[0].name;
+
+				//var out=["name text"];
+				for(var i = 1; i < result.rows.length;i++){
+					if(result.rows[i].name.charAt(0) == result.rows[i].name.charAt(0).toUpperCase())
+						result.rows[i].name='"' + result.rows[i].name + '"';
+					else if(result.rows[i].name.indexOf(" ")!=-1)
+						result.rows[i].name='"' + result.rows[i].name + '"';// as '+ result.rows[i].name.replace(/ /g,"_");
+					if(depvar)cols.push(result.rows[i].name);
+					else depvar=result.rows[i].name
+				}
+
+				//var sql='select '+corr.join(",")+' from '+tableName+"_stats";
+				//var sql = "select replace(column1,'`','') as fieldname,column2 as estimate,column3 as stderr,column4 as tval,column5 as pr from public.r_lm_summary('" + cols.join(",") + "','" + tableName + "')";
+				//var sql = "select * from public.r_table_cor('" + cols.join(",") + "','" + tableName + "') s("+out.join(",")+")";
+				//'id,sale_price,parcel_ac,parcel_lv,parcel_bv,parcel_tv,sale_acres,sale_ppa,elevation,climate_zn,_acres_total as acres_total,"Slope","Elevation","Prod Index","Range Potential","Drought Index","All Crop Prod Index"', 'reaisincva.homesites_stats');
+				if(req.query.nosw)
+					var sql = "select r_regression_variables as vals from public.r_regression_variables('" + depvar + "','" + cols.join(",") + "','" + tableName + "',0,0)";// s("+out.join(",")+")";
+				else
+					var sql = "select r_step_regression_variables as vals from public.r_step_regression_variables('" + depvar + "','" + cols.join(",") + "','" + tableName + "',0,0)";// s("+out.join(",")+")";
+
+				//var sql = "select * from public.r_table_stepwise_regression_variables('" + cols.join(",") + "','" + tableName + "')";// s("+out.join(",")+")";
+				console.log(sql);
+				//pg.connect(global.conString,function(err, client, release) {
+				//if (err){ res.end(JSON.stringify({"err":"No connection to database;"}));throw err;}
+				//strip off extension
+				client.query(sql, function(err, result) {
+					if(err)console.log(err);
+					//console.log(result.rows);
+
+					var factors = JSON.parse(result.rows[0].vals);
+					//console.log(factors);
+					//client.query(sql, function(err, result) {
+					//if(err)console.log(err);
+					var sql="select name from " + req.user.shortName + "." + subtableName + "_vars where include>0 and depvar!=1 order by id desc,name asc";
+					console.log(sql);
+					client.query(sql, function(err, result) {
+						var fields=[];
+						//for(var i in result.rows)fields.push(result.rows[i].name);
+						for(var i = 0; i < result.rows.length;i++){
+
+							if(result.rows[i].name.charAt(0) == result.rows[i].name.charAt(0).toUpperCase())
+								result.rows[i].name='"' + result.rows[i].name + '"';
+							else if(result.rows[i].name.indexOf(" ")!=-1)
+								result.rows[i].name='"' + result.rows[i].name + '"';// as '+ result.rows[i].name.replace(/ /g,"_");
+							fields.push(result.rows[i].name);
+						}
+
+						var sql="select " + fields.join(",") + " from " + req.user.shortName + "." + subtableName + "_stats" + (id?" where oid="+id:"");
+						console.log(sql);
+						client.query(sql, function(err, result) {
+							release()
+							//calculate the depvar price. result should only contain one row
+							/*
+							var depvar=0.0;
+							for(var i=0;i<factors.vars.names.length;i++){
+								if(i==factors.vars.names[i]){depvar=factors.vars.coef[i].Estimate}
+								else{
+									depvar+=
+								}
+							}
+							*/
+							var data = processData(factors,result.rows[0]);
+							if(err){console.log(err);res.json({err:err.toString()});throw err;}
+							res.json({depvar:factors.names[0],pid:pid,tid:tid,sid:sid,fields:fields,alias:alias,rows:result.rows,result:data?data:{}});
+						});
+					})
+					//});
+					//var vars=JSON.parse(result.rows[0].vals);
+					//res.end('{"alias":"'+alias+'","vars":'+result.rows[0].vals+'}');
+					//res.end(JSON.stringify({id:id,vars:vars}));
+				});
+				//});		  	
+			});	
+
+		});
+	});
+
+}
+function calc(factors,row)
+{
+	var ret=factors.coef[0].Estimate;
+	for(var i=1;i<factors.names.length;i++)
+	{
+		ret += factors.coef[i].Estimate * row[factors.names[i]];
+	}
+	return ret;
+}
+
+function processData(factors,data){
+	var depvar=factors.names[0];
+	var res={};
+	/*
+	if(!$scope.residualscolumns){
+		var id=factors.id.trim();//.replace(/"/g,"")
+		$scope.residualcolumns=[id,depvar,"Predicted "+depvar,"Range - Lower "+depvar,"Range - Higher "+depvar,"Sale price within range"];
+		$scope.residualsfields=[id,depvar,depvar+"_pred",depvar+"_lwr",depvar+"_hgr",depvar+"_inrng"];
+		factors.names[depvar]='currency';
+		factors.names[depvar+"_pred"]='currency';
+		factors.names[depvar+"_lwr"]='currency';
+		factors.names[depvar+"_hgr"]='currency';
+		for(var i in data[0]){
+			if(i!=id&&i!=depvar){
+				$scope.residualcolumns.push(i);
+				$scope.residualsfields.push(i);
+			}
+		}
+	}
+	 */
+	//(col,key) in residualsdata[0] track by $index
+	res[depvar+"_pred"]  = calc(factors,data);
+	res[depvar+"_lwr"]   = res[depvar+"_pred"] - factors.stderr;
+	res[depvar+"_hgr"]   = res[depvar+"_pred"] + factors.stderr;
+	//data[depvar+"_inrng"] =  (data[depvar]<data[depvar+'_pred']+factors.vars.stderr && data[depvar]>data[depvar+'_pred']-factors.vars.stderr)?"Yes":"No";
+	return res;
+}
+
 function deleteSubject(req,res){
 	var pid = parseInt(req.params.pid);
 	var tid = parseInt(req.params.tid);

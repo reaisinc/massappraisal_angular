@@ -64,12 +64,7 @@ li.disabled {
 	<div class="jumbotron">
 
 		<div class="row">
-			<div class="col-md-4">
-				<h4>Predict sales prices using regression coefficients.</h4>
-				To show predictions for parcels data, click the Add data button to upload a CSV (Comma separated values) file. <br> <br> Note: the CSV file must have columns using the same names shown in the formula shown on the right above the statistics table. <br> <br> <input
-					ng-model="useSW" ng-change="toggleRegression()" type='checkbox'> Use full regression (non-stepwise) results
-			</div>
-			<div class="col-md-8">
+		<div class="col-lg-4 col-xs-4">
 				<div style="width: 300px">
 					<h4>Regression summary</h4>
 					<div id="summary">
@@ -96,9 +91,16 @@ li.disabled {
 							</tr>
 						</table>
 					</div>
+					<input
+					ng-model="useSW" ng-change="toggleRegression()" type='checkbox'> Use full regression (non-stepwise) results
 				</div>
 
 			</div>
+			<div class="col-lg-8 col-xs-8">
+				<h4>Predict sales prices using regression coefficients.</h4>
+				
+			</div>
+			
 		</div>
 	</div>
 	<!-- end jumbotron -->
@@ -136,6 +138,7 @@ li.disabled {
 	<table data-cache="false" id="summaryTable1">
 	</table>
 -->
+<div class="col-lg-12 col-xs-12 text-right">Comparable: {{tableName}}</div>
 	<br>
 	<div class="panel panel-default">
 		<div class="panel-heading">
