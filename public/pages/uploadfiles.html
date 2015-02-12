@@ -99,7 +99,7 @@
 		<span class="glyphicon glyphicon-upload"></span> Start processing
 	</button>
 	<br><br>
-	<div class="progress progress-striped active" style="margin-bottom: 0;">
+	<div ng-class="completed?'':'active'" class="progress progress-striped" style="margin-bottom: 0;">
 		<div role="progressbar" class="progress-bar"  ng-style="{ 'width': soilsprogress + '%' }"></div>
 	</div>
 </div>

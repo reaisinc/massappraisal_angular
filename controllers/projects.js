@@ -108,15 +108,15 @@ router.delete('/:pid/tables/:tid/subject/:sid',  function(req, res){
 	deleteSubject(req,res);	
 });
 //subject table report single
-router.get('/:pid/tables/:tid/report/:sid',  function(req, res){
+router.get('/:pid/tables/:tid/reports/:sid',  function(req, res){
 	reportSubject(req,res);	
 });
-router.get('/:pid/tables/:tid/report/:sid/row/:id',  function(req, res){
+router.get('/:pid/tables/:tid/reports/:sid/row/:id',  function(req, res){
 	reportSubject(req,res);	
 });
 
 //subject table reports - mass appraisal
-router.get('/:pid/tables/:tid/reports/:sid',  function(req, res){
+router.get('/:pid/tables/:tid/reports/:sid/table',  function(req, res){
 	tableReports(req,res);	
 });
 
@@ -194,7 +194,7 @@ function getUserFiles(req,res)
 
 function updateProject(req,res){
 	pg.connect(global.conString,function(err, client, release) {
-		if (err){ res.end(JSON.stringify({"err":"No connection to database;"}));throw err;}
+		if (err){ res.json({"err":"No connection to database;"});throw err;}
 		// var sql="SELECT table_name FROM information_schema.tables WHERE
 		// table_schema = '"+req.user.shortName+"' and table_name not like
 		// '%_stats' and table_name not like '%_soils' and table_name not like
@@ -218,18 +218,23 @@ function deleteProject(req,res){
 		// table_schema = '"+req.user.shortName+"' and table_name not like
 		// '%_stats' and table_name not like '%_soils' and table_name not like
 		// '%_vars'";
-		var sql=["delete from "+req.user.shortName + ".projects where id="+id,"select name,id from "+req.user.shortName+".tables where pid="+id];
-
+		var sql="select name,id from "+req.user.shortName+".tables where pid="+id;
 		console.log(sql);
-		client.query(sql.join(";"), function(err, result) {
-			var tablename=result.rows[0].name+result.rows[0].id;
-			var sql=["delete from "+req.user.shortName + ".tables where pid="+id,"drop table if exists "+tableName,"drop table if exists "+ tableName + "_stats", "drop table if exists "+ tableName + "_soils", "drop table if exists "+ tableName + "_vars"];
+		client.query(sql, function(err, result) {
+			if (err){ res.json({"err":"Unable to get list of layers for this project;"});throw err;}
+			var tableName=result.rows[0].name+result.rows[0].id;
+			var sql=["delete from "+req.user.shortName + ".tables where pid="+id,"drop view if exists "+tableName+"_stats","drop table if exists "+tableName,"drop table if exists "+ tableName + "_stats", "drop table if exists "+ tableName + "_soils", "drop table if exists "+ tableName + "_vars"];
+			console.log(sql);
 			client.query(sql.join(";"), function(err, result) {
-				release()
-				if(err)res.json({"status":"false"})
-				else res.json({"status":"true"})
+				if (err){ res.json({"err":"Unable to get delete layers for this project;"});throw err;}
+				var sql="delete from "+req.user.shortName + ".projects where id="+id;
+				console.log(sql);
+				client.query(sql, function(err, result) {
+					release()
+					if(err)res.json({"status":"false"})
+					else res.json({"status":"true"})
+				});
 			});
-			// getUserFiles(req,res);
 		})
 	});
 }
@@ -255,7 +260,7 @@ function deleteTable(req,res){
 			var tableName = result.rows[0].name+tid;
 			var baseTableName=tableName;
 			tableName = req.user.shortName+"." + baseTableName;
-			var sql=["drop table if exists "+tableName,"drop table if exists "+ tableName + "_stats", "drop table if exists "+ tableName + "_soils", "drop table if exists "+ tableName + "_vars","delete from "+req.user.shortName+".tables where pid="+pid+" and id="+tid];
+			var sql=["drop view if exists "+ tableName + "_stats","drop table if exists "+tableName,"drop table if exists "+ tableName + "_stats", "drop table if exists "+ tableName + "_soils", "drop table if exists "+ tableName + "_vars","delete from "+req.user.shortName+".tables where pid="+pid+" and id="+tid];
 			console.log(sql);
 			client.query(sql.join(";"), function(err, result) {
 				if (err){ res.json({"err":"Unable to delete table;"});throw err;}
@@ -306,7 +311,7 @@ function tableSummary(req, res){
 			var tableName = result.rows[0].name+tid;
 			var geomtype = result.rows[0].geometrytype;
 			var alias=result.rows[0].alias;
-			var sql="select include,id,depvar,saledate,name from " + req.user.shortName + "." + tableName + "_vars where include<5 order by id desc,depvar desc,name asc";
+			var sql="select include,id,depvar,saledate,name,type from " + req.user.shortName + "." + tableName + "_vars where include<5 order by id desc,depvar desc,name asc";
 			console.log(sql);
 			client.query(sql, function(err, result) {
 				tableName = req.user.shortName+"."+ tableName+'_stats';
@@ -315,7 +320,7 @@ function tableSummary(req, res){
 				// console.log(result.rows);
 				for(var i in result.rows){
 					// names[result.rows[i].name]={"include":result.rows[i].include?'true':'false',"id":result.rows[i].id?'true':'false',"depvar":result.rows[i].depvar?'true':'false'};
-					names[result.rows[i].name]={"include":result.rows[i].include,"id":result.rows[i].id,"depvar":result.rows[i].depvar,"saledate":result.rows[i].saledate};
+					names[result.rows[i].name]={"include":result.rows[i].include,"id":result.rows[i].id,"depvar":result.rows[i].depvar,"saledate":result.rows[i].saledate,"type":result.rows[i].type};
 					if(result.rows[i].name.charAt(0) == result.rows[i].name.charAt(0).toUpperCase())
 						result.rows[i].name='"' + result.rows[i].name + '"';
 					else if(result.rows[i].name.indexOf(" ")!=-1)
@@ -681,7 +686,7 @@ function tablePredictions(req,res){
 			if (err){ res.json({"err":"Unable to find table;"});throw err;}
 			var tableName = result.rows[0].name+tid;
 			var alias=result.rows[0].alias;
-			var sql="select name from " + req.user.shortName + "." + tableName + "_vars where (include=1 or id=1) order by id desc,depvar desc,name asc";
+			var sql="select name,type from " + req.user.shortName + "." + tableName + "_vars where (include=1 or id=1) order by id desc,depvar desc,name asc";
 			console.log(sql);
 			//strip off extension
 			client.query(sql, function(err, result) {
@@ -691,15 +696,20 @@ function tablePredictions(req,res){
 				var cols=[];
 				var depvar;
 				var id=result.rows[0].name;
-
+				var fields={};
 				//var out=["name text"];
 				for(var i = 1; i < result.rows.length;i++){
+					fields[result.rows[i].name]=result.rows[i].type;
 					if(result.rows[i].name.charAt(0) == result.rows[i].name.charAt(0).toUpperCase())
 						result.rows[i].name='"' + result.rows[i].name + '"';
 					else if(result.rows[i].name.indexOf(" ")!=-1)
 						result.rows[i].name='"' + result.rows[i].name + '"';// as '+ result.rows[i].name.replace(/ /g,"_");
-					if(depvar)cols.push(result.rows[i].name);
-					else depvar=result.rows[i].name
+					if(depvar){
+						cols.push(result.rows[i].name);
+					}
+					else{
+						depvar=result.rows[i].name
+					}
 				}
 
 				//var sql='select '+corr.join(",")+' from '+tableName+"_stats";
@@ -721,7 +731,8 @@ function tablePredictions(req,res){
 					console.log(result.rows);
 					release();
 					//var vars=JSON.parse(result.rows[0].vals);
-					res.end('{"alias":"'+alias+'","vars":'+result.rows[0].vals+'}');
+					res.end('{"alias":"'+alias+'","fields":' + JSON.stringify(fields) + ',"vars":'+result.rows[0].vals+'}');
+					
 					//res.end(JSON.stringify({id:id,vars:vars}));
 				});
 				//});		  	
@@ -734,12 +745,11 @@ function tablePredictions(req,res){
  * Get subject data metadata for this comparable  
  * 
 */
-
 function tableSubject(req,res){
 	var pid = parseInt(req.params.pid);
 	var tid = parseInt(req.params.tid);
 	//var sid = parseInt(req.params.sid);
-	var sql="select name,alias,numtuples from "+req.user.shortName + ".tables where id="+tid;
+	var sql="select name,alias,numtuples,geometrytype from "+req.user.shortName + ".tables where id="+tid;
 	console.log(sql);
 	pg.connect(global.conString,function(err, client, release) {
 		if (err){ res.json({"err":"No connection to database;"});throw err;}
@@ -747,8 +757,10 @@ function tableSubject(req,res){
 		client.query(sql, function(err, result) {
 			var tableName = result.rows[0].name+tid;
 			var alias=result.rows[0].alias;
-			var sql="select name,type from " + req.user.shortName + "." + tableName + "_vars where (include=1 or id=1) order by id desc,depvar desc,name asc";
-
+			var geometrytype=result.rows[0].geometrytype;
+			var sql="select name,type,saledate from " + req.user.shortName + "." + tableName + "_vars where (include=1 or id=1) order by id desc,depvar desc,name asc";
+			
+			console.log(sql);
 			//strip off extension
 			client.query(sql, function(err, result) {
 				if(err)console.log(err);
@@ -759,10 +771,11 @@ function tableSubject(req,res){
 				var id=result.rows[0].name;
 				var names={};
 				names[result.rows[0].name]=result.rows[0].type;
+				var saledate="";
 
 				console.log(result.rows);
 				for(var i = 1; i < result.rows.length;i++){
-					names[result.rows[i].name]=result.rows[i].type;
+					if(result.rows[i].saledate==1)saledate=result.rows[i].name;
 					if(result.rows[i].name.charAt(0) == result.rows[i].name.charAt(0).toUpperCase())
 						result.rows[i].name='"' + result.rows[i].name + '"';
 					else if(result.rows[i].name.indexOf(" ")!=-1)
@@ -775,27 +788,101 @@ function tableSubject(req,res){
 				else
 					var sql = "select r_step_regression_variables as vals from public.r_step_regression_variables('" + depvar + "','" + cols.join(",") + "','" + tableName + "',0,0)";// s("+out.join(",")+")";
 				console.log(sql);
+				
+
 				client.query(sql, function(err, result) {
 					if(err)console.log(err);
 					console.log(result.rows);
 					var vars=JSON.parse(result.rows[0].vals);
-					var sql="select count(*) as total from " + tableName;
+					var fields=[];
+					for(var i=1;i<vars.names.length;i++)
+						if(vars.names[i]!=saledate)
+							fields.push(vars.names[i]);
+					
+					var sql="select id,name,type,numtuples,case when filetype IS NULL then 'Unknown' else filetype end,to_char(date_loaded, 'Month DD, YYYY') as date  from "+req.user.shortName + ".tables where type=1 and pid="+pid+" and tid="+tid;
+					//var sql="select count(*) as total from " + tableName;
 					console.log(sql);
 					client.query(sql, function(err, result) {
 						if(err)console.log(err);
 						release();
-						res.json({alias:alias,id:id,names:names,vars:vars,total:parseInt(result.rows[0].total)});				    
+						res.json({alias:alias,geometrytype:geometrytype,fields:fields.join(", "),id:id,names:names,vars:vars,pid:pid,tid:tid,rows:result&&result.rows?result.rows:[]});				    
 					});
 				});
 			});
 		});
 	});
 }
+
+
+
+/*
+function tableSubject(req,res){
+	var pid = parseInt(req.params.pid);
+	var tid = parseInt(req.params.tid);
+	//var sid = parseInt(req.params.sid);
+	var sql="select name,alias,numtuples,geometrytype from "+req.user.shortName + ".tables where id="+tid;
+	console.log(sql);
+	pg.connect(global.conString,function(err, client, release) {
+		if (err){ res.json({"err":"No connection to database;"});throw err;}
+		// strip off extension
+		client.query(sql, function(err, result) {
+			var tableName = result.rows[0].name+tid;
+			var alias=result.rows[0].alias;
+			var geometrytype=result.rows[0].geometrytype;
+			var sql="select name,type from " + req.user.shortName + "." + tableName + "_vars where (include=1 or id=1) order by id desc,depvar desc,name asc";
+			
+			console.log(sql);
+			//strip off extension
+			client.query(sql, function(err, result) {
+				if(err)console.log(err);
+				//add the schema to the tablename
+				tableName = req.user.shortName+"."+ tableName+'_stats';
+				var cols=[];
+				var depvar;
+				var id=result.rows[0].name;
+				var names={};
+				names[result.rows[0].name]=result.rows[0].type;
+				var fields={};
+				console.log(result.rows);
+				for(var i = 1; i < result.rows.length;i++){
+					fields[result.rows[i].name]=result.rows[i].type;
+					if(result.rows[i].name.charAt(0) == result.rows[i].name.charAt(0).toUpperCase())
+						result.rows[i].name='"' + result.rows[i].name + '"';
+					else if(result.rows[i].name.indexOf(" ")!=-1)
+						result.rows[i].name='"' + result.rows[i].name + '"';// as '+ result.rows[i].name.replace(/ /g,"_");
+					if(depvar)cols.push(result.rows[i].name);
+					else depvar=result.rows[i].name
+				}
+				if(req.query.nosw)
+					var sql = "select r_regression_variables as vals from public.r_regression_variables('" + depvar + "','" + cols.join(",") + "','" + tableName + "',0,0)";// s("+out.join(",")+")";
+				else
+					var sql = "select r_step_regression_variables as vals from public.r_step_regression_variables('" + depvar + "','" + cols.join(",") + "','" + tableName + "',0,0)";// s("+out.join(",")+")";
+				console.log(sql);
+				for(var i in fields)fields[i]=fields[i].replace(/\"/g,"");
+
+				client.query(sql, function(err, result) {
+					if(err)console.log(err);
+					console.log(result.rows);
+					var vars=JSON.parse(result.rows[0].vals);
+					var sql="select id,name,type,numtuples,case when filetype IS NULL then 'Unknown' else filetype end,to_char(date_loaded, 'Month DD, YYYY') as date  from "+req.user.shortName + ".tables where type=1 and pid="+pid+" and tid="+tid;
+					//var sql="select count(*) as total from " + tableName;
+					console.log(sql);
+					client.query(sql, function(err, result) {
+						if(err)console.log(err);
+						release();
+						res.json({alias:alias,geometrytype:geometrytype,fields:fields,id:id,names:names,vars:vars,pid:pid,tid:tid,rows:result&&result.rows?result.rows:[]});				    
+					});
+				});
+			});
+		});
+	});
+}
+*/
 /*
  * Get list of all subject data tables for this comparable  
  * 
 */
-
+/*
 function getSubjectTables(req,res){
 	pg.connect(global.conString,function(err, client, release) {
 		if (err){ res.json({"err":"No connection to database;"});throw err;}
@@ -813,6 +900,7 @@ function getSubjectTables(req,res){
 	});
 	
 }
+*/
 /*
  * Print multiple rows in subject file  
  * 
@@ -857,6 +945,7 @@ function tableReports(req,res){
 		})
 	});
 }
+
 /*
  * Create report for single subject  
  * 
@@ -866,7 +955,7 @@ function reportSubject(req,res){
 	var pid = parseInt(req.params.pid);
 	var tid = parseInt(req.params.tid);
 	var sid = parseInt(req.params.sid);
-	var id = req.params.id?parseInt(req.params.id):null;
+	var oid = req.params.id?parseInt(req.params.id):null;
 	var sql=["select name,alias from "+req.user.shortName + ".tables where id="+sid,"select name,alias from "+req.user.shortName + ".tables where id="+tid];
 	console.log(sql);
 	pg.connect(global.conString,function(err, client, release) {
@@ -877,7 +966,7 @@ function reportSubject(req,res){
 			var subtableName = result.rows[0].name+sid;
 			var alias=result.rows[0].alias;
 			var alias=result.rows[1].alias;
-			var sql="select name from " + req.user.shortName + "." + tableName + "_vars where (include=1 or id=1) order by id desc,depvar desc,name asc";
+			var sql="select name,saledate from " + req.user.shortName + "." + tableName + "_vars where (include=1 or id=1) order by id desc,depvar desc,name asc";
 			console.log(sql);
 			//strip off extension
 			client.query(sql, function(err, result) {
@@ -887,9 +976,11 @@ function reportSubject(req,res){
 				var cols=[];
 				var depvar;
 				var id=result.rows[0].name;
+				var saledate='';
 
 				//var out=["name text"];
 				for(var i = 1; i < result.rows.length;i++){
+					if(result.rows[i].saledate==1)saledate=result.rows[i].name;
 					if(result.rows[i].name.charAt(0) == result.rows[i].name.charAt(0).toUpperCase())
 						result.rows[i].name='"' + result.rows[i].name + '"';
 					else if(result.rows[i].name.indexOf(" ")!=-1)
@@ -920,7 +1011,7 @@ function reportSubject(req,res){
 					//console.log(factors);
 					//client.query(sql, function(err, result) {
 					//if(err)console.log(err);
-					var sql="select name from " + req.user.shortName + "." + subtableName + "_vars where include>0 and depvar!=1 order by id desc,name asc";
+					var sql="select name,saledate from " + req.user.shortName + "." + subtableName + "_vars where include>0 and depvar!=1 order by id desc,name asc";
 					console.log(sql);
 					client.query(sql, function(err, result) {
 						var fields=[];
@@ -934,7 +1025,7 @@ function reportSubject(req,res){
 							fields.push(result.rows[i].name);
 						}
 
-						var sql="select " + fields.join(",") + " from " + req.user.shortName + "." + subtableName + "_stats" + (id?" where oid="+id:"");
+						var sql="select " + fields.join(",") + " from " + req.user.shortName + "." + subtableName + "_stats" + (oid?" where oid="+oid:"");
 						console.log(sql);
 						client.query(sql, function(err, result) {
 							release()
@@ -948,7 +1039,7 @@ function reportSubject(req,res){
 								}
 							}
 							*/
-							var data = processData(factors,result.rows[0]);
+							var data = processData(factors,result.rows[0],saledate);
 							if(err){console.log(err);res.json({err:err.toString()});throw err;}
 							res.json({depvar:factors.names[0],pid:pid,tid:tid,sid:sid,fields:fields,alias:alias,rows:result.rows,result:data?data:{}});
 						});
@@ -965,19 +1056,23 @@ function reportSubject(req,res){
 	});
 
 }
-function calc(factors,row)
+function calc(factors,row,saledate)
 {
 	var ret=factors.coef[0].Estimate;
+	var today =  new Date()/1000;
 	for(var i=1;i<factors.names.length;i++)
 	{
-		ret += factors.coef[i].Estimate * row[factors.names[i]];
+		if(saledate == factors.names[i])ret += factors.coef[i].Estimate * today;
+		else ret += factors.coef[i].Estimate * row[factors.names[i]];
 	}
+	
 	return ret;
 }
 
-function processData(factors,data){
+function processData(factors,data,saledate){
 	var depvar=factors.names[0];
 	var res={};
+	//add today's date to row
 	/*
 	if(!$scope.residualscolumns){
 		var id=factors.id.trim();//.replace(/"/g,"")
@@ -996,9 +1091,9 @@ function processData(factors,data){
 	}
 	 */
 	//(col,key) in residualsdata[0] track by $index
-	res[depvar+"_pred"]  = calc(factors,data);
-	res[depvar+"_lwr"]   = res[depvar+"_pred"] - factors.stderr;
-	res[depvar+"_hgr"]   = res[depvar+"_pred"] + factors.stderr;
+	res["Appraisal price"]  = calc(factors,data,saledate);
+	res["Lower range"]   = res["Appraisal price"] - factors.stderr;
+	res["Higher range"]   = res["Appraisal price"] + factors.stderr;
 	//data[depvar+"_inrng"] =  (data[depvar]<data[depvar+'_pred']+factors.vars.stderr && data[depvar]>data[depvar+'_pred']-factors.vars.stderr)?"Yes":"No";
 	return res;
 }

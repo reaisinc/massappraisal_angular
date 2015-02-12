@@ -67,15 +67,21 @@ maApp.config(function($routeProvider,$locationProvider) {
 		controller  : 'subjectController'
 	})
 	// route for the report page
-	.when('/projects/:id/tables/:tid/reports/:sid', {
+	.when('/projects/:id/tables/:tid/reports/:sid/table', {
 		templateUrl : 'pages/ma.html',
 		controller  : 'maController'
 	})
 	// route for the report page
-	.when('/projects/:id/tables/:tid/report/:sid', {
+	.when('/projects/:id/tables/:tid/reports/:sid', {
 		templateUrl : 'pages/report.html',
 		controller  : 'reportController'
 	})
+	// route for the report page
+	.when('/projects/:id/tables/:tid/reports/:sid/row/:id', {
+		templateUrl : 'pages/report.html',
+		controller  : 'reportController'
+	})
+
 	// route for the contact page
 	.when('/contact', {
 		templateUrl : 'pages/contact.html',
@@ -93,6 +99,10 @@ maApp.filter('numformat', function($filter) {
 		//$filter('currency')(amount, symbol, fractionSize)
 		if(type=='currency')out=$filter('currency')(out);
 		else if(type=='numeric')out=$filter('number',2)(out);
+		else if(type=='timestamp with time zone'){
+			out=$filter('date')(new Date(out * 1000), "MM/dd/yyyy")
+			//out=new Date(out * 1000).format('mm/dd/yyyy');
+		}
 		return out;
 	};
 });
@@ -114,6 +124,7 @@ maApp.controller('mainController', function($rootScope,$scope, $http, $location)
 
 	// projects
 	$scope.createProject = function () {
+		$scope.errMsg=null;
 		var frm=document.forms['newprojfrm'];
 		var name=frm.name.value;
 		if(name==''){
@@ -190,12 +201,18 @@ maApp.controller('mainController', function($rootScope,$scope, $http, $location)
 		$location.path(getURL("predictions"));
 	};
 	//subject
-	$scope.viewSubjectProperty = function () {
-		$location.path(getURL("subject",3));
+	$scope.viewSubject = function () {
+		$location.path(getURL("subject"));
+		//$location.path(getURL("subject",3));
 	};
-	//subject report
-	$scope.viewSubjectReport = function () {
-		$location.path(getURL("report"));
+	//report using subject property
+	$scope.viewReport = function () {
+		$location.path(getURL("reports"));
+	};
+	//report using subject property
+	$scope.viewMAReport = function (id) {
+		//$location.path(window.location.hash.substring(1)+"/row/" + id);
+		$location.path(getURL("row")+"/"+ id);
 	};
 
 	//goto using breadcrumbs
@@ -674,20 +691,62 @@ maApp.controller('predictController', function($scope,$http,$location,$filter) {
 	}
 	$scope.getData();
 	$scope.calculatePrediction=function(){
-		var result=0.0;
+		$scope.prediction="";
+		$scope.prederror=false;
+		var result=parseFloat($scope.predictions.vars.coef[0].Estimate);
 		var frm=document.forms['predfrm'];
+		try{
+			for(var i=1;i< $scope.predictions.vars.names.length;i++)
+			{
+				var name = $scope.predictions.vars.names[i];
+				if(frm.elements[name])
+				{
+					if( frm.elements[name].type=='text' && frm.elements[name].name){
+						//is it a date?
+						if( $scope.predictions.fields[frm.elements[name].name]=='timestamp with time zone'){
+							var d=Date.parse(frm.elements[name].value);
+							if(isNaN(d)){$scope.prederror=true;$scope.prediction="Invalid date entered for " + frm.elements[name].name+".  Use format MM/DD/YYYY.";return;}
+							d /= 1000;
+							result +=  d * parseFloat($scope.predictions.vars.coef[i].Estimate);
+						}
+						else{
+							if(isNaN(frm.elements[name].value)){$scope.prederror=true;$scope.prediction="Invalid number entered for " + frm.elements[name].name+".";return;}
+							var d = parseFloat(frm.elements[name].value.replace(/,/g,''));
+							result += d * parseFloat($scope.predictions.vars.coef[i].Estimate);
+						}
+					}
+				}
+			}
+		}catch(e){console.log(e);}
+
+		/*
 		try{
 			for(var i in $scope.predictions.vars.coef)
 			{
 				if(frm.elements[i])
 				{
-					if( frm.elements[i].type=='text')
-						result += parseFloat(frm.elements[i].value.replace(/,/g,'')) * parseFloat($scope.predictions.vars.coef[i].Estimate);
+					if( frm.elements[i].type=='text' && frm.elements[i].name){
+						//is it a date?
+						
+						if( $scope.predictions.fields[frm.elements[i].name]=='timestamp with time zone'){
+							var d=Date.parse(frm.elements[i].value)/1000;
+							if(isNaN(d)){$scope.prediction="Invalid date entered for " + frm.elements[i].name+".  Use format MM/DD/YYYY.";return;}
+							d /= 1000;
+							result +=  d * parseFloat($scope.predictions.vars.coef[cidx++].Estimate);
+						}
+						else{
+							if(isNaN(frm.elements[i].value)){$scope.prediction="Invalid number entered for " + frm.elements[i].name+".";return;}
+							var d = parseFloat(frm.elements[i].value.replace(/,/g,''));
+							
+							result += d * parseFloat($scope.predictions.vars.coef[cidx++].Estimate);
+						}
+					}
+					//else result+=parseFloat($scope.predictions.vars.coef[i].Estimate);
 					//console.log(this.elements[i].value +" * " +  coeff[i] );
 				}
-				else result+=parseFloat($scope.predictions.vars.coef[i].Estimate);
 			}
 		}catch(e){console.log(e);}
+		*/
 		//console.log(priceFormatter(result));
 		//		if(type=='currency')out=$filter('currency')(out);
 		//else if(type=='numeric')out=$filter('number',2)(out);
@@ -696,7 +755,7 @@ maApp.controller('predictController', function($scope,$http,$location,$filter) {
 });
 
 maApp.controller('subjectController', function($rootScope,$scope,$http,$location,$modal) {
-
+/*
 	$http.get($location.$$url).
 	success(function(data, status, headers, config) {
 		$scope.subject = data;
@@ -707,10 +766,14 @@ maApp.controller('subjectController', function($rootScope,$scope,$http,$location
 		if(status==404)$location.path("/login")
 		// log error
 	});
+	*/
 	$scope.list = function(){
-		$http.get($location.$$url+"/tables").
+		$http.get($location.$$url).
 		success(function(data, status, headers, config) {
-			$scope.tables = data;
+			$scope.subject = data;
+			$scope.tableName=data.alias;
+
+			//$scope.tables = data.rows;
 			$scope.pid=data.pid;
 			$scope.tid=data.tid;
 		}).
@@ -720,6 +783,7 @@ maApp.controller('subjectController', function($rootScope,$scope,$http,$location
 		});
 	}
 	$scope.list();
+	
 	$scope.open = function (size, source) {
 		var modalInstance = $modal.open({
 			templateUrl: 'pages/uploadfiles.html',
@@ -743,13 +807,13 @@ maApp.controller('subjectController', function($rootScope,$scope,$http,$location
 	$scope.viewSubject = function (id,numTuples) {
 		if(numTuples>1)
 		{
-			if(id)$location.path(getURL("reports") + "/" + id)
-			else $location.path(getURL(id+"/reports",1) + "/" + id);
+			if(id)$location.path(getURL("reports") + "/" + id + "/table")
+			else $location.path(getURL(id+"/reports",1) + "/" + id + "/table");
 		}
 		else
 		{
-			if(id)$location.path(getURL("report") + "/" + id)
-			else $location.path(getURL(id+"/report",1) + "/" + id);
+			if(id)$location.path(getURL("reports") + "/" + id)
+			else $location.path(getURL(id+"/reports",1) + "/" + id);
 		}
 	};
 	
@@ -812,7 +876,7 @@ maApp.controller('maController', function($rootScope,$scope,$http,$location,$mod
 	}
 	$scope.list();
 });
-maApp.controller('reportController', function($rootScope,$scope,$http,$location,$modal) {
+maApp.controller('reportController', function($rootScope,$scope,$http,$location) {
 
 	$http.get($location.$$url).
 	success(function(data, status, headers, config) {
@@ -935,6 +999,7 @@ function checkStep($scope,$http,url,params){
 			},5000);
 		}
 		else {
+			//stop the progress bar by removing .active
 			$scope.completed=true;
 		}	
 	})

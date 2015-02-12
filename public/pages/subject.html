@@ -43,8 +43,8 @@ li.disabled {
 	Before uploading subject property data, please follow the checklist below:
 	<ol>
 	<li>Must contain the following fields: <p style='font-weight:bold'>{{subject.fields}}</p></li>
-	<li ng-show="subject.info.geometrytype!='None'">Must be in ESRI Shapefile format</li>
-	<li ng-show="subject.info.geometrytype=='None'">Must be in table format (Excel, Comma-separated values (CSV))</li>
+	<li ng-show="subject.geometrytype!='None'">Must be in ESRI Shapefile format</li>
+	<li ng-show="subject.geometrytype=='None'">Must be in table format (Excel, Comma-separated values (CSV))</li>
 	<li>Are you uploading a single subject property or multiple (ie. mass appraisal)</li>
 	</ol>
 	</div>
@@ -80,7 +80,7 @@ li.disabled {
 			<th>&nbsp;</th>
 		</tr>
 
-		<tr ng-repeat="x in tables.rows">
+		<tr ng-repeat="x in subject.rows">
 			<td>{{x.name}}</td>
 			<!-- <td>{{x.comp}}</td>-->
 			<td>{{x.filetype}}</td>

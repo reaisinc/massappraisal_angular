@@ -56,15 +56,15 @@
 				<tr>
 					<th data-align="center" >Include</th>
 					<th data-align="center">ID</th>
-					<th data-align="center">Dep variable</th>
+					<th data-align="center">Dependent<br> variable</th>
 					<th data-align="center">Sale date</th>
 
 					<th data-field="name">Name</th>
 					<th data-field="min" data-align="right">Minimum</th>
 					<th data-field="max" data-align="right">Maximum</th>
-					<th data-field="sd" data-align="right">Standard Deviation</th>
+					<th data-field="sd" data-align="right">Standard<br>Deviation</th>
 					<th data-field="median" data-align="right">Median</th>
-					<th data-field="se" data-align="right">Standard error</th>
+					<th data-field="se" data-align="right">Standard<br>error</th>
 					<th data-field="mean" data-align="right">Mean</th>
 				</tr>
 
@@ -76,12 +76,12 @@
 
 					<!-- ng-disabled="table.names[x.name][0]==3" -->
 					<td style="text-align: center">{{ x.name }}</td>
-					<td style="text-align: right">{{ x.min }}</td>
-					<td style="text-align: right">{{ x.max }}</td>
-					<td style="text-align: right">{{ x.sd }}</td>
-					<td style="text-align: right">{{ x.median }}</td>
-					<td style="text-align: right">{{ x.se }}</td>
-					<td style="text-align: right">{{ x.mean }}</td>
+					<td style="text-align: right">{{ x.min | numformat:summary.status[x.name].type}}</td>
+					<td style="text-align: right">{{ x.max | numformat:summary.status[x.name].type}}</td>
+					<td style="text-align: right">{{ x.sd | numformat:summary.status[x.name].type}}</td>
+					<td style="text-align: right">{{ x.median | numformat:summary.status[x.name].type}}</td>
+					<td style="text-align: right">{{ x.se | numformat:summary.status[x.name].type}}</td>
+					<td style="text-align: right">{{ x.mean | numformat:summary.status[x.name].type}}</td>
 
 				</tr>
 			</thead>

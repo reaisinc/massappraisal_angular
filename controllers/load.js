@@ -112,7 +112,7 @@ function getOgrInfo(req,res,pid,tid,fileName){
 				console.log(sql);
 				client.query(sql, function(err, result) {
 					var tableName=result.rows[0].name+tid;
-					var sql="select name from " + req.user.shortName + "." + tableName + "_vars where include=1 and id=0 and depvar!=1";
+					var sql="select name,saledate from " + req.user.shortName + "." + tableName + "_vars where include=1 and id=0 and depvar!=1";
 					console.log(sql);
 					client.query(sql, function(err, result) {
 						release()
@@ -122,7 +122,7 @@ function getOgrInfo(req,res,pid,tid,fileName){
 							//does it exist in the ogrinfo output?
 							for(var j in data){
 								//console.log(j.toLowerCase() + "  -  " +  result.rows[i].name + " equal: " + (j.toLowerCase() ==  result.rows[i].name));
-								if(j.toLowerCase() == result.rows[i].name){
+								if(j.toLowerCase() == result.rows[i].name || result.rows[i].saledate==1){
 									fieldFound=true;
 									break;
 								}
@@ -259,12 +259,19 @@ function cleanTable(req,res,pid,tid,id,fileName,tableName) {
 			 // precision','float','integer','decimal')",
 			 // string fields can't be used as dependent
 			 // variables
-			 "update " + tableName + "_vars set include=2,depvar=2 where type not in('numeric','double precision','float','integer','decimal')",
+			 "update " + tableName + "_vars set include=2,depvar=2 where type not in('numeric','double precision','float','integer','decimal','timestamp with time zone')",
 			 // set the oid as the default unique identifier
 			 "update " + tableName + "_vars set include=3,id=1 where name='oid'",
 			 // set the first numeric field found as the
 			 // dependent variable
 			 "update " + tableName + "_vars set depvar=1 where name=(select name from "+tableName+"_vars where include=1 limit 1)",
+	         //update sales date
+	         "update " + tableName + "_vars set saledate=2 where type='timestamp with time zone'",
+	         //update default sales date
+	         "update " + tableName + "_vars set saledate=1 where saledate=2 and ctid in(select ctid from " + tableName + "_vars where saledate=2 limit 1)",
+	          //now convert all date formats to integers for calculations
+	          "select public.update_saledate_to_int('"+req.user.shortName+"','" + baseTableName + id + "')",
+
 			 // find all the fields that have all distinct/unique
 			 // values. These are the only fields that can be
 			 // used as unique identifiers
@@ -508,15 +515,11 @@ function loadNonSpatial(req,res,pid,tid,fileName,filePath,data){
 					// var sql='select '+corr.join(",")+' from '+tableName+"_stats";
 					var sql = [
 					           (isCSV?"select public.tonumeric('" + cols.join("','"+tableName+"'),public.tonumeric('") + "','"+tableName+"')":"select 1")
-			           		   // find all possible sale date fields
+					           ,'alter table ' + tableName + " drop column if exists oid"
+					           ,'alter table ' + tableName + " drop column if exists ogc_fid"
+			           		   ,'alter table ' + tableName + " add column oid serial"
+					           // find all possible sale date fields
 					           ,"select public.update_saledate('"+req.user.shortName+"','" + baseTableName + id + "')"
-					           ,'drop table if exists ' + tableName + "_stats"
-					           ,"create table " + tableName+"_stats as select * from " + tableName
-					           ,"alter table " + tableName + "_stats drop if exists wkb_geometry"
-					           ,"alter table " + tableName + "_stats drop if exists ogc_fid"
-					           ,"alter table " + tableName + "_stats add oid serial"
-					           //,"delete from "+req.user.shortName+".tables where name='"+baseTableName+"'"
-					           ,"insert into "+req.user.shortName+".tables(id,alias,name,filename,pid,tid,type,geometrytype,filetype,date_loaded,numtuples) values("+id+",'"+alias+"','"+baseTableName + "','"+fileName+"',"+pid+","+(tid?tid:"NULL")+"," +(tid?"1":"0") +",'"+data['Geometry']+"','" + data['file'] + "',NOW(),"+data["Feature Count"]+")"
 					           ,'drop table if exists ' + tableName + '_vars'
 					           // "create table " + tableName + "_vars as select 1 as
 					           // include,0 as id,0 as depvar,column_name as name from
@@ -526,17 +529,23 @@ function loadNonSpatial(req,res,pid,tid,fileName,filePath,data){
 					           // in('wkb_geometry','shape_leng','shape_area','_acres_total')
 					           // and data_type in('numeric','double
 					           // precision','float','integer','decimal')",
-					           ,"create table " + tableName + "_vars as select 1 as include,0 as id,0 as uniqueid,0 as depvar,0 as saledate,column_name as name,data_type as type from information_schema.columns where table_schema='"+req.user.shortName+"' and table_name = '"+baseTableName+id+"_stats' and column_name not in('wkb_geometry','shape_leng','shape_area','_acres_total')" // and
+					           ,"create table " + tableName + "_vars as select 1 as include,0 as id,0 as uniqueid,0 as depvar,0 as saledate,column_name as name,data_type as type from information_schema.columns where table_schema='"+req.user.shortName+"' and table_name = '"+baseTableName+id+"' and column_name not in('wkb_geometry','shape_leng','shape_area','_acres_total')" // and
 					           // data_type
 					           // in('numeric','double
 					           // precision','float','integer','decimal')",
 					           // string fields can't be used as dependent variables
-					           ,"update " + tableName + "_vars set include=2,depvar=2 where type not in('numeric','double precision','float','integer','decimal')"
+					           ,"update " + tableName + "_vars set include=2,depvar=2 where type not in('numeric','double precision','float','integer','decimal','timestamp with time zone')"
 					           // set the oid as the default unique identifier
 					           ,"update " + tableName + "_vars set include=3,id=1 where name='oid'"
 					           // set the first numeric field found as the dependent
 					           // variable
 					           ,"update " + tableName + "_vars set depvar=1 where name=(select name from "+tableName+"_vars where include=1 limit 1)"
+					           //update sales date
+					           ,"update " + tableName + "_vars set saledate=2 where type='timestamp with time zone'"
+					           //update default sales date
+					           ,"update " + tableName + "_vars set saledate=1 where saledate=2 and ctid in(select ctid from " + tableName + "_vars where saledate=2 limit 1)"
+					           //now convert all date formats to integers for calculations
+					           ,"select public.update_saledate_to_int('"+req.user.shortName+"','" + baseTableName + id + "')"
 					           // find all the fields that have all distinct/unique
 					           // values. These are the only fields that can be used as
 					           // unique identifiers
@@ -544,6 +553,22 @@ function loadNonSpatial(req,res,pid,tid,fileName,filePath,data){
 					           // remove the non-numeric fields that don't have all
 					           // unique values
 					           ,"delete from "+ tableName + "_vars where include=2 and uniqueid=0"
+					           
+					           //create stats view instead of creating a new table
+					           
+					           ,'drop view if exists ' + tableName + "_stats"
+					           ,"create view " + tableName + "_stats as select * from " + tableName
+					           /*
+					           ,'drop table if exists ' + tableName + "_stats"
+					           ,"create table " + tableName+"_stats as select * from " + tableName
+					           ,"alter table " + tableName + "_stats drop if exists wkb_geometry"
+					           ,"alter table " + tableName + "_stats drop if exists ogc_fid"
+					           ,"alter table " + tableName + "_stats add oid serial"
+					           */
+
+					           //,"delete from "+req.user.shortName+".tables where name='"+baseTableName+"'"
+					           ,"insert into "+req.user.shortName+".tables(id,alias,name,filename,pid,tid,type,geometrytype,filetype,date_loaded,numtuples) values("+id+",'"+alias+"','"+baseTableName + "','"+fileName+"',"+pid+","+(tid?tid:"NULL")+"," +(tid?"1":"0") +",'"+data['Geometry']+"','" + data['file'] + "',NOW(),"+data["Feature Count"]+")"
+					           
 					           ,'select count(*) as count from '+tableName+'_stats'];
 
 					// ,'drop table if exists ' + tableName + '_vars'

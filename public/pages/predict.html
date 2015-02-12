@@ -68,7 +68,7 @@ li.disabled {
 				<div style="width: 300px">
 					<h4>Regression summary</h4>
 					<div id="summary">
-						<b>Formula: </b>{{predictions.vars.names[0]}} = {{predictions.vars.coef[0]['Estimate']}} <span ng-repeat="row in predictions.vars.coef track by $index" ng-if="$index>0"> {{$index}} + {{predictions.vars.names[$index]}} * {{row['Estimate']}}</span>
+						<b>Formula: </b>{{predictions.vars.names[0]}} = {{predictions.vars.coef[0]['Estimate']}} <span ng-repeat="row in predictions.vars.coef track by $index" ng-if="$index>0">  + {{predictions.vars.names[$index]}} * {{row['Estimate']}}</span>
 					</div>
 					<br>
 					<div style="width: 300px">
@@ -108,7 +108,7 @@ li.disabled {
 		<a ng-click="viewResiduals()" class="btn btn-default btn-continue" id="previousBtn"><i class="glyphicon glyphicon-arrow-left"></i> Return to residuals </a>
 	</div>
 	<div class='col-lg-6 col-xs-6 text-right'>
-		<a ng-click="viewSubjectProperty()" class="btn btn-default btn-continue flt-right"> Add subject property <i class="glyphicon glyphicon-arrow-right"></i></a>
+		<a ng-click="viewSubject()" class="btn btn-default btn-continue flt-right"> Add subject property <i class="glyphicon glyphicon-arrow-right"></i></a>
 	</div>
 	
 	<br><br>
@@ -120,16 +120,16 @@ li.disabled {
 		<form name="predfrm">
 			<table class="table table-striped table-bordered">
 				<thead>
-					<th ng-repeat="col in predictions.vars.names track by $index" ng-if="$index>0")>{{col}}</th>
+					<th style='text-align:right' ng-repeat="col in predictions.vars.names track by $index" ng-if="$index>0">{{col}}</th>
 				</thead>
 				<tbody>
-					<td ng-repeat="col in predictions.vars.names track by $index" ng-if="$index>0" align='right'><input type='text'></td>
+					<td ng-repeat="col in predictions.vars.names track by $index" ng-if="$index>0" align='right'><input name="{{ col }}" type='text'></td>
 					</tr>
 				</tbody>
 
 			</table>
 
-			<div ng-show="prediction" class="alert alert-success" id="events-result">{{prediction}}</div>
+			<div ng-show="prediction" ng-class="prederror?'alert alert-danger':'alert alert-success'" id="events-result">{{prediction}}</div>
 			<input class="btn btn-success" type='submit' value='Calculate' ng-click="calculatePrediction()">
 		</form>
 	</div>
