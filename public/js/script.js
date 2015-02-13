@@ -200,6 +200,10 @@ maApp.controller('mainController', function($rootScope,$scope, $http, $location)
 	$scope.viewPredictions = function () {
 		$location.path(getURL("predictions"));
 	};
+	//report using subject property
+	$scope.viewSubject = function () {
+		$location.path(getURL("subject"));
+	};
 
 	//report using subject property
 	$scope.viewReport = function () {
