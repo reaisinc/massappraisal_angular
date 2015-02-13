@@ -167,7 +167,7 @@ function getUserFiles(req,res)
 		// table_schema = '"+req.user.shortName+"' and table_name not like
 		// '%_stats' and table_name not like '%_soils' and table_name not like
 		// '%_vars'";
-		var sql="select name from "+req.user.shortName + ".projects where id="+id+";select id,alias,type,numtuples,case when filetype IS NULL then 'Unknown' else filetype end,to_char(date_loaded, 'Month DD, YYYY') as date  from "+req.user.shortName + ".tables where pid="+id;
+		var sql="select name from "+req.user.shortName + ".projects where id="+id+";select id,alias,type,tid,numtuples,case when filetype IS NULL then 'Unknown' else filetype end,to_char(date_loaded, 'Month DD, YYYY') as date  from "+req.user.shortName + ".tables where pid="+id + " order by type";
 
 		console.log(sql);
 		// console.log(vals);
@@ -177,8 +177,12 @@ function getUserFiles(req,res)
 			// console.log(result);
 			var name=result.rows[0].name;
 			result.rows.splice(0,1);
+			var comps=[];
+			var subj=[];
+			for(var i in result.rows)if(result.rows[i].type==0)comps.push(result.rows[i]);else subj.push(result.rows[i]);
+				
 			// res.send(JSON.stringify({user:req.user.displayName,project:req.params.projectName,rows:result.rows?result.rows:[]}))
-			res.json({id:id,name:name,rows:result&&result.rows?result.rows:[]});
+			res.json({id:id,name:name,comps:comps,subjects:subj});
 
 			// if (err) throw err;
 			// console.log("Count: "+result.rows[0])
@@ -956,7 +960,7 @@ function reportSubject(req,res){
 	var tid = parseInt(req.params.tid);
 	var sid = parseInt(req.params.sid);
 	var oid = req.params.id?parseInt(req.params.id):null;
-	var sql=["select name,alias from "+req.user.shortName + ".tables where id="+sid,"select name,alias from "+req.user.shortName + ".tables where id="+tid];
+	var sql=["select name,alias,geometrytype from "+req.user.shortName + ".tables where id="+sid,"select name,alias from "+req.user.shortName + ".tables where id="+tid];
 	console.log(sql);
 	pg.connect(global.conString,function(err, client, release) {
 		if (err){ res.json({"err":"No connection to database;"});throw err;}
@@ -964,6 +968,7 @@ function reportSubject(req,res){
 			if (err){ res.json({"err":"Unable to find table;"});throw err;}
 			var tableName = result.rows[1].name+tid;
 			var subtableName = result.rows[0].name+sid;
+			var geometrytype=result.rows[0].geometrytype;
 			var alias=result.rows[0].alias;
 			var alias=result.rows[1].alias;
 			var sql="select name,saledate from " + req.user.shortName + "." + tableName + "_vars where (include=1 or id=1) order by id desc,depvar desc,name asc";
@@ -1025,9 +1030,10 @@ function reportSubject(req,res){
 							fields.push(result.rows[i].name);
 						}
 
-						var sql="select " + fields.join(",") + " from " + req.user.shortName + "." + subtableName + "_stats" + (oid?" where oid="+oid:"");
+						var sql=["select " + fields.join(",") + " from " + req.user.shortName + "." + subtableName + "_stats" + (oid?" where oid="+oid:"")];
+						if(geometrytype!="None")sql.push("select replace(replace(substring(box2d(st_transform(st_setsrid(st_extent(wkb_geometry),3857),4326))::text,5),' ',','),')','') as extent from " + req.user.shortName + "." + subtableName + (oid?" where oid="+oid:""));
 						console.log(sql);
-						client.query(sql, function(err, result) {
+						client.query(sql.join(";"), function(err, result) {
 							release()
 							//calculate the depvar price. result should only contain one row
 							/*
@@ -1041,7 +1047,7 @@ function reportSubject(req,res){
 							*/
 							var data = processData(factors,result.rows[0],saledate);
 							if(err){console.log(err);res.json({err:err.toString()});throw err;}
-							res.json({depvar:factors.names[0],pid:pid,tid:tid,sid:sid,fields:fields,alias:alias,rows:result.rows,result:data?data:{}});
+							res.json({depvar:factors.names[0],pid:pid,tid:tid,sid:sid,id:oid,fields:fields,alias:alias,subject:subtableName,rows:result.rows,result:data?data:{}});
 						});
 					})
 					//});

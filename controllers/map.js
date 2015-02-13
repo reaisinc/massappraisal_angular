@@ -17,9 +17,12 @@ router.use(function(req, res, next) {
 //replace(substring(st_extent(wkb_geometry)::text,4),' ',',')
 
 router.get('/',  function(req, res){
-	console.log(req.query);
+	if(req.query.debug)console.log(req.query);
 	if(req.query.BBOX){
-		drawMap(req,res);
+		if(req.query.ID)
+			drawPGMap(req,res);
+		else
+			drawShapefileMap(req,res);
 		return;
 	}
 	//return;
@@ -48,8 +51,85 @@ router.get('/',  function(req, res){
 	//}
 });
 
+function drawPGMap(req,res){
+	// A minimalist mapfile string
+	//var filename=__dirname + "/../public/files/" + req.user.shortName + "/" + fileName;
+	var oid = parseInt(req.query.ID);
+	var mapfile = "MAP \n \
+NAME parcel \n \
+STATUS ON \n\
+EXTENT "+req.query.BBOX.replace(/,/g," ") + "\n \
+SIZE "+req.query.WIDTH + " " + req.query.HEIGHT + "\n \
+IMAGECOLOR 255 255 255 \n \
+TRANSPARENT on \n \
+LAYER \n \
+NAME '"+req.query.LAYERS+"' \n \
+STATUS ON \n \
+TYPE POLYGON \n \
+CONNECTIONTYPE POSTGIS \n \
+CONNECTION '"+global.postgisStr+"' \n \
+DATA 'wkb_geometry from (select oid,wkb_geometry from " + req.user.shortName + "." + req.query.LAYERS + " where oid="+oid+") as subquery using SRID=3857 using unique oid' \n \
+PROCESSING 'CLOSE_CONNECTION=DEFER' \n \
+CLASS \n\
+NAME '"+req.query.LAYERS+"' \n \
+STYLE \n \
+COLOR '#8b7765' \n \
+OUTLINECOLOR '#999999' \n \
+WIDTH 0.5 \n \
+END \n \
+END \n \
+END  \n \
+END";
 
-function drawMap(req,res){
+//(SELECT geom, attr1, attr2 FROM country WHERE country = 'usa') as subquery
+//DATA '"+path.normalize(__dirname + "/../public/files/" + req.user.shortName + "/" + req.query.LAYERS)+".shp' \n \
+//OPACITY 40 \n \
+
+//STATUS DEFAULT \n \
+//TRANSFORM FALSE \n \
+	if(req.query.debug)
+	console.log(mapfile);
+	// Instantiate a Map object from the mapfile string. You could use
+	// `mapserv.Map.FromFile` instead.
+	mapserv.Map.FromString(mapfile, function handleMap(err, map) {
+	    if (err) throw err;         // error loading the mapfile
+
+	    // a minimal CGI environment
+	    var env = {
+	        REQUEST_METHOD: 'GET',
+	        QUERY_STRING: 'mode=map&layer='+req.query.LAYERS
+	    };
+
+	    map.mapserv(env, function handleMapResponse(err, mapResponse) {
+
+	        if (err) {
+                // the map returned an error: handle it
+                if (mapResponse.data) {
+                    // return the error as rendered by mapserver
+                    res.writeHead(500, mapResponse.headers);
+                    res.end(mapResponse.data);
+                } else {
+                    // A raw error we need to output ourselves
+                    res.writeHead(500, {'Content-Type': 'text/plain'});
+                    res.end(err.stack);
+                }
+                console.error(err.stack); // log the error
+                return;
+            }
+
+            // send the map response to the client
+            res.writeHead(200, mapResponse.headers);
+            if (req.method !== 'HEAD') {
+                res.end(mapResponse.data);
+            } else {
+                res.end();
+            }
+	    });
+	});	
+	
+}
+
+function drawShapefileMap(req,res){
 	// A minimalist mapfile string
 	//var filename=__dirname + "/../public/files/" + req.user.shortName + "/" + fileName;
 	var mapfile = "MAP \n \

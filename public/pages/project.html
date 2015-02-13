@@ -74,7 +74,7 @@
 			<th>Date loaded</th>
 			<th>&nbsp;</th>
 		</tr>
-		<tr ng-repeat="x in project.rows" ng-if="x.type==0">
+		<tr ng-repeat="x in project.comps">
 			<td>{{x.alias}}</td>
 			<td>{{x.filetype}}</td>
 			<td>{{x.date}}</td>
@@ -85,7 +85,7 @@
 		</tr>
 	</table>
 
-	<br> <br>
+
 	<!-- 
 	<div class='col-lg-10'></div>
 	<div class='col-lg-2'>
@@ -106,8 +106,8 @@
 	</div>
 	 -->	
 
-	<br> <br>
-	<table class="table">
+
+	<table class="table" ng-show="project.subjects.length>0">
 		<caption>
 			<h4>Subject properties</h4>
 		</caption>
@@ -119,13 +119,13 @@
 			<th>&nbsp;</th>
 		</tr>
 
-		<tr ng-repeat="x in project.rows" ng-if="x.type==1">
+		<tr ng-repeat="x in project.subjects">
 			<td>{{x.alias}}</td>
 			<!-- <td>{{x.comp}}</td>-->
 			<td>{{x.filetype}}</td>
 			<td>{{x.date}}</td>
 			<td align='right'>
-			<a ng-click="viewSubject(x.id,x.numTuples)" role="button" class="btn btn-primary"><i class="glyphicon glyphicon-stats"></i> View</a>
+			<a ng-click="viewSubject(x.tid,x.id,x.numtuples)" role="button" class="btn btn-primary"><i class="glyphicon glyphicon-stats"></i> View</a>
 			<a ng-click="deleteTable(x.id)" role="button" class="btn btn-danger delete"><i class="glyphicon glyphicon-trash"></i> Delete</a>
 			</td>
 		</tr>

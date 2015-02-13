@@ -200,11 +200,7 @@ maApp.controller('mainController', function($rootScope,$scope, $http, $location)
 	$scope.viewPredictions = function () {
 		$location.path(getURL("predictions"));
 	};
-	//subject
-	$scope.viewSubject = function () {
-		$location.path(getURL("subject"));
-		//$location.path(getURL("subject",3));
-	};
+
 	//report using subject property
 	$scope.viewReport = function () {
 		$location.path(getURL("reports"));
@@ -335,16 +331,19 @@ maApp.controller('projectController', function($rootScope,$scope,$http,$location
 		if(id)$location.path(getURL(id+"/summary",1));
 		else $location.path(getURL("summary"))
 	};
-	$scope.viewSubject = function (id,numTuples) {
-		if(numTuples>0)
+	$scope.viewSubject = function (tid,id,numTuples) {
+		///projects/30/tables
+		if(numTuples>1)
 		{
-			if(id)$location.path(getURL("report"))
-			else $location.path(getURL(id+"/report",1));
+			///projects/30/tables/102/reports/105/table
+			if(id)$location.path(window.location.hash.substring(1)+"/"+tid+"/reports/"+id+"/table")
+			else $location.path(window.location.hash.substring(1) +"/"+tid);
 		}
 		else
 		{
-			if(id)$location.path(getURL("report")+"/"+id)
-			else $location.path(getURL(id+"/report",1)+"/"+id);
+			///projects/30/tables/102/reports/104
+			if(id)$location.path(window.location.hash.substring(1)+"/"+tid+"/reports/"+id)
+			else $location.path(window.location.hash.substring(1) +"/"+tid);
 		}
 	};	
 	$scope.deleteTable = function (id) {
@@ -861,6 +860,9 @@ maApp.controller('maController', function($rootScope,$scope,$http,$location,$mod
 		// log error
 	});
 	*/
+	$scope.previous = function(){
+		 window.history.back();
+	}
 	$scope.list = function(){
 		$http.get($location.$$url).
 		success(function(data, status, headers, config) {
@@ -882,12 +884,56 @@ maApp.controller('reportController', function($rootScope,$scope,$http,$location)
 	success(function(data, status, headers, config) {
 		$scope.report = data;
 		$scope.tableName=data.alias;
-
+		$scope.subjectTableName=data.subject;
+		if($scope.report.rows.length>1)
+			$scope.drawMap();
 	}).
 	error(function(data, status, headers, config) {
 		if(status==404)$location.path("/login")
 		// log error
 	});
+	$scope.previous = function(){
+		 window.history.back();
+	}
+	$scope.drawMap=function(){
+		if(typeof(L)==='undefined'){
+			$('head').append('<link rel="stylesheet" href="/css/leaflet.css" type="text/css" />');
+			$.getScript("/js/leaflet.js",function(){
+				$scope.drawMap();
+			});
+			return;
+		}
+
+		var map = new L.Map('map');//, {center: center, zoom: 12, maxZoom: 20});
+	    var extent = $scope.report.rows[1].extent.split(",");
+	    var oid=$scope.report.id;
+	    map.fitBounds([
+	                   [extent[1],extent[0]],
+	                   [extent[3],extent[2]]
+	               ]);
+	    //var osmUrl='http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
+	    //var osmAttrib='Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors';
+	    //var street_layer = new L.TileLayer(osmUrl, { maxZoom: 19, attribution: osmAttrib});
+	    var Streets= new L.TileLayer("http://services.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}.png", {maxZoom: 19}).addTo(map);
+	    var Aerial=new L.TileLayer("http://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}.png", {maxZoom: 19});
+	    var Topo=new L.TileLayer("http://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}.png", {maxZoom: 19});
+	    				
+	    //var baseMaps = { "ESRI Streets": Streets, "ESRI Aerial":Aerial, "ESRI Topo":Topo , "OpenStreet": street_layer};
+
+		//$('#files').bind('change', handleFileSelect);
+		//map.addLayers([parcelLayer]);
+		var parcelLayer = L.tileLayer.wms('/map', {
+		    format: 'image/png',
+		    transparent: true,
+		    opacity: 0.7,
+	        srs: 'EPSG:3857',
+	        id:oid,
+		    layers: $scope.subjectTableName
+		}).addTo(map);
+
+		L.control.scale({metric:false}).addTo(map);
+		
+	}
 });
 
 

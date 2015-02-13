@@ -38,7 +38,7 @@ li.disabled {
 	</div>
 
 	<div class='col-lg-12 col-xs-12'>
-		<a ng-click="viewSubject(3)" class="btn btn-default btn-continue"><i class="glyphicon glyphicon-arrow-left"></i> Return to subject property </a>
+		<a ng-click="previous()" class="btn btn-default btn-continue"><i class="glyphicon glyphicon-arrow-left"></i> Return to previous page</a>
 	</div>
 
 	<br> <br>
@@ -52,10 +52,9 @@ li.disabled {
  		</thead>
  		<tbody>
  			<tr ng-repeat="row in subjectdata.rows track by $index">
- 			
  			<!--  <a ng-click="viewSubject(x.id,x.numtuples)" class="btn btn-default btn-continue"><i class="glyphicon glyphicon-arrow-left"></i> View </a></td> -->
           	<td ng-repeat="col in subjectdata.fields" align='right'>
- 			<span ng-show="$index==0" style='float:left'>
+ 			<span ng-show="$index==0" style='float:left;'>
 	 			<a ng-click="viewMAReport(row['oid'])" role="button" class="btn btn-primary"><i class="glyphicon glyphicon-stats"></i> View</a>
  			</span>
           	{{ row[col] }}</td>
@@ -63,9 +62,9 @@ li.disabled {
 		</tbody>
 	</table>
 
-<pagination total-items="totalItems" ng-model="currentPage" max-size="maxSize" class="pagination-sm" boundary-links="true" ng-change="pageChanged()"></pagination>
-<div class="col-lg-12 col-xs-12 text-right">Comparable: {{tableName}}</div>
-<br>
+	<pagination total-items="totalItems" ng-model="currentPage" max-size="maxSize" class="pagination-sm" boundary-links="true" ng-change="pageChanged()"></pagination>
+	<div class="col-lg-12 col-xs-12 text-right">Comparable: {{tableName}}</div>
+	<br>
 	<br>
 	<div class="panel panel-default">
 		<div class="panel-heading">

@@ -17,6 +17,8 @@ global.conString = "postgres://dbuser:dbuser@localhost/soils";
 global.adminConString = "postgres://postgres:postgres@localhost/soils";
 global.hostString = "http://127.0.0.1:8888";
 global.ogrConnString = 'PG:host=localhost user=dbuser dbname=soils password=dbuser';
+global.postgisStr = "dbname=soils user=dbuser password=dbuser host=localhost"
+
 
 //Simple route middleware to ensure user is authenticated.
 //Use this route middleware on any resource that needs to be protected.  If
