@@ -1069,7 +1069,7 @@ function calc(factors,row,saledate)
 	for(var i=1;i<factors.names.length;i++)
 	{
 		if(saledate == factors.names[i])ret += factors.coef[i].Estimate * today;
-		else ret += factors.coef[i].Estimate * row[factors.names[i]];
+		else if(row[factors.names[i]])ret += factors.coef[i].Estimate * row[factors.names[i]];
 	}
 	
 	return ret;
