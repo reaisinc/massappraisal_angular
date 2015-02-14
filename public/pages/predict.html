@@ -64,14 +64,14 @@ li.disabled {
 	<div class="jumbotron">
 
 		<div class="row">
-		<div class="col-lg-4 col-xs-4">
-				<div style="width: 300px">
+			<div class="col-lg-6 col-xs-6">
+				<div>
 					<h4>Regression summary</h4>
 					<div id="summary">
 						<b>Formula: </b>{{predictions.vars.names[0]}} = {{predictions.vars.coef[0]['Estimate']}} <span ng-repeat="row in predictions.vars.coef track by $index" ng-if="$index>0">  + {{predictions.vars.names[$index]}} * {{row['Estimate']}}</span>
 					</div>
 					<br>
-					<div style="width: 300px">
+					<div>
 						<table class='table table-striped table-bordered'>
 							<tr>
 								<td>R Squared</td>
@@ -96,7 +96,7 @@ li.disabled {
 				</div>
 
 			</div>
-			<div class="col-lg-8 col-xs-8">
+			<div class="col-lg-6 col-xs-6">
 				Use this page to get a quick quote using the regression coefficients from the previous page.  Enter values for each coefficient and click the green Calculate button to see the result.
 				
 			</div>

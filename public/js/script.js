@@ -176,6 +176,13 @@ maApp.controller('mainController', function($rootScope,$scope, $http, $location)
 		});
 	};
 
+	// tables
+	$scope.viewComparable = function (id) {
+		// $rootScope.tid=id;
+		// $location.path("/projects/"+this.pid+"/tables/"+id+"/summary");
+		if(id)$location.path(getURL(id+"/summary",1));
+		else $location.path(getURL("summary"))
+	};
 
 	// correlation
 	$scope.viewCorrelation = function() {
@@ -327,13 +334,6 @@ maApp.controller('projectController', function($rootScope,$scope,$http,$location
 			console.log('Modal dismissed at: ' + new Date());
 		});
 
-	};
-	// tables
-	$scope.viewComparable = function (id) {
-		// $rootScope.tid=id;
-		// $location.path("/projects/"+this.pid+"/tables/"+id+"/summary");
-		if(id)$location.path(getURL(id+"/summary",1));
-		else $location.path(getURL("summary"))
 	};
 	$scope.viewSubject = function (tid,id,numTuples) {
 		///projects/30/tables

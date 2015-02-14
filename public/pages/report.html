@@ -3,44 +3,43 @@
 		<a ng-click="previous()" class="btn btn-default btn-continue" id="previousBtn"><i class="glyphicon glyphicon-arrow-left"></i> Return to subject property</a>
 	</div>
 
-	<br>
-	<br>
+	<br> <br>
 	<h4>Subject properties</h4>
 	<br> <br>
 	<div id='loader' ng-show="!report">
 		<img src="/img/spinner_mac.gif"> Loading table..... Please wait
 	</div>
-<div class="col-lg-6 col-xs-6">
-	<table  class="table table-striped table-bordered">
- 		<tbody>
- 			<tr ng-repeat="(name,val) in report.result">
-          	<td>{{ name }} </td>
-          	 <td align='right'>{{ val | currency}}</td>
-			</tr>
-		</tbody>
-	</table>
-	
-	<table  class="table table-striped table-bordered">
-		<!-- 
+	<div class="col-lg-6 col-xs-6">
+		<table class="table table-striped table-bordered">
+			<tbody>
+				<tr ng-repeat="(name,val) in report.result">
+					<td>{{ name }}</td>
+					<td align='right'>{{ val | currency}}</td>
+				</tr>
+			</tbody>
+		</table>
+
+		<table class="table table-striped table-bordered">
+			<!-- 
 		<thead>
 			<th style="text-align:right" ng-repeat="col in report.fields">{{col}}</th>
  		</thead>
  		 -->
- 		<tbody>
- 			<tr ng-repeat="col in report.fields">
- 			<td style='font-weight:bold'>{{col}} </td>
-          	<td style='text-align:right'>{{report.rows[0][col]}}</td>
-			</tr>
+			<tbody>
+				<tr ng-repeat="col in report.fields">
+					<td style='font-weight: bold'>{{col}}</td>
+					<td style='text-align: right'>{{report.rows[0][col]}}</td>
+				</tr>
 
- 		<!-- 
+				<!-- 
  			<tr ng-repeat="row in report.rows">
           	<td ng-repeat="col in report.fields" align='right'>{{ row[col] }}</td>
 			</tr>
 		-->
-		</tbody>
-	</table>
-</div>
-<div class="col-lg-6 col-xs-6">
-<div id="map" style="width:400px;height:300px"></div>
-</div>
+			</tbody>
+		</table>
+	</div>
+	<div class="col-lg-6 col-xs-6">
+		<div id="map" style="width: 400px; height: 300px"></div>
+	</div>
 </div>
