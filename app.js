@@ -1,3 +1,4 @@
+#!/bin/env node
 /*
 R Regression pages
 http://www.statmethods.net/stats/regression.html
@@ -11,14 +12,27 @@ WITH (OIDS=FALSE);
 ALTER TABLE "session" ADD CONSTRAINT "session_pkey" PRIMARY KEY ("sid") NOT DEFERRABLE INITIALLY IMMEDIATE;
 
  */
+var isLocal=false;
+var os = require("os");
+os.hostname();
+if(/^win/.test(process.platform))
+	isLocal=true;
 
-//global.conString = "postgres://postgres:postgres@localhost/soils";
-global.conString = "postgres://dbuser:dbuser@localhost/soils";
-global.adminConString = "postgres://postgres:postgres@localhost/soils";
-global.hostString = "http://127.0.0.1:8888";
-global.ogrConnString = 'PG:host=localhost user=dbuser dbname=soils password=dbuser';
-global.postgisStr = "dbname=soils user=dbuser password=dbuser host=localhost"
-
+if(isLocal){
+//	global.conString = "postgres://postgres:postgres@localhost/soils";
+	global.conString = "postgres://dbuser:dbuser@localhost/soils";
+	global.adminConString = "postgres://postgres:postgres@localhost/soils";
+	global.hostString = "http://127.0.0.1:8888";
+	global.ogrConnString = 'PG:host=localhost user=dbuser dbname=soils password=dbuser';
+	global.postgisStr = "dbname=soils user=dbuser password=dbuser host=localhost"
+}
+else{
+	global.ogrConnString = 'PG:host=localhost user=dbuser dbname=soils password=dbuser';
+	global.conString = "postgresql://dbuser:dbuser@127.11.25.130:5432/massappraisal";
+	global.adminConString = "postgres://adminwrhjewj:I2JGjbKe1ENG@localhost/massappraisal";
+	global.hostString = "http://massappraisal-reais.rhcloud.com";
+	global.ogrConnString = 'PG:host=127.11.25.130 user=dbuser dbname=massappraisal password=dbuser';
+}	
 
 //Simple route middleware to ensure user is authenticated.
 //Use this route middleware on any resource that needs to be protected.  If
@@ -62,7 +76,7 @@ var express = require('express')
 //, GoogleStrategy = require('passport-google-oauth').OAuth2Strategy;
 //, path = require('path')
 //, fs = require('fs')
-// Since Node 0.8, .existsSync() moved from path to fs:
+//Since Node 0.8, .existsSync() moved from path to fs:
 //,formidable = require('formidable')
 //,nodeStatic = require('node-static');
 
@@ -119,7 +133,7 @@ app.set('port', process.env.PORT || 8888);
 //app.set('conString',"postgres://postgres:postgres@localhost/soils");
 app.use(bodyParser.urlencoded({ extended: true }))    // parse application/x-www-form-urlencoded
 app.use(bodyParser.json())    //
- 
+
 
 app.set('views', __dirname + '/views');
 app.set('view engine', 'ejs');
@@ -149,13 +163,15 @@ app.use('/', function(req,res,next){
 	   //res.render(403, 'login', {message:'Please, login!'});
 	 }
 });
-*/
+ */
 //app.use(express.static(path.join(__dirname, 'public')));
 app.use('/', express.static(__dirname + '/public/html'));
+
 app.use('/pages', express.static(__dirname + '/public/pages'));
 app.use('/css', express.static(__dirname + '/public/css'));
 app.use('/js', express.static(__dirname + '/public/js'));
 app.use('/img', express.static(__dirname + '/public/img'));
+app.use('/data', express.static(__dirname + '/public/data'));
 //app.use(serveStatic('/css', {'index': ['default.html', 'default.htm']}))
 
 app.use(session({
@@ -267,34 +283,82 @@ function(identifier, profile, done) {
 /*
  * End of login
  */
-
-//app.get('/upload', upload.upload);
-//app.get('/verify', verify);
-//app.get('/users', user.list);
-/*
+if(isLocal)
+{
+	//app.get('/upload', upload.upload);
+//	app.get('/verify', verify);
+//	app.get('/users', user.list);
+	/*
 http.createServer(app).listen(app.get('port'), function(){
   console.log('Express server listening on port ' + app.get('port'));
 });
- */
-//error handling middleware should be loaded after the loading the routes
-//if ('development' == app.get('env')) {
-//app.use(errorHandler());
-//}
-var cluster = require('cluster'); //for the multi-processing
-var numCPUs = require('os').cpus().length;
+	 */
+//	error handling middleware should be loaded after the loading the routes
+//	if ('development' == app.get('env')) {
+//	app.use(errorHandler());
+//	}
+	var cluster = require('cluster'); //for the multi-processing
+	var numCPUs = require('os').cpus().length;
 
-if (cluster.isMaster) {
-	// Fork workers.
-	for (var i = 0; i < numCPUs; i++) {
-		cluster.fork();
+	if (cluster.isMaster) {
+		// Fork workers.
+		for (var i = 0; i < numCPUs; i++) {
+			cluster.fork();
+		}
+
+		cluster.on('exit', function(worker, code, signal) {
+			console.log('worker ' + worker.process.pid + ' died');
+		});
+	} else {
+		app.listen(app.get('port'), function(){
+			console.log('Express server listening on port ' + app.get('port'));
+			//console.log(global.conString);
+		});
+	}
+}
+else
+{	
+//	Get the environment variables we need.
+	var ipaddr  = process.env.OPENSHIFT_NODEJS_IP;
+	var port    = process.env.OPENSHIFT_NODEJS_PORT || 8080;
+
+	if (typeof ipaddr === "undefined") {
+		console.warn('No OPENSHIFT_NODEJS_IP environment variable');
 	}
 
-	cluster.on('exit', function(worker, code, signal) {
-		console.log('worker ' + worker.process.pid + ' died');
-	});
-} else {
-	app.listen(app.get('port'), function(){
-		console.log('Express server listening on port ' + app.get('port'));
-		//console.log(global.conString);
-	});
+	//  terminator === the termination handler.
+	function terminator(sig) {
+		if (typeof sig === "string") {
+			console.log('%s: Received %s - terminating Node server ...',
+					Date(Date.now()), sig);
+			process.exit(1);
+		}
+		console.log('%s: Node server stopped.', Date(Date.now()) );
+	}
+
+	//  Process on exit and signals.
+	process.on('exit', function() { terminator(); });
+	['SIGHUP', 'SIGINT', 'SIGQUIT', 'SIGILL', 'SIGTRAP', 'SIGABRT', 'SIGBUS',
+	 'SIGFPE', 'SIGUSR1', 'SIGSEGV', 'SIGUSR2', 'SIGPIPE', 'SIGTERM'
+	 ].forEach(function(element, index, array) {
+		 process.on(element, function() { terminator(element); });
+	 });
+	var numCPUs=1;
+	if (cluster.isMaster) {
+		// Fork workers.
+		for (var i = 0; i < numCPUs; i++) {
+			cluster.fork();
+		}
+
+		cluster.on('exit', function(worker, code, signal) {
+			console.log('worker ' + worker.process.pid + ' died');
+		});
+	} else {
+		//  And start the app on that interface (and port).
+		app.listen(port, ipaddr, function() {
+			console.log('%s: Node server started on %s:%d ...', Date(Date.now() ),
+					ipaddr, port);
+		});
+	}
+
 }

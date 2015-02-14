@@ -42,10 +42,10 @@ li.disabled {
 	<h4>Subject property</h4>
 	Before uploading subject property data, please follow the checklist below:
 	<ol>
-	<li>Must contain the following fields: <p style='font-weight:bold'>{{subject.fields}}</p></li>
+	<li>Must contain the following fields in order to calculate estimated sales price: <p style='font-weight:bold'>{{subject.fields}}</p></li>
 	<li ng-show="subject.geometrytype!='None'">Must be in ESRI Shapefile format</li>
 	<li ng-show="subject.geometrytype=='None'">Must be in table format (Excel, Comma-separated values (CSV))</li>
-	<li>Are you uploading a single subject property or multiple (ie. mass appraisal)</li>
+	<li>Upload a single subject property or multiple properties (ie. mass appraisal)</li>
 	</ol>
 	</div>
 
@@ -99,10 +99,9 @@ li.disabled {
 		</div>
 		<div class="panel-body">
 			<ul>
-				<li>The minimum, maximum, average and standard deviation is calculated for each of the default columns.</li>
-				<li>Click the Download button to download a spreadsheet to complete the analysis in Excel.</li>
-				<li>The spreadsheet contains the source data and the added soils information (slope, elevation, etc).</li>
-				<li>Click Continue to do the analysis online.</li>
+				<li>The subject data should also be in the same format as the comparable data.</li>
+				<li>Click the blue View button to view the appraisal summary.</li>
+				<li>Spatial data will also include a map showing the subject property in the summary report.</li>
 			</ul>
 		</div>
 	</div>

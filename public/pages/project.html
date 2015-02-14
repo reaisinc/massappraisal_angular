@@ -28,20 +28,7 @@
 
 <div class="container">
 	<div class="jumbotron">
-		<h4>
-			Upload comparable sales and use the <a href='http://www.nrcs.usda.gov/wps/portal/nrcs/detail/soils/survey/?cid=nrcs142p2_053627'>USDA SSURGO (Soils) database</a> to identify independent variables to use for mass appraisal.
-		</h4>
-		Before uploading data files, please note:
-		<ul>
-			<li>Make sure you use meaningful names for your field names to help identify them during the regression process.</li>
-			<li>Regression uses a variable Y, called the response, output or dependent variable.</li>
-			<li>It also uses one or more predictor, input, independent or explanatory variables, X<sub>1</sub> ... X<sub>p</sub></li>
-			<li>Regression only works with numeric data, so you may need to convert strings to numbers.</li>
-			<li>Make sure you don't have missing data. Valid data files are CSV, Excel, ESRI Shapefile and ESRI File Geodatabases.</li>
-			<li>For ESRI Shapefiles (spatial data), make sure you have a .prj file identifying the projection.</li>
-			<li>Non spatial data is allowed, but won't take advantage of the soils data.</li>
-		</ul>
-
+			Upload comparable sales data to use in this model.  Data must include sales price, sales date and other relevant information.  Files can be text (Excel, CSV) or spatial (ESRI Shapefile).  See the notes at the bottom for more information. 
 	</div>
 	<h3>Model name: {{ project.name }}</h3>
 	<!--  
@@ -136,9 +123,16 @@
 			<h3 class="panel-title">Notes</h3>
 		</div>
 		<div class="panel-body">
-			<ul>
-				<li>Prepare your data prior to uploading.</li>
-			</ul>
+		Before uploading data files, please note:
+		<ul>
+			<li>Make sure you use meaningful names for your field names to help identify them during the regression process.</li>
+			<li>Regression uses a variable Y, called the response, output or dependent variable.</li>
+			<li>It also uses one or more predictor, input, independent or explanatory variables, X<sub>1</sub> ... X<sub>p</sub></li>
+			<li>Regression only works with numeric data, so you may need to convert strings to numbers.</li>
+			<li>Make sure you don't have missing data. Valid data files are CSV, Excel, ESRI Shapefile and ESRI File Geodatabases.</li>
+			<li>For ESRI Shapefiles (spatial data), make sure you have a .prj file identifying the projection.</li>
+			<li>Non spatial data is allowed, but won't take advantage of the soils data.</li>
+		</ul>
 		</div>
 	</div>
 </div>
