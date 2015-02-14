@@ -343,22 +343,9 @@ else
 	 ].forEach(function(element, index, array) {
 		 process.on(element, function() { terminator(element); });
 	 });
-	var numCPUs=1;
-	if (cluster.isMaster) {
-		// Fork workers.
-		for (var i = 0; i < numCPUs; i++) {
-			cluster.fork();
-		}
-
-		cluster.on('exit', function(worker, code, signal) {
-			console.log('worker ' + worker.process.pid + ' died');
-		});
-	} else {
-		//  And start the app on that interface (and port).
-		app.listen(port, ipaddr, function() {
-			console.log('%s: Node server started on %s:%d ...', Date(Date.now() ),
-					ipaddr, port);
-		});
-	}
-
+	//  And start the app on that interface (and port).
+	app.listen(port, ipaddr, function() {
+		console.log('%s: Node server started on %s:%d ...', Date(Date.now() ),
+				ipaddr, port);
+	});
 }
