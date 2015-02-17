@@ -102,8 +102,10 @@
 	<div ng-class="completed?'':'active'" class="progress progress-striped" style="margin-bottom: 0;">
 		<div role="progressbar" class="progress-bar"  ng-style="{ 'width': soilsprogress + '%' }"></div>
 	</div>
+</div style="width:100%">
+<div >
+{{stepMsg}}
 </div>
-
 <div class="modal-footer">
 	<button ng-show="completed" class="btn btn-primary" ng-click="ok()">OK</button>
 	<button class="btn btn-warning" ng-click="cancel()">Cancel</button>

@@ -101,6 +101,7 @@ GRANT SELECT,INSERT, DELETE ON demo.projects TO dbuser;
 GRANT SELECT,USAGE,UPDATE ON demo.projects_id_seq TO dbuser;
 GRANT ALL ON SCHEMA demo TO dbuser;
 select count(*) as cnt from demo.tables;
+
 insert into demo.projects(username,created_date,modified_date,name,state) values('demo',NOW(),NOW(),'demo','az');
 
 */

@@ -381,14 +381,14 @@ function createStatsTable(req,res,pid,tid,id,fileName,tableName){
 	var idName = req.query.idName;
 	if(!idName)idName='oid';
 	else idName=idName.replace(/\W/g, '');
-	var state="select state from "+req.user.shortName + ".projects where id="+pid;
+	var state="select state from "+req.user.shortName + ".tables where id="+id;
 	pg.connect(global.conString,function(err, client, release) {
 		if (err){ res.end(JSON.stringify({"err":"No connection to database;"}));throw err;}
 		// client.query("BEGIN");
 		// strip off extension
 		client.query(state, function(err, result) {
-			if (err){ res.json({"err":"State not found for this project;"});throw err;}
-			var state_abbr=result.rows[0].state;
+			if (err){ res.json({"err":"State not found for this table;"});throw err;}
+			var state_abbr=result.rows[0].state||'az';
 
 			// fileName = fileName.split(".")[0];
 			var sql=

@@ -350,6 +350,7 @@ maApp.controller('ModalInstanceCtrl', function ($scope,$location,$http,$modalIns
 	$scope.pid =  $modalInstance.pid;
 	$scope.tid =  $modalInstance.tid;
 	$scope.maxSteps = $modalInstance.maxSteps;
+	$scope.msg=["Getting information about data","Loading data into database","Determining which fields to include","Intersecting geometries with USDA Soils polygons","Creating new table containing uploaded data and soils information","",""];
 	$scope.renderHtml = function(html_code)
 	{
 		return $sce.trustAsHtml(html_code);
@@ -1107,6 +1108,7 @@ function getFileStatus($scope,$http){
 }
 
 function getSoilsStatus($scope,$http){
+	$scope.stepMsg=$scope.msg[2];
 	var url ="/load/" + $scope.pid+($scope.tid?"/tables/"+$scope.tid:"");
 	//var url = "/load/" + fileName+ "?step=2";
 	$scope.soilsprogress=0;
@@ -1138,6 +1140,7 @@ function checkStep($scope,$http,url,params){
 			// sessionStorage.setItem("idName",idName);
 		}
 		data.step++;
+		$scope.stepMsg=$scope.msg[data.step];
 		$scope.soilsprogress += (100/($scope.maxSteps-2));
 		//var param = (idName?"&idName="+idName:"");
 		//if(data.step==3)param+=($scope.filetype?"&type="+$scope.filetype:"")+($scope.geomtype?"&stype="+$scope.geomtype:"");
@@ -1151,6 +1154,7 @@ function checkStep($scope,$http,url,params){
 		else {
 			//stop the progress bar by removing .active
 			$scope.completed=true;
+			$scope.stepMsg="";
 		}	
 	})
 	.error(function(data,status,headers,config){
