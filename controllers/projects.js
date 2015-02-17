@@ -129,8 +129,8 @@ router.get('/:pid/delete',  function(req, res){
 
 function createProject(req,res)
 {
-	if(!req.body.name || !req.body.state){
-		res.json({err:"No project name and state specified"})
+	if(!req.body.name){
+		res.json({err:"No project name specified"})
 		return;
 	}
 
@@ -140,12 +140,13 @@ function createProject(req,res)
 		// table_schema = '"+req.user.shortName+"' and table_name not like
 		// '%_stats' and table_name not like '%_soils' and table_name not like
 		// '%_vars'";
-		var sql="insert into "+req.user.shortName+".projects(name,state,created_date,modified_date) values($1,$2,NOW(),NOW()) returning id";
-		var vals=[req.body.name,req.body.state];
+		
+		var sql="insert into "+req.user.shortName+".projects(name,state,created_date,modified_date) values($1,'',NOW(),NOW()) returning id";
+		var vals=[req.body.name];//,req.body.state
 		console.log(sql);console.log(vals);
 		client.query(sql, vals, function(err, result) {
 			release();
-			if(err||!result)res.status(404).send('Not found');
+			if(err||!result)res.status(403).send('Project name already exists');
 			else {
 				res.json({"id":result.rows[0].id})
 				// getUserFiles(req,res,result.rows[0].id);
@@ -222,12 +223,20 @@ function deleteProject(req,res){
 		// table_schema = '"+req.user.shortName+"' and table_name not like
 		// '%_stats' and table_name not like '%_soils' and table_name not like
 		// '%_vars'";
-		var sql="select name,id from "+req.user.shortName+".tables where pid="+id;
+		var sql="select name,id,geometrytype from "+req.user.shortName+".tables where pid="+id;
 		console.log(sql);
 		client.query(sql, function(err, result) {
 			if (err){ res.json({"err":"Unable to get list of layers for this project;"});throw err;}
+			if(result.rows.length==0){
+				release();
+				res.json({"status":"true"});
+				return;
+			}
 			var tableName=result.rows[0].name+result.rows[0].id;
-			var sql=["delete from "+req.user.shortName + ".tables where pid="+id,"drop view if exists "+tableName+"_stats","drop table if exists "+tableName,"drop table if exists "+ tableName + "_stats", "drop table if exists "+ tableName + "_soils", "drop table if exists "+ tableName + "_vars"];
+			var geomtype=result.rows[0].geometrytype;
+			var sql=["delete from "+req.user.shortName + ".tables where pid="+id,"drop table if exists "+ tableName + "_soils", "drop table if exists "+ tableName + "_vars"];
+			if(geomtype=='None')sql.push("drop view if exists "+ tableName + "_stats");else sql.push("drop table if exists "+ tableName + "_stats");
+			sql.push("drop table if exists "+tableName);//drop last since there might be a dependency on _stats if non-spatial
 			console.log(sql);
 			client.query(sql.join(";"), function(err, result) {
 				if (err){ res.json({"err":"Unable to get delete layers for this project;"});throw err;}
@@ -253,7 +262,7 @@ function deleteTable(req,res){
 	// in('id','ogc_fid','wkb_geometry','id','shape_leng','shape_area','_acres_total')
 	// and data_type in('numeric','double
 	// precision','float','integer','decimal')";
-	var sql="select name from "+req.user.shortName+".tables where id="+tid;
+	var sql="select name,geometrytype from "+req.user.shortName+".tables where id="+tid;
 	console.log(sql);
 	pg.connect(global.conString,function(err, client, release) {
 		if (err){ res.json({"err":"No connection to database;"});throw err;}
@@ -262,9 +271,12 @@ function deleteTable(req,res){
 			// add the schema to the tablename
 			// console.log(result);
 			var tableName = result.rows[0].name+tid;
+			var geomtype=result.rows[0].geometrytype;
 			var baseTableName=tableName;
 			tableName = req.user.shortName+"." + baseTableName;
-			var sql=["drop view if exists "+ tableName + "_stats","drop table if exists "+tableName,"drop table if exists "+ tableName + "_stats", "drop table if exists "+ tableName + "_soils", "drop table if exists "+ tableName + "_vars","delete from "+req.user.shortName+".tables where pid="+pid+" and id="+tid];
+			var sql=["drop table if exists "+ tableName + "_soils", "drop table if exists "+ tableName + "_vars","delete from "+req.user.shortName+".tables where pid="+pid+" and id="+tid];
+			if(geomtype=='None')sql.push("drop view if exists "+ tableName + "_stats");else sql.push("drop table if exists "+ tableName + "_stats");
+			sql.push("drop table if exists "+tableName);//drop last since there might be a dependency on _stats if non-spatial
 			console.log(sql);
 			client.query(sql.join(";"), function(err, result) {
 				if (err){ res.json({"err":"Unable to delete table;"});throw err;}
@@ -315,7 +327,7 @@ function tableSummary(req, res){
 			var tableName = result.rows[0].name+tid;
 			var geomtype = result.rows[0].geometrytype;
 			var alias=result.rows[0].alias;
-			var sql="select include,id,depvar,saledate,name,type from " + req.user.shortName + "." + tableName + "_vars where include<5 order by id desc,depvar desc,name asc";
+			var sql="select include,id,depvar,saledate,soils,name,type from " + req.user.shortName + "." + tableName + "_vars where include<5 order by id desc,depvar desc,name asc";
 			console.log(sql);
 			client.query(sql, function(err, result) {
 				tableName = req.user.shortName+"."+ tableName+'_stats';
@@ -324,7 +336,7 @@ function tableSummary(req, res){
 				// console.log(result.rows);
 				for(var i in result.rows){
 					// names[result.rows[i].name]={"include":result.rows[i].include?'true':'false',"id":result.rows[i].id?'true':'false',"depvar":result.rows[i].depvar?'true':'false'};
-					names[result.rows[i].name]={"include":result.rows[i].include,"id":result.rows[i].id,"depvar":result.rows[i].depvar,"saledate":result.rows[i].saledate,"type":result.rows[i].type};
+					names[result.rows[i].name]={"include":result.rows[i].include,"id":result.rows[i].id,"depvar":result.rows[i].depvar,"saledate":result.rows[i].saledate,"soils":result.rows[i].soils,"type":result.rows[i].type};
 					if(result.rows[i].name.charAt(0) == result.rows[i].name.charAt(0).toUpperCase())
 						result.rows[i].name='"' + result.rows[i].name + '"';
 					else if(result.rows[i].name.indexOf(" ")!=-1)

@@ -6,11 +6,22 @@ var user;
 maApp.config(function($routeProvider,$locationProvider) {
 	$routeProvider
 
-	// route for the home page
 	.when('/', {
-		templateUrl : 'pages/home.html',
+		templateUrl : 'pages/intro.html',
 		controller  : 'mainController'
 	})
+
+	// route for the home page
+	.when('/models', {
+		templateUrl : 'pages/model.html',
+		controller  : 'modelController'
+	})
+	// route for the demo
+	.when('/demo', {
+		templateUrl : 'pages/demo.html',
+		controller  : 'demoController'
+	})
+
 	// route for the about page
 	.when('/about', {
 		templateUrl : 'pages/about.html',
@@ -89,10 +100,11 @@ maApp.config(function($routeProvider,$locationProvider) {
 	})
 	.otherwise({ redirectTo: '/' });	
 });
-
+/*
 maApp.factory('Data', function () {
 	return { message: "I'm data from a service" };
 });
+ */
 maApp.filter('numformat', function($filter) {
 	return function(input, type) {
 		var out=input;
@@ -106,43 +118,20 @@ maApp.filter('numformat', function($filter) {
 		return out;
 	};
 });
+
 //create the controller and inject Angular's $scope
 maApp.controller('mainController', function($rootScope,$scope, $http, $location) {
-	$scope.showNewProject=false;
-	$rootScope.pid=null;
-	$rootScope.tid=null;
 
-	$http.get('/projects')
-	.success(function(data, status, headers, config) {
-		$scope.project = data;
-		sessionStorage.setItem("username",data.user);
-	})
-	.error(function(data, status, headers, config) {
-		// log error
-		if(status==404)$location.path("/login")
-	});			
-
-	// projects
-	$scope.createProject = function () {
-		$scope.errMsg=null;
-		var frm=document.forms['newprojfrm'];
-		var name=frm.name.value;
-		if(name==''){
-			this.errMsg="Please enter a project name";
-			return false;
-		}		
-		var state=frm.state.options[frm.state.selectedIndex].value;
-		// see if name already taken, else create it
-		$http.put('/projects', { name:name, state: state })
-		.success(function(data, status, headers, config) {
-			$location.path("/projects/"+data.id+"/tables");
-		})
-		.error(function(data, status, headers, config ){ 
-			if(status==404)$location.path("/login")
-			$scope.errMsg="Project name is already in use.  Please select a different name";
-		});
-	};
-
+	$scope.showNewProject=false;	
+	$rootScope.mode="user";
+	$rootScope.username=null;
+	if(sessionStorage.getItem("username")){
+		$rootScope.username=sessionStorage.getItem("username");
+	}
+	$scope.viewModels=function(){
+		$location.path("/models");	
+	}
+	
 	$scope.viewProject = function (id) {
 
 		if(id){
@@ -151,37 +140,16 @@ maApp.controller('mainController', function($rootScope,$scope, $http, $location)
 		}
 		else $location.path(getURL('',3));
 	};		
-	$scope.deleteProject = function (id,a) {
-		$http.delete('/projects/'+id)
-		.success(function(data, status, headers, config) {
-			// remove tr from table
-			var index = -1;		
-			for( var i = 0; i < $scope.project.rows.length; i++ ) {
-				if( $scope.project.rows[i].id === id ) {
-					index = i;
-					break;
-				}
-			}
-			if( index === -1 ) {
-				alert( "Something gone wrong" );
-			}
-			$scope.project.rows.splice( index, 1 );						
-		})
-		.error(function(data, status, headers, config ){ 
-			// console.log( errorThrown );
-			if(status==404)$location.path("/login")
-			$scope.errMsg="Unable to remove this project";
-			// $("#events-result").show().html("Project name is already in use.
-			// Please select a different name")
-		});
-	};
-
 	// tables
 	$scope.viewComparable = function (id) {
 		// $rootScope.tid=id;
 		// $location.path("/projects/"+this.pid+"/tables/"+id+"/summary");
 		if(id)$location.path(getURL(id+"/summary",1));
 		else $location.path(getURL("summary"))
+	};
+	// demo
+	$scope.viewDemo = function() {
+		$location.path("/demo");
 	};
 
 	// correlation
@@ -226,6 +194,80 @@ maApp.controller('mainController', function($rootScope,$scope, $http, $location)
 	$scope.gotoUrl = function (name,len) {
 		$location.path(getURL(name,len));
 	};
+/*
+	if(sessionStorage.getItem("username")){
+		console.log("Found username" + sessionStorage.getItem("username"));
+		$location.path("/models");
+		return;
+	};
+*/
+});
+
+//create the controller and inject Angular's $scope
+maApp.controller('modelController', function($rootScope,$scope, $http, $location) {
+
+	$rootScope.pid=null;
+	$rootScope.tid=null;
+
+	$http.get('/projects')
+	.success(function(data, status, headers, config) {
+		$scope.project = data;
+		$rootScope.username=data.user;
+		sessionStorage.setItem("username",data.user);
+	})
+	.error(function(data, status, headers, config) {
+		// log error
+		if(status==404)$location.path("/login")
+	});			
+
+	// projects
+	$scope.createProject = function () {
+		$scope.errMsg=null;
+		var frm=document.forms['newprojfrm'];
+		var name=frm.name.value;
+		if(name==''){
+			this.errMsg="Please enter a project name";
+			return false;
+		}		
+		//var state=frm.state.options[frm.state.selectedIndex].value;
+		// see if name already taken, else create it
+		$http.put('/projects', { name:name })
+		.success(function(data, status, headers, config) {
+			$location.path("/projects/"+data.id+"/tables");
+		})
+		.error(function(data, status, headers, config ){ 
+			if(status==404)$location.path("/login")
+			$scope.errMsg="Project name is already in use.  Please select a different name";
+		});
+	};
+
+
+	$scope.deleteProject = function (id,a) {
+		$scope.errMsg=null;
+		$http.delete('/projects/'+id)
+		.success(function(data, status, headers, config) {
+			// remove tr from table
+			var index = -1;		
+			for( var i = 0; i < $scope.project.rows.length; i++ ) {
+				if( $scope.project.rows[i].id === id ) {
+					index = i;
+					break;
+				}
+			}
+			if( index === -1 ) {
+				alert( "Something gone wrong" );
+			}
+			$scope.project.rows.splice( index, 1 );						
+		})
+		.error(function(data, status, headers, config ){ 
+			// console.log( errorThrown );
+			if(status==404)$location.path("/login")
+			$scope.errMsg="Unable to remove this project";
+			// $("#events-result").show().html("Project name is already in use.
+			// Please select a different name")
+		});
+	};
+
 
 
 	// if(!sessionStorage.getItem("username"))
@@ -247,7 +289,7 @@ maApp.controller('aboutController', function($scope) {
 
 });
 
-maApp.controller('accountController', function($rootScope,$scope,$http) {
+maApp.controller('accountController', function($rootScope,$scope,$http,$location) {
 	$http.get('/auth/userinfo').
 	success(function(data, status, headers, config) {
 		$scope.user = data;
@@ -255,14 +297,45 @@ maApp.controller('accountController', function($rootScope,$scope,$http) {
 	error(function(data, status, headers, config) {
 		// log error
 		if(status==404)$location.path("/login")		
-	});			
+	});
+	$scope.logout=function(){
+		$http.get('/logout')
+		.success(function(data, status, headers, config) {
+			$scope.project = data;
+			$rootScope.username=null;
+			sessionStorage.removeItem("username");
+			$location.path("/");
+		})
+		.error(function(data, status, headers, config) {
+			// log error
+			if(status==404)$location.path("/login")
+			else $location.path("/");
+		});			
+
+	}
 });
 
 maApp.controller('contactController', function($scope) {
 
 });
 
-maApp.controller('loginController', function($scope) {
+maApp.controller('loginController', function($scope,$http) {
+//	try to automatically log in if user still logged in to Google
+	if(sessionStorage.getItem("username")){
+		console.log("Found username" + sessionStorage.getItem("username"));
+		$http.get('/auth/google').
+		success(function(data, status, headers, config) {
+			console.log("Redirecting");
+			$location.path(getURL("/models"));
+			//$scope.user = data;
+		}).
+		error(function(data, status, headers, config) {
+			console.log("Error - force manual login");
+			// log error
+			//if(status==404)$location.path("/login")		
+		});			
+	}
+	else $location.path(getURL("/models"));
 
 });	
 
@@ -350,7 +423,7 @@ maApp.controller('projectController', function($rootScope,$scope,$http,$location
 			else $location.path(window.location.hash.substring(1) +"/"+tid);
 		}
 	};	
-	$scope.deleteTable = function (id) {
+	$scope.deleteCompTable = function (id) {
 		// $location.path("/project/"+id);
 		var url='/projects/'+this.pid+'/tables/'+id;
 		$http.delete(url)
@@ -358,8 +431,8 @@ maApp.controller('projectController', function($rootScope,$scope,$http,$location
 			// remove tr from table
 			// remove tr from table
 			var index = -1;		
-			for( var i = 0; i < $scope.project.rows.length; i++ ) {
-				if( $scope.project.rows[i].id === id ) {
+			for( var i = 0; i < $scope.project.comps.length; i++ ) {
+				if( $scope.project.comps[i].id === id ) {
 					index = i;
 					break;
 				}
@@ -367,7 +440,7 @@ maApp.controller('projectController', function($rootScope,$scope,$http,$location
 			if( index === -1 ) {
 				alert( "Something gone wrong" );
 			}
-			$scope.project.rows.splice( index, 1 );						
+			$scope.project.comps.splice( index, 1 );						
 
 		})
 		.error(function(data, status, headers, config ){ 
@@ -378,7 +451,34 @@ maApp.controller('projectController', function($rootScope,$scope,$http,$location
 			// Please select a different name")
 		});
 	};
+	$scope.deleteSubjTable = function (id) {
+		// $location.path("/project/"+id);
+		var url='/projects/'+this.pid+'/tables/'+id;
+		$http.delete(url)
+		.success(function(data, status, headers, config) {
+			// remove tr from table
+			// remove tr from table
+			var index = -1;		
+			for( var i = 0; i < $scope.project.subjects.length; i++ ) {
+				if( $scope.project.subjects[i].id === id ) {
+					index = i;
+					break;
+				}
+			}
+			if( index === -1 ) {
+				alert( "Something gone wrong" );
+			}
+			$scope.project.subjects.splice( index, 1 );						
 
+		})
+		.error(function(data, status, headers, config ){ 
+			// console.log( errorThrown );
+			if(status==404)$location.path("/login")
+			else $scope.errMsg="Unable to remove this table";
+			// $("#events-result").show().html("Project name is already in use.
+			// Please select a different name")
+		});
+	};
 });
 
 maApp.controller('summaryController', function($rootScope,$scope,$http,$location,$window) {
@@ -492,7 +592,7 @@ maApp.controller('correlationController', function($rootScope,$scope,$http,$loca
 		$http.get($location.$$url).
 		success(function(data, status, headers, config) {
 			$scope.tableName=data.alias;
-			
+
 			var tmpdata=[];
 			$scope.id=1;
 			for(var i in data.names)
@@ -511,7 +611,7 @@ maApp.controller('correlationController', function($rootScope,$scope,$http,$loca
 							}
 						}
 					}
-					
+
 				}
 				else data.names[i].cls='info';
 				var vals=[];
@@ -730,7 +830,7 @@ maApp.controller('predictController', function($scope,$http,$location,$filter) {
 				{
 					if( frm.elements[i].type=='text' && frm.elements[i].name){
 						//is it a date?
-						
+
 						if( $scope.predictions.fields[frm.elements[i].name]=='timestamp with time zone'){
 							var d=Date.parse(frm.elements[i].value)/1000;
 							if(isNaN(d)){$scope.prediction="Invalid date entered for " + frm.elements[i].name+".  Use format MM/DD/YYYY.";return;}
@@ -740,7 +840,7 @@ maApp.controller('predictController', function($scope,$http,$location,$filter) {
 						else{
 							if(isNaN(frm.elements[i].value)){$scope.prediction="Invalid number entered for " + frm.elements[i].name+".";return;}
 							var d = parseFloat(frm.elements[i].value.replace(/,/g,''));
-							
+
 							result += d * parseFloat($scope.predictions.vars.coef[cidx++].Estimate);
 						}
 					}
@@ -749,7 +849,7 @@ maApp.controller('predictController', function($scope,$http,$location,$filter) {
 				}
 			}
 		}catch(e){console.log(e);}
-		*/
+		 */
 		//console.log(priceFormatter(result));
 		//		if(type=='currency')out=$filter('currency')(out);
 		//else if(type=='numeric')out=$filter('number',2)(out);
@@ -758,7 +858,7 @@ maApp.controller('predictController', function($scope,$http,$location,$filter) {
 });
 
 maApp.controller('subjectController', function($rootScope,$scope,$http,$location,$modal) {
-/*
+	/*
 	$http.get($location.$$url).
 	success(function(data, status, headers, config) {
 		$scope.subject = data;
@@ -769,7 +869,7 @@ maApp.controller('subjectController', function($rootScope,$scope,$http,$location
 		if(status==404)$location.path("/login")
 		// log error
 	});
-	*/
+	 */
 	$scope.list = function(){
 		$http.get($location.$$url).
 		success(function(data, status, headers, config) {
@@ -786,7 +886,7 @@ maApp.controller('subjectController', function($rootScope,$scope,$http,$location
 		});
 	}
 	$scope.list();
-	
+
 	$scope.open = function (size, source) {
 		var modalInstance = $modal.open({
 			templateUrl: 'pages/uploadfiles.html',
@@ -819,8 +919,8 @@ maApp.controller('subjectController', function($rootScope,$scope,$http,$location
 			else $location.path(getURL(id+"/reports",1) + "/" + id);
 		}
 	};
-	
-	$scope.deleteTable = function (id) {
+
+	$scope.deleteSubjTable = function (id) {
 		//var url="" + $location.path("/project/"+id);
 		var url='/projects/'+$scope.pid+'/tables/'+id;
 		//($location.$$url+"/tables/"+id
@@ -863,9 +963,9 @@ maApp.controller('maController', function($rootScope,$scope,$http,$location,$mod
 		if(status==404)$location.path("/login")
 		// log error
 	});
-	*/
+	 */
 	$scope.previous = function(){
-		 window.history.back();
+		window.history.back();
 	}
 	$scope.list = function(){
 		$http.get($location.$$url).
@@ -897,7 +997,7 @@ maApp.controller('reportController', function($rootScope,$scope,$http,$location)
 		// log error
 	});
 	$scope.previous = function(){
-		 window.history.back();
+		window.history.back();
 	}
 	$scope.drawMap=function(){
 		if(typeof(L)==='undefined'){
@@ -909,34 +1009,34 @@ maApp.controller('reportController', function($rootScope,$scope,$http,$location)
 		}
 
 		var map = new L.Map('map');//, {center: center, zoom: 12, maxZoom: 20});
-	    var extent = $scope.report.rows[1].extent.split(",");
-	    var oid=$scope.report.id;
-	    map.fitBounds([
-	                   [extent[1],extent[0]],
-	                   [extent[3],extent[2]]
-	               ]);
-	    //var osmUrl='http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
-	    //var osmAttrib='Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors';
-	    //var street_layer = new L.TileLayer(osmUrl, { maxZoom: 19, attribution: osmAttrib});
-	    var Streets= new L.TileLayer("http://services.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}.png", {maxZoom: 19}).addTo(map);
-	    var Aerial=new L.TileLayer("http://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}.png", {maxZoom: 19});
-	    var Topo=new L.TileLayer("http://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}.png", {maxZoom: 19});
-	    				
-	    //var baseMaps = { "ESRI Streets": Streets, "ESRI Aerial":Aerial, "ESRI Topo":Topo , "OpenStreet": street_layer};
+		var extent = $scope.report.rows[1].extent.split(",");
+		var oid=$scope.report.id;
+		map.fitBounds([
+		               [extent[1],extent[0]],
+		               [extent[3],extent[2]]
+		               ]);
+		//var osmUrl='http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
+		//var osmAttrib='Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors';
+		//var street_layer = new L.TileLayer(osmUrl, { maxZoom: 19, attribution: osmAttrib});
+		var Streets= new L.TileLayer("http://services.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}.png", {maxZoom: 19}).addTo(map);
+		var Aerial=new L.TileLayer("http://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}.png", {maxZoom: 19});
+		var Topo=new L.TileLayer("http://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}.png", {maxZoom: 19});
+
+		//var baseMaps = { "ESRI Streets": Streets, "ESRI Aerial":Aerial, "ESRI Topo":Topo , "OpenStreet": street_layer};
 
 		//$('#files').bind('change', handleFileSelect);
 		//map.addLayers([parcelLayer]);
 		var parcelLayer = L.tileLayer.wms('/map', {
-		    format: 'image/png',
-		    transparent: true,
-		    opacity: 0.7,
-	        srs: 'EPSG:3857',
-	        id:oid,
-		    layers: $scope.subjectTableName
+			format: 'image/png',
+			transparent: true,
+			opacity: 0.7,
+			srs: 'EPSG:3857',
+			id:oid,
+			layers: $scope.subjectTableName
 		}).addTo(map);
 
 		L.control.scale({metric:false}).addTo(map);
-		
+
 	}
 });
 

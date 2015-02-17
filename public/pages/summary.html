@@ -16,6 +16,8 @@
 			<div class="col-lg-8 col-xs-8">
 				Before continuing, you need to specify which field is the dependent variable. Usually this will be the sales price. A new field "oid" is added that is guaranteed to be unique, but you may wish to specify a different field as your unique identifier. This unique identifier is used when printing
 				out the residuals. <br> Check the boxes next to the numeric fields you wish to include in the regression analysis.
+				<br>
+				Note: rows colored in blue are fields extracted from the USDA soils data
 			</div>
 
 			<div class="col-lg-4 col-xs-4">
@@ -63,14 +65,14 @@
 					<th data-field="mean" data-align="right">Mean</th>
 				</tr>
 
-				<tr ng-repeat="x in summary.fields">
+				<tr ng-repeat="x in summary.fields" ng-class="summary.status[x.name].soils?'info':''">
 					<td><input ng-show="summary.status[x.name].include<2" type='checkbox' ng-change="selectField(x.name,include)" ng-model="include" ng-checked="summary.status[x.name].include" ng-disabled="summary.status[x.name].include==2" /></td>
 					<td><input ng-show="summary.status[x.name].id<2" type='radio' name="idvar"  ng-change="selectId(x.name)" ng-value="summary.status[x.name].id" ng-model="id" ng-disabled="summary.status[x.name].id==2" /></td>
 					<td><input ng-show="summary.status[x.name].depvar<2" type='radio' name="depvar" ng-change="selectDepVar(x.name)" ng-value="summary.status[x.name].depvar" ng-model="depvar" ng-disabled="summary.status[x.name].depvar==2||summary.status[x.name].include==3" /></td>
 					<td><input ng-show="summary.status[x.name].saledate>0" type='radio' name="saledate" ng-change="selectSaleDate(x.name)" ng-value="summary.status[x.name].saledate" ng-model="saledate" /></td>
 
 					<!-- ng-disabled="table.names[x.name][0]==3" -->
-					<td style="text-align: center">{{ x.name }}</td>
+					<td style="text-align: left">{{ x.name }}</td>
 					<td style="text-align: right">{{ x.min | numformat:summary.status[x.name].type}}</td>
 					<td style="text-align: right">{{ x.max | numformat:summary.status[x.name].type}}</td>
 					<td style="text-align: right">{{ x.sd | numformat:summary.status[x.name].type}}</td>

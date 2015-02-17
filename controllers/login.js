@@ -164,7 +164,7 @@ router.get('/google/callback', passport.authenticate('google', {
 	//	res.redirect(req.query.redirect);
 	//else
 
-	res.redirect('/');
+	res.redirect('/#/models');
 	/*
 	res.render('upload', {
 		user : req.user

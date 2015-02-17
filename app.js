@@ -172,6 +172,8 @@ app.use('/css', express.static(__dirname + '/public/css'));
 app.use('/js', express.static(__dirname + '/public/js'));
 app.use('/img', express.static(__dirname + '/public/img'));
 app.use('/data', express.static(__dirname + '/public/data'));
+app.use('/media', express.static(__dirname + '/public/media'));
+
 //app.use(serveStatic('/css', {'index': ['default.html', 'default.htm']}))
 
 app.use(session({

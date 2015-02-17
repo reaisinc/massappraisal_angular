@@ -37,18 +37,18 @@ function createUser(username){
 	         "GRANT SELECT ON ALL TABLES IN SCHEMA "+username+" TO dbuser",
 	         "GRANT SELECT ON ALL SEQUENCES IN SCHEMA "+username+" TO dbuser",
 	         "GRANT SELECT,INSERT,DELETE ON SCHEMA "+username+" TO dbuser",
-	         "CREATE TABLE "+username+".tables( id serial NOT NULL, name character varying(200), alias varchar(200),pid int,tid int,filename varchar(200), geometrytype character varying(50), filetype character varying(50),  date_loaded timestamp without time zone, numtuples int default 0, type int default 0	)	WITH (	  OIDS=FALSE	)",
+	         "CREATE TABLE "+username+".tables( id serial NOT NULL, name character varying(200), alias varchar(200),state varchar(2),pid int,tid int,filename varchar(200), geometrytype character varying(50), filetype character varying(50),  date_loaded timestamp without time zone, numtuples int default 0, type int default 0	)	WITH (	  OIDS=FALSE	)",
 	         "ALTER TABLE "+username+".tables OWNER TO postgres",
 	         "GRANT ALL ON TABLE "+username+".tables TO postgres",
 	         "GRANT SELECT,INSERT, DELETE ON TABLE "+username+".tables TO dbuser",
-	         "GRANT SELECT,INSERT, DELETE ON "+username+".tables TO dbuser",
+	         "GRANT SELECT,INSERT,UPDATE, DELETE ON "+username+".tables TO dbuser",
 	         "GRANT SELECT,USAGE,UPDATE ON "+username+".tables_id_seq TO dbuser",
 
 	         "CREATE TABLE "+username+".projects( id serial NOT NULL, username varchar(200),created_date timestamp without time zone, modified_date timestamp without time zone,name varchar(200) NOT NULL,state varchar(2) NOT NULL, primary key(name,state))	WITH (	  OIDS=FALSE	)",
 	         "ALTER TABLE "+username+".projects OWNER TO postgres",
 	         "GRANT ALL ON TABLE "+username+".projects TO postgres",
-	         "GRANT SELECT,INSERT, DELETE ON TABLE "+username+".projects TO dbuser",
-	         "GRANT SELECT,INSERT, DELETE ON "+username+".projects TO dbuser",
+	         "GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE "+username+".projects TO dbuser",
+	         "GRANT SELECT,INSERT,DELETE,UPDATE ON "+username+".projects TO dbuser",
 	         "GRANT SELECT,USAGE,UPDATE ON "+username+".projects_id_seq TO dbuser",
 
 	         "GRANT ALL ON SCHEMA "+username+" TO dbuser",
@@ -79,6 +79,32 @@ function createUser(username){
 
 }
 module.exports = router;
+
+/*
+CREATE SCHEMA demo AUTHORIZATION postgres;
+GRANT ALL ON SCHEMA demo TO postgres;
+GRANT ALL ON SCHEMA demo TO dbuser;
+GRANT SELECT ON ALL TABLES IN SCHEMA demo TO dbuser;
+GRANT SELECT ON ALL SEQUENCES IN SCHEMA demo TO dbuser;
+GRANT SELECT,INSERT,DELETE ON SCHEMA demo TO dbuser;
+CREATE TABLE demo.tables( id serial NOT NULL, name character varying(200), alias varchar(200),pid int,tid int,filename varchar(200), geometrytype character varying(50), filetype character varying(50),  date_loaded timestamp without time zone, numtuples int default 0, type int default 0	)	WITH (	  OIDS=FALSE	);
+ALTER TABLE demo.tables OWNER TO postgres;
+GRANT ALL ON TABLE demo.tables TO postgres;
+GRANT SELECT,INSERT, DELETE ON TABLE demo.tables TO dbuser;
+GRANT SELECT,INSERT, DELETE ON demo.tables TO dbuser;
+GRANT SELECT,USAGE,UPDATE ON demo.tables_id_seq TO dbuser;
+CREATE TABLE demo.projects( id serial NOT NULL, username varchar(200),created_date timestamp without time zone, modified_date timestamp without time zone,name varchar(200) NOT NULL,state varchar(2) NOT NULL, primary key(name,state))	WITH (	  OIDS=FALSE	);
+ALTER TABLE demo.projects OWNER TO postgres;
+GRANT ALL ON TABLE demo.projects TO postgres;
+GRANT SELECT,INSERT, DELETE ON TABLE demo.projects TO dbuser;
+GRANT SELECT,INSERT, DELETE ON demo.projects TO dbuser;
+GRANT SELECT,USAGE,UPDATE ON demo.projects_id_seq TO dbuser;
+GRANT ALL ON SCHEMA demo TO dbuser;
+select count(*) as cnt from demo.tables;
+insert into demo.projects(username,created_date,modified_date,name,state) values('demo',NOW(),NOW(),'demo','az');
+
+*/
+
 /*
  * GET users listing.
 

@@ -28,7 +28,7 @@ router.get('/',  function(req, res){
 	return;
 	// }
 });
-*/
+ */
 router.get('/:pid',  function(req, res){
 	runSteps(req,res);
 });
@@ -52,7 +52,7 @@ function runSteps(req,res){
 	var tid=req.params.tid?parseInt(req.params.tid):null;
 	var id = req.query.id?parseInt(req.query.id):null;
 	if(id)tableName+=id;
-	
+
 	res.setTimeout(0); 
 	if(req.query.step == 1){
 		getOgrInfo(req,res,pid,tid,fileName);
@@ -78,7 +78,7 @@ function runSteps(req,res){
 		//createStatsTable(req,res,pid,fileName,tableName);
 		checkSubjectProperty(req,res,pid,tid,id,fileName,tableName)
 	}
-	
+
 }
 function getOgrInfo(req,res,pid,tid,fileName){
 	var filePath=__dirname + "/../public/files/" + req.user.shortName + "/" + pid + '/' + fileName;
@@ -192,7 +192,7 @@ function execOgr2ogr(req,res,pid,tid,id,fileName,tableName){
 	if(/^win/.test(process.platform))
 		process.env['GDAL_DATA'] = 'C:\\PostgreSQL93\\gdal-data';
 	var step=2;
-	
+
 	// is it not a spatial file?
 	var opts=["-t_srs","epsg:3857","-overwrite","-lco", "DROP_TABLE=IF_EXISTS", "-lco", "WRITE_EWKT_GEOM=ON", "-nlt", "MULTIPOLYGON", "-nln",tableName];
 
@@ -252,7 +252,7 @@ function cleanTable(req,res,pid,tid,id,fileName,tableName) {
 			 // in('wkb_geometry','shape_leng','shape_area','_acres_total')
 			 // and data_type in('numeric','double
 			 // precision','float','integer','decimal')",
-			 "create table " + tableName + "_vars as select 1 as include,1 as cinclude,0 as id,0 as uniqueid,0 as depvar,0 as saledate,column_name as name,data_type as type from information_schema.columns where table_schema='"+req.user.shortName+"' and table_name = '"+baseTableName+"' and column_name not in('wkb_geometry','shape_leng','shape_area','_acres_total')",// and
+			 "create table " + tableName + "_vars as select 1 as include,1 as cinclude,0 as id,0 as uniqueid,0 as depvar,0 as saledate,0 as soils,column_name as name,data_type as type from information_schema.columns where table_schema='"+req.user.shortName+"' and table_name = '"+baseTableName+"' and column_name not in('wkb_geometry','shape_leng','shape_area','_acres_total')",// and
 
 			 // data_type
 			 // in('numeric','double
@@ -265,12 +265,12 @@ function cleanTable(req,res,pid,tid,id,fileName,tableName) {
 			 // set the first numeric field found as the
 			 // dependent variable
 			 "update " + tableName + "_vars set depvar=1 where name=(select name from "+tableName+"_vars where include=1 limit 1)",
-	         //update sales date
-	         "update " + tableName + "_vars set saledate=2 where type='timestamp with time zone'",
-	         //update default sales date
-	         "update " + tableName + "_vars set saledate=1 where saledate=2 and ctid in(select ctid from " + tableName + "_vars where saledate=2 limit 1)",
-	          //now convert all date formats to integers for calculations
-	          "select public.update_saledate_to_int('"+req.user.shortName+"','" + baseTableName + id + "')",
+			 //update sales date
+			 "update " + tableName + "_vars set saledate=2 where type='timestamp with time zone'",
+			 //update default sales date
+			 "update " + tableName + "_vars set saledate=1 where saledate=2 and ctid in(select ctid from " + tableName + "_vars where saledate=2 limit 1)",
+			 //now convert all date formats to integers for calculations
+			 "select public.update_saledate_to_int('"+req.user.shortName+"','" + baseTableName + "')",
 
 			 // find all the fields that have all distinct/unique
 			 // values. These are the only fields that can be
@@ -284,7 +284,9 @@ function cleanTable(req,res,pid,tid,id,fileName,tableName) {
 			 'alter table '+tableName+' add _acres_total double precision',
 			 // _fid',
 			 'update '+tableName+' set _acres_total=ST_Area(wkb_geometry)/4046.86',
-			 
+			 //find the state for these polygons
+			 'update '+req.user.shortName + '.tables set state=(select stusps from public.us_states,'+tableName+' where public.us_states.wkb_geometry && box2d(' + tableName + '.wkb_geometry) limit 1) where id='+id,
+
 			 "select name from " + tableName + "_vars where uniqueid=1"
 			 ];
 		/*
@@ -330,13 +332,14 @@ function createSoilsTable(req,res,pid,tid,id,fileName,tableName){
 	var idName = req.query.idName;
 	if(!idName)idName='oid';
 	else idName = idName.replace(/\W/g, '');
-	var state="select state from "+req.user.shortName + ".projects where id=$1";
+	var state="select state from "+req.user.shortName + ".tables where id=$1";
 	tableName = req.user.shortName + "." + tableName;
-	var vals=[pid];
+	var vals=[id];
 	pg.connect(global.conString,function(err, client, release) {
 		if (err){ res.json({"err":"No connection to database;"});throw err;}
 		// client.query("BEGIN");
 		// strip off extension
+		console.log(state);console.log(vals);
 		client.query(state,vals, function(err, result) {
 			if (err){ res.json({"err":"State not found for this project;"});throw err;}
 			var state_abbr=result.rows[0].state;
@@ -426,9 +429,7 @@ function createStatsTable(req,res,pid,tid,id,fileName,tableName){
 				 'alter table '+tableName+'_stats drop column if exists wkb_geometry',
 				 'alter table '+tableName+'_stats drop column if exists oid',
 				 'alter table '+tableName+'_stats drop column if exists '+idName+'_tmp',
-				 'alter table '+tableName+'_stats add column oid serial',
-
-				 'select count(*) as count from '+tableName+'_stats'];
+				 'alter table '+tableName+'_stats add column oid serial'];
 
 			// +"inner join "+tableName+"_soils
 			// on("+tableName+"_soils.allot_name=(graz_bid.range_unit,',',''))"
@@ -440,14 +441,20 @@ function createStatsTable(req,res,pid,tid,id,fileName,tableName){
 			console.log(sql);
 			// strip off extension
 			client.query(sql.join(";"), function(err, result) {
-				release()
-				// if (err) throw err;
-				// console.log(result.rows[0])
-				var obj={"step":5,"count":result&&result.rows?result.rows[0]['count']:0,"rows":result?result.rows:null};
-				if (err) {obj['err']=err.toString();console.log(err);}
-				// res.writeHead(200, {"Content-Type":
-				// "application/json"});
-				res.json(obj);
+				if (err) {console.log(err);}
+				var sql=["insert into " + tableName + "_vars(include,id,uniqueid,depvar,saledate,soils,name,type) (select 1 as include,0 as id,0 as uniqueid,0 as depvar,0 as saledate,1 as soils,column_name as name,data_type as type from information_schema.columns where table_schema='"+req.user.shortName+"' and table_name = '"+baseTableName+"_stats' and column_name!='_acres_total' and upper(substring(column_name,1,1))=substring(column_name,1,1))",// and
+				         'select count(*) as count from '+tableName+'_stats'];
+				console.log(sql);
+				client.query(sql.join(";"), function(err, result) {
+					release()
+					// if (err) throw err;
+					// console.log(result.rows[0])
+					var obj={"step":5,"count":result&&result.rows?result.rows[0]['count']:0,"rows":result?result.rows:null};
+					if (err) {obj['err']=err.toString();console.log(err);}
+					// res.writeHead(200, {"Content-Type":
+					// "application/json"});
+					res.json(obj);
+				});
 			})
 		})
 	});
@@ -493,7 +500,7 @@ function loadNonSpatial(req,res,pid,tid,fileName,filePath,data){
 					res.status(404).json({err:er});
 					return;
 				}
-				
+
 				var sql="select column_name from information_schema.columns where table_schema='"+req.user.shortName+"' and table_name = '"+tableName+"' and column_name not in('ogc_fid','wkb_geometry','id','shape_leng','shape_area','_acres_total') and data_type not in('numeric','double precision','float','integer','decimal')";
 				console.log(sql);
 				// strip off extension
@@ -517,7 +524,7 @@ function loadNonSpatial(req,res,pid,tid,fileName,filePath,data){
 					           (isCSV?"select public.tonumeric('" + cols.join("','"+tableName+"'),public.tonumeric('") + "','"+tableName+"')":"select 1")
 					           ,'alter table ' + tableName + " drop column if exists oid"
 					           ,'alter table ' + tableName + " drop column if exists ogc_fid"
-			           		   ,'alter table ' + tableName + " add column oid serial"
+					           ,'alter table ' + tableName + " add column oid serial"
 					           // find all possible sale date fields
 					           ,"select public.update_saledate('"+req.user.shortName+"','" + baseTableName + id + "')"
 					           ,'drop table if exists ' + tableName + '_vars'
@@ -529,7 +536,7 @@ function loadNonSpatial(req,res,pid,tid,fileName,filePath,data){
 					           // in('wkb_geometry','shape_leng','shape_area','_acres_total')
 					           // and data_type in('numeric','double
 					           // precision','float','integer','decimal')",
-					           ,"create table " + tableName + "_vars as select 1 as include,0 as id,0 as uniqueid,0 as depvar,0 as saledate,column_name as name,data_type as type from information_schema.columns where table_schema='"+req.user.shortName+"' and table_name = '"+baseTableName+id+"' and column_name not in('wkb_geometry','shape_leng','shape_area','_acres_total')" // and
+					           ,"create table " + tableName + "_vars as select 1 as include,0 as id,0 as uniqueid,0 as depvar,0 as saledate,0 as soils,column_name as name,data_type as type from information_schema.columns where table_schema='"+req.user.shortName+"' and table_name = '"+baseTableName+id+"' and column_name not in('wkb_geometry','shape_leng','shape_area','_acres_total')" // and
 					           // data_type
 					           // in('numeric','double
 					           // precision','float','integer','decimal')",
@@ -553,9 +560,9 @@ function loadNonSpatial(req,res,pid,tid,fileName,filePath,data){
 					           // remove the non-numeric fields that don't have all
 					           // unique values
 					           ,"delete from "+ tableName + "_vars where include=2 and uniqueid=0"
-					           
+
 					           //create stats view instead of creating a new table
-					           
+
 					           ,'drop view if exists ' + tableName + "_stats"
 					           ,"create view " + tableName + "_stats as select * from " + tableName
 					           /*
@@ -564,11 +571,11 @@ function loadNonSpatial(req,res,pid,tid,fileName,filePath,data){
 					           ,"alter table " + tableName + "_stats drop if exists wkb_geometry"
 					           ,"alter table " + tableName + "_stats drop if exists ogc_fid"
 					           ,"alter table " + tableName + "_stats add oid serial"
-					           */
+					            */
 
 					           //,"delete from "+req.user.shortName+".tables where name='"+baseTableName+"'"
 					           ,"insert into "+req.user.shortName+".tables(id,alias,name,filename,pid,tid,type,geometrytype,filetype,date_loaded,numtuples) values("+id+",'"+alias+"','"+baseTableName + "','"+fileName+"',"+pid+","+(tid?tid:"NULL")+"," +(tid?"1":"0") +",'"+data['Geometry']+"','" + data['file'] + "',NOW(),"+data["Feature Count"]+")"
-					           
+
 					           ,'select count(*) as count from '+tableName+'_stats'];
 
 					// ,'drop table if exists ' + tableName + '_vars'
