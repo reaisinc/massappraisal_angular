@@ -350,7 +350,7 @@ maApp.controller('ModalInstanceCtrl', function ($scope,$location,$http,$modalIns
 	$scope.pid =  $modalInstance.pid;
 	$scope.tid =  $modalInstance.tid;
 	$scope.maxSteps = $modalInstance.maxSteps;
-	$scope.msg=["Getting information about data","Loading data into database","Determining which fields to include","Intersecting geometries with USDA Soils polygons","Creating new table containing uploaded data and soils information","",""];
+	$scope.msg={2:"Getting information about data...",3:"Loading data into database...",4:"Determining fields to include...",5:"Intersecting geometries with USDA Soils polygons...",6:"Creating new table containing uploaded data and soils information..."};
 	$scope.renderHtml = function(html_code)
 	{
 		return $sce.trustAsHtml(html_code);
@@ -375,8 +375,8 @@ maApp.controller('ModalInstanceCtrl', function ($scope,$location,$http,$modalIns
 });
 
 maApp.controller('projectController', function($rootScope,$scope,$http,$location,$modal) {
-	$scope.list = function(){
-		$http.get($location.$$url).
+	$scope.list = function(r){
+		$http.get($location.$$url+(r?"?"+r:"")).
 		success(function(data, status, headers, config) {
 			$scope.project = data;
 			$scope.pid=data.id;
@@ -402,7 +402,7 @@ maApp.controller('projectController', function($rootScope,$scope,$http,$location
 		modalInstance.result.then(function (newfile) {
 			//$scope.selected = selectedItem;
 			//insert file into list of layers
-			$scope.list();
+			$scope.list(Math.random());
 		}, function () {
 			//$log.info('Modal dismissed at: ' + new Date());
 			console.log('Modal dismissed at: ' + new Date());
@@ -1154,7 +1154,7 @@ function checkStep($scope,$http,url,params){
 		else {
 			//stop the progress bar by removing .active
 			$scope.completed=true;
-			$scope.stepMsg="";
+			$scope.stepMsg="Completed!  Click Ok to continue.";
 		}	
 	})
 	.error(function(data,status,headers,config){

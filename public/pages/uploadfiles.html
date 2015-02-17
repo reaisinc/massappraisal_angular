@@ -88,24 +88,24 @@
 	</div>
 </div>
 
-<div ng-class="err?'alert alert-danger':'alert alert-success'" ng-show="hasStatus" style='padding:20px'>
+<div ng-class="err?'alert alert-danger':'alert alert-success'" ng-show="hasStatus" style='padding: 20px'>
 	<span ng-show="status==''"><img src='../img/spinner_mac.gif'> Please wait...</span>
 	<p ng-bind-html="renderHtml(status)" />
 </div>
 
-<div ng-show="isSpatial" style="padding:20px;">
+<div ng-show="isSpatial" style="padding: 20px;">
 	<p>Click the Start processing button to begin. Please wait while your data is loaded into the database and processed. This may take several minutes depending on the size of your input file.</p>
 	<button type="button" class="btn btn-success btn-default" ng-click="processSoils()">
 		<span class="glyphicon glyphicon-upload"></span> Start processing
 	</button>
-	<br><br>
+	<br> <br>
 	<div ng-class="completed?'':'active'" class="progress progress-striped" style="margin-bottom: 0;">
-		<div role="progressbar" class="progress-bar"  ng-style="{ 'width': soilsprogress + '%' }"></div>
+		<div role="progressbar" class="progress-bar" ng-style="{ 'width': soilsprogress + '%' }"></div>
 	</div>
-</div style="width:100%">
-<div >
-{{stepMsg}}
 </div>
+
+<span style="width: 100%; padding: 20px">{{stepMsg}}</span>
+
 <div class="modal-footer">
 	<button ng-show="completed" class="btn btn-primary" ng-click="ok()">OK</button>
 	<button class="btn btn-warning" ng-click="cancel()">Cancel</button>
