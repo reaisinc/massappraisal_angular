@@ -100,6 +100,7 @@ maApp.config(function($routeProvider,$locationProvider) {
 	})
 	.otherwise({ redirectTo: '/' });	
 });
+
 /*
 maApp.factory('Data', function () {
 	return { message: "I'm data from a service" };
@@ -122,7 +123,7 @@ maApp.filter('numformat', function($filter) {
 //create the controller and inject Angular's $scope
 maApp.controller('mainController', function($rootScope,$scope, $http, $location) {
 
-	$scope.showNewProject=false;	
+		
 	$rootScope.mode="user";
 	$rootScope.username=null;
 	if(sessionStorage.getItem("username")){
@@ -208,6 +209,7 @@ maApp.controller('modelController', function($rootScope,$scope, $http, $location
 
 	$rootScope.pid=null;
 	$rootScope.tid=null;
+	$scope.newProjectVisible=false;
 
 	$http.get('/projects')
 	.success(function(data, status, headers, config) {
@@ -219,11 +221,17 @@ maApp.controller('modelController', function($rootScope,$scope, $http, $location
 		// log error
 		if(status==404)$location.path("/login")
 	});			
-
+	$scope.showNewProject=function(){
+		$scope.newProjectVisible=!$scope.newProjectVisible;
+		if($scope.newProjectVisible){
+			setTimeout(function(){document.forms.newprojfrm.name.focus()},400);
+			//$scope.newprojfrm.name.focus();
+		}
+	}
 	// projects
 	$scope.createProject = function () {
 		$scope.errMsg=null;
-		var frm=document.forms['newprojfrm'];
+		var frm=document.forms['newprojfrm'];//$scope.newprojfrm;//
 		var name=frm.name.value;
 		if(name==''){
 			this.errMsg="Please enter a project name";
@@ -534,8 +542,27 @@ maApp.controller('summaryController', function($rootScope,$scope,$http,$location
 	};
 
 	$scope.downloadTable = function() {
-		var url = getURL("download");
-		$window.open(url);
+		/*
+		var headers=$('.table tr').eq(0).get().map(function(row) {
+			return $(row).find('th:gt(3)').get().map(function(cell) {
+				return $(cell).html();
+			});
+		});
+		var data=$('.table tr').get().map(function(row) {
+			return $(row).find('td.ng-binding').get().map(function(cell) {
+				return $(cell).html();
+			});
+		});
+		*/
+		exportTableToCSV($(".table"),$scope.summary.alias+'_summary.csv','dl_summary',3);
+		
+		
+		//exportTableToCSV(headers,data,$scope.summary.alias+".csv")
+		// CSV
+        //exportTableToCSV.apply(this, [$('.table'), outputFile]);
+		//var url = getURL("download");
+		//$window.open(url);
+		
 		/*
 		$http.get(getURL("download")).
 		success(function(data, status, headers, config) {
@@ -689,6 +716,10 @@ maApp.controller('residualsController', function($scope,$http,$location) {
 			if(status==404)$location.path("/login")
 		});
 	}
+	$scope.downloadTable = function(){
+		
+		exportTableToCSV($("#resid_table"),$scope.residuals.alias+'_residuals.csv','dl_resid',-1);
+	}
 	$scope.tableURL = $location.$$url.slice(0,-10);
 
 	$scope.getData = function(page){
@@ -798,7 +829,7 @@ maApp.controller('predictController', function($scope,$http,$location,$filter) {
 		$scope.prediction="";
 		$scope.prederror=false;
 		var result=parseFloat($scope.predictions.vars.coef[0].Estimate);
-		var frm=document.forms['predfrm'];
+		var frm=document.forms.predfrm;//$scope.predfrm;
 		try{
 			for(var i=1;i< $scope.predictions.vars.names.length;i++)
 			{
@@ -1238,4 +1269,76 @@ function createUploader($scope,$http,FileUploader,$modalInstance){
 		getFileStatus($scope,$http);
 	};
 	return uploader;
+}
+
+//https://gist.github.com/adilapapaya/9787842
+function exportTableToCSV($table, filename,aid,skipcols) {
+	/*
+	var headers=$('.table tr').eq(0).get().map(function(row) {
+		return $(row).find('th:gt(3)').get().map(function(cell) {
+			return $(cell).html();
+		});
+	});
+	var data=$('.table tr').get().map(function(row) {
+		return $(row).find('td.ng-binding').get().map(function(cell) {
+			return $(cell).html();
+		});
+	});
+	*/
+	var $headers = $table.find('tr:has(th)')
+        ,$rows = $table.find('tr:has(td)')
+
+        // Temporary delimiter characters unlikely to be typed by keyboard
+        // This is to avoid accidentally splitting the actual contents
+        ,tmpColDelim = String.fromCharCode(11) // vertical tab character
+        ,tmpRowDelim = String.fromCharCode(0) // null character
+
+        // actual delimiter characters for CSV format
+        ,colDelim = '","'
+        ,rowDelim = '"\r\n"';
+
+        // Grab text from table into CSV formatted string
+        var csv = '"';
+        csv += formatRows($headers.map(grabRow));
+        csv += rowDelim;
+        csv += formatRows($rows.map(grabRow)) + '"';
+
+        // Data URI
+        var csvData = 'data:application/csv;charset=utf-8,' + encodeURIComponent(csv);
+
+        $("#"+aid)
+        .attr({
+        'download': filename
+            ,'href': csvData
+            //,'target' : '_blank' //if you want it to open in a new window
+    });
+
+    //------------------------------------------------------------
+    // Helper Functions 
+    //------------------------------------------------------------
+    // Format the output so it has the appropriate delimiters
+    function formatRows(rows){
+        return rows.get().join(tmpRowDelim)
+            .split(tmpRowDelim).join(rowDelim)
+            .split(tmpColDelim).join(colDelim);
+    }
+    // Grab and format a row from the table
+    function grabRow(i,row){
+         
+        var $row = $(row);
+        //for some reason $cols = $row.find('td') || $row.find('th') won't work...
+        var $cols = $row.find('td:gt('+skipcols+')'); 
+        if(!$cols.length) $cols = $row.find('th:gt('+skipcols+')');  
+
+        return $cols.map(grabCol)
+                    .get().join(tmpColDelim);
+    }
+    // Grab and format a column from the table 
+    function grabCol(j,col){
+        var $col = $(col),
+            $text = $col.text();
+
+        return $text.replace('"', '""'); // escape double quotes
+
+    }
 }

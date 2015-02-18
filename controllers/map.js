@@ -19,10 +19,10 @@ router.use(function(req, res, next) {
 router.get('/',  function(req, res){
 	if(req.query.debug)console.log(req.query);
 	if(req.query.BBOX){
-		if(req.query.ID)
-			drawPGMap(req,res);
-		else
-			drawShapefileMap(req,res);
+		//if(req.query.ID)
+		drawPGMap(req,res);
+		//else
+		//	drawShapefileMap(req,res);
 		return;
 	}
 	//return;
@@ -68,7 +68,7 @@ STATUS ON \n \
 TYPE POLYGON \n \
 CONNECTIONTYPE POSTGIS \n \
 CONNECTION '"+global.postgisStr+"' \n \
-DATA 'wkb_geometry from (select oid,wkb_geometry from " + req.user.shortName + "." + req.query.LAYERS + " where oid="+oid+") as subquery using SRID=3857 using unique oid' \n \
+DATA 'wkb_geometry from "+(oid?"(select oid,wkb_geometry from " + req.user.shortName + "." + req.query.LAYERS + " where oid="+oid+") as subquery":req.user.shortName + "." + req.query.LAYERS)+" using SRID=3857 using unique oid' \n \
 PROCESSING 'CLOSE_CONNECTION=DEFER' \n \
 CLASS \n\
 NAME '"+req.query.LAYERS+"' \n \

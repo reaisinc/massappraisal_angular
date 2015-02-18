@@ -112,7 +112,7 @@ function getOgrInfo(req,res,pid,tid,fileName){
 				console.log(sql);
 				client.query(sql, function(err, result) {
 					var tableName=result.rows[0].name+tid;
-					var sql="select name,saledate from " + req.user.shortName + "." + tableName + "_vars where include=1 and id=0 and depvar!=1";
+					var sql="select name,saledate from " + req.user.shortName + "." + tableName + "_vars where include=1 and id=0 and depvar!=1 and soils=0";
 					console.log(sql);
 					client.query(sql, function(err, result) {
 						release()

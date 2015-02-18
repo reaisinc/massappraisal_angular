@@ -8,13 +8,14 @@
 
 		<div class='col-lg-2' style='float: right;width:500px' >
 			<div id="startBtn" style='float:right'>
-				<a class="btn btn-success btn-default" id="createNewProjectBtn" ng-click='showNewProject=!showNewProject'> Create new model <i class="glyphicon glyphicon-plus"></i></a></i></a>
+				<a class="btn btn-success btn-default" ng-click='showNewProject()'> Create new model <i class="glyphicon glyphicon-plus"></i></a></i></a>
 			</div>
-			<div id="newProjectDiv" ng-show="showNewProject" style='border:1px solid #e6e6e6;padding: 5px;'>
+			<div id="newProjectDiv" ng-show="newProjectVisible" style='border:1px solid #e6e6e6;padding: 5px;'>
 				<br><br>
-				<form id='newprojfrm' style='padding: 5px' ng-submit="createProject()">
+				<form name="newprojfrm" id='newprojfrm' style='padding: 5px' ng-submit="createProject()">
 					<table class='table'>
-					<tr><td>Appraisal model name</td><td> <input class='input' type='text' name='name' style='width:100%' /></td></tr>
+					<tr><td>Appraisal model name</td><td> 
+					<input class='input' type='text' name='name' style='width:100%'/></td></tr>
 					<!-- 
 					<tr><td> Location </td>
 					<td>

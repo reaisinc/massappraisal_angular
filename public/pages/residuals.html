@@ -82,12 +82,18 @@ li.disabled {
 				</div>
 			</div>
 			<div class='col-lg-6 col-xs-6'>
+			<h4>Residuals table</h4>
+			The table below shows the difference between the observed value and the estimated function value.
+			</div>
+			<!--  
+			<div class='col-lg-6 col-xs-6'>
 				<div id="browse_app">
 					<h4>Download the residuals table</h4>
-					<a class="btn btn-large btn-info" ng-click="downloadTable()"> <i class="glyphicon glyphicon-cloud-download"></i> Download
+					<a id="dl_resid" class="btn btn-large btn-info" ng-click="downloadTable()"> <i class="glyphicon glyphicon-cloud-download"></i> Download
 					</a>
 				</div>
 			</div>
+			-->
 		</div>
 	</div>
 
@@ -104,7 +110,7 @@ li.disabled {
 		<img src="/img/spinner_mac.gif"> Loading table..... Please wait
 	</div>
 
-	<table class="table table-striped table-bordered">
+	<table id="resid_table" class="table table-striped table-bordered">
 		<thead>
 			<th ng-repeat="col in residualcolumns">{{col}}</th>
 		</thead>

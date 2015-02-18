@@ -16,13 +16,14 @@
 			<div class="col-lg-8 col-xs-8">
 				Before continuing, you need to specify which field is the dependent variable. Usually this will be the sales price. A new field "oid" is added that is guaranteed to be unique, but you may wish to specify a different field as your unique identifier. This unique identifier is used when printing
 				out the residuals. <br> Check the boxes next to the numeric fields you wish to include in the regression analysis.
-				<br>
-				Note: rows colored in blue are fields extracted from the USDA soils data
+				
+				<span ng-show="summary.geomtype=='Polygon'"><br><br>Note: rows colored in blue are fields extracted from the USDA soils data</span>
 			</div>
 
 			<div class="col-lg-4 col-xs-4">
+			<h4>Download the summary table</h4>
 				<div id="browse_app">
-					<a class="btn btn-large btn-info" ng-click="downloadTable()"> <i class="glyphicon glyphicon-cloud-download"></i> Download
+					<a id="dl_summary" class="btn btn-large btn-info" ng-click="downloadTable()"> <i class="glyphicon glyphicon-cloud-download"></i> Download
 					</a>
 					<a ng-show="summary.geomtype=='Polygon'" class="btn btn-large btn-info" target=_blank ng-click="showMap()"> <i class="glyphicon glyphicon-globe"></i> Show on map
 					</a>
