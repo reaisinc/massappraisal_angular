@@ -123,7 +123,7 @@ maApp.filter('numformat', function($filter) {
 //create the controller and inject Angular's $scope
 maApp.controller('mainController', function($rootScope,$scope, $http, $location) {
 
-		
+
 	$rootScope.mode="user";
 	$rootScope.username=null;
 	if(sessionStorage.getItem("username")){
@@ -132,7 +132,7 @@ maApp.controller('mainController', function($rootScope,$scope, $http, $location)
 	$scope.viewModels=function(){
 		$location.path("/models");	
 	}
-	
+
 	$scope.viewProject = function (id) {
 
 		if(id){
@@ -195,13 +195,13 @@ maApp.controller('mainController', function($rootScope,$scope, $http, $location)
 	$scope.gotoUrl = function (name,len) {
 		$location.path(getURL(name,len));
 	};
-/*
+	/*
 	if(sessionStorage.getItem("username")){
 		console.log("Found username" + sessionStorage.getItem("username"));
 		$location.path("/models");
 		return;
 	};
-*/
+	 */
 });
 
 //create the controller and inject Angular's $scope
@@ -382,6 +382,50 @@ maApp.controller('ModalInstanceCtrl', function ($scope,$location,$http,$modalIns
 
 });
 
+maApp.controller('ModalDeleteInstanceCtrl', function ($scope,$location,$http,$modalInstance) {
+	//$scope.ok = function () {
+	//	$modalInstance.close();
+	//};
+
+	$scope.cancel = function () {
+		$modalInstance.dismiss('cancel');
+	};
+	$scope.ok = function () {
+		$modalInstance.close();
+		// $location.path("/project/"+id);
+		var url='/projects/'+$modalInstance.pid+'/tables/'+$modalInstance.id;
+		$http.delete(url)
+		.success(function(data, status, headers, config) {
+			// remove tr from table
+			// remove tr from table
+			var index = -1;		
+			for( var i = 0; i < $modalInstance.rows.length; i++ ) {
+				if( $modalInstance.rows[i].id === $modalInstance.id ) {
+					index = i;
+					break;
+				}
+			}
+			if( index === -1 ) {
+				alert( "Something gone wrong" );
+			}
+			$modalInstance.rows.splice( index, 1 );						
+
+		})
+		.error(function(data, status, headers, config ){ 
+			// console.log( errorThrown );
+			if(status==404)$location.path("/login")
+			else $scope.errMsg="Unable to remove this table";
+			// $("#events-result").show().html("Project name is already in use.
+			// Please select a different name")
+		});
+
+	};
+
+	$scope.cancel = function () {
+		$modalInstance.dismiss('cancel');
+	};
+});
+
 maApp.controller('projectController', function($rootScope,$scope,$http,$location,$modal) {
 	$scope.list = function(r){
 		$http.get($location.$$url+(r?"?"+r:"")).
@@ -432,35 +476,52 @@ maApp.controller('projectController', function($rootScope,$scope,$http,$location
 			else $location.path(window.location.hash.substring(1) +"/"+tid);
 		}
 	};	
-	$scope.deleteCompTable = function (id) {
-		// $location.path("/project/"+id);
-		var url='/projects/'+this.pid+'/tables/'+id;
-		$http.delete(url)
-		.success(function(data, status, headers, config) {
-			// remove tr from table
-			// remove tr from table
-			var index = -1;		
-			for( var i = 0; i < $scope.project.comps.length; i++ ) {
-				if( $scope.project.comps[i].id === id ) {
-					index = i;
-					break;
-				}
-			}
-			if( index === -1 ) {
-				alert( "Something gone wrong" );
-			}
-			$scope.project.comps.splice( index, 1 );						
 
-		})
-		.error(function(data, status, headers, config ){ 
-			// console.log( errorThrown );
-			if(status==404)$location.path("/login")
-			else $scope.errMsg="Unable to remove this table";
-			// $("#events-result").show().html("Project name is already in use.
-			// Please select a different name")
+	$scope.deleteCompTable = function (id) {
+		var modalInstance = $modal.open({
+			templateUrl: 'myModalContent.html',
+			controller: 'ModalDeleteInstanceCtrl',
+			size: 'sm'
+			//resolve: {
+			//	items: function () {
+			//		return $scope.items;
+			//	}
+			//}
+		});
+		modalInstance.pid=$scope.pid;
+		modalInstance.id=id;
+		modalInstance.rows=$scope.project.comps;
+		modalInstance.result.then(function () {
+			//$scope.selected = selectedItem;
+			//$scope.id=id;
+		}, function () {
+			console.log("Ok");
+			//$log.info('Modal dismissed at: ' + new Date());
 		});
 	};
+
 	$scope.deleteSubjTable = function (id) {
+		var modalInstance = $modal.open({
+			templateUrl: 'myModalContent.html',
+			controller: 'ModalDeleteInstanceCtrl',
+			size: 'sm'
+			//resolve: {
+			//	items: function () {
+			//		return $scope.items;
+			//	}
+			//}
+		});
+		modalInstance.pid=$scope.pid;
+		modalInstance.id=id;
+		modalInstance.rows=$scope.project.subjects;
+		modalInstance.result.then(function () {
+			//$scope.selected = selectedItem;
+			//$scope.id=id;
+		}, function () {
+			console.log("Ok");
+			//$log.info('Modal dismissed at: ' + new Date());
+		});
+		/*
 		// $location.path("/project/"+id);
 		var url='/projects/'+this.pid+'/tables/'+id;
 		$http.delete(url)
@@ -487,6 +548,7 @@ maApp.controller('projectController', function($rootScope,$scope,$http,$location
 			// $("#events-result").show().html("Project name is already in use.
 			// Please select a different name")
 		});
+		*/
 	};
 });
 
@@ -553,16 +615,16 @@ maApp.controller('summaryController', function($rootScope,$scope,$http,$location
 				return $(cell).html();
 			});
 		});
-		*/
+		 */
 		exportTableToCSV($(".table"),$scope.summary.alias+'_summary.csv','dl_summary',3);
-		
-		
+
+
 		//exportTableToCSV(headers,data,$scope.summary.alias+".csv")
 		// CSV
-        //exportTableToCSV.apply(this, [$('.table'), outputFile]);
+		//exportTableToCSV.apply(this, [$('.table'), outputFile]);
 		//var url = getURL("download");
 		//$window.open(url);
-		
+
 		/*
 		$http.get(getURL("download")).
 		success(function(data, status, headers, config) {
@@ -717,7 +779,7 @@ maApp.controller('residualsController', function($scope,$http,$location) {
 		});
 	}
 	$scope.downloadTable = function(){
-		
+
 		exportTableToCSV($("#resid_table"),$scope.residuals.alias+'_residuals.csv','dl_resid',-1);
 	}
 	$scope.tableURL = $location.$$url.slice(0,-10);
@@ -953,6 +1015,27 @@ maApp.controller('subjectController', function($rootScope,$scope,$http,$location
 	};
 
 	$scope.deleteSubjTable = function (id) {
+		var modalInstance = $modal.open({
+			templateUrl: 'myModalContent.html',
+			controller: 'ModalDeleteInstanceCtrl',
+			size: 'sm'
+			//resolve: {
+			//	items: function () {
+			//		return $scope.items;
+			//	}
+			//}
+		});
+		modalInstance.pid=$scope.pid;
+		modalInstance.id=id;
+		modalInstance.rows=$scope.subject.rows;
+		modalInstance.result.then(function () {
+			//$scope.selected = selectedItem;
+			//$scope.id=id;
+		}, function () {
+			console.log("Ok");
+			//$log.info('Modal dismissed at: ' + new Date());
+		});
+		/*
 		//var url="" + $location.path("/project/"+id);
 		var url='/projects/'+$scope.pid+'/tables/'+id;
 		//($location.$$url+"/tables/"+id
@@ -980,6 +1063,7 @@ maApp.controller('subjectController', function($rootScope,$scope,$http,$location
 			// $("#events-result").show().html("Project name is already in use.
 			// Please select a different name")
 		});
+		*/
 	};
 
 });
@@ -1284,61 +1368,61 @@ function exportTableToCSV($table, filename,aid,skipcols) {
 			return $(cell).html();
 		});
 	});
-	*/
+	 */
 	var $headers = $table.find('tr:has(th)')
-        ,$rows = $table.find('tr:has(td)')
+	,$rows = $table.find('tr:has(td)')
 
-        // Temporary delimiter characters unlikely to be typed by keyboard
-        // This is to avoid accidentally splitting the actual contents
-        ,tmpColDelim = String.fromCharCode(11) // vertical tab character
-        ,tmpRowDelim = String.fromCharCode(0) // null character
+	// Temporary delimiter characters unlikely to be typed by keyboard
+	// This is to avoid accidentally splitting the actual contents
+	,tmpColDelim = String.fromCharCode(11) // vertical tab character
+	,tmpRowDelim = String.fromCharCode(0) // null character
 
-        // actual delimiter characters for CSV format
-        ,colDelim = '","'
-        ,rowDelim = '"\r\n"';
+	// actual delimiter characters for CSV format
+	,colDelim = '","'
+		,rowDelim = '"\r\n"';
 
-        // Grab text from table into CSV formatted string
-        var csv = '"';
-        csv += formatRows($headers.map(grabRow));
-        csv += rowDelim;
-        csv += formatRows($rows.map(grabRow)) + '"';
+	// Grab text from table into CSV formatted string
+	var csv = '"';
+	csv += formatRows($headers.map(grabRow));
+	csv += rowDelim;
+	csv += formatRows($rows.map(grabRow)) + '"';
 
-        // Data URI
-        var csvData = 'data:application/csv;charset=utf-8,' + encodeURIComponent(csv);
+	// Data URI
+	var csvData = 'data:application/csv;charset=utf-8,' + encodeURIComponent(csv);
 
-        $("#"+aid)
-        .attr({
-        'download': filename
-            ,'href': csvData
-            //,'target' : '_blank' //if you want it to open in a new window
-    });
+	$("#"+aid)
+	.attr({
+		'download': filename
+		,'href': csvData
+		//,'target' : '_blank' //if you want it to open in a new window
+	});
 
-    //------------------------------------------------------------
-    // Helper Functions 
-    //------------------------------------------------------------
-    // Format the output so it has the appropriate delimiters
-    function formatRows(rows){
-        return rows.get().join(tmpRowDelim)
-            .split(tmpRowDelim).join(rowDelim)
-            .split(tmpColDelim).join(colDelim);
-    }
-    // Grab and format a row from the table
-    function grabRow(i,row){
-         
-        var $row = $(row);
-        //for some reason $cols = $row.find('td') || $row.find('th') won't work...
-        var $cols = $row.find('td:gt('+skipcols+')'); 
-        if(!$cols.length) $cols = $row.find('th:gt('+skipcols+')');  
+	//------------------------------------------------------------
+	// Helper Functions 
+	//------------------------------------------------------------
+	// Format the output so it has the appropriate delimiters
+	function formatRows(rows){
+		return rows.get().join(tmpRowDelim)
+		.split(tmpRowDelim).join(rowDelim)
+		.split(tmpColDelim).join(colDelim);
+	}
+	// Grab and format a row from the table
+	function grabRow(i,row){
 
-        return $cols.map(grabCol)
-                    .get().join(tmpColDelim);
-    }
-    // Grab and format a column from the table 
-    function grabCol(j,col){
-        var $col = $(col),
-            $text = $col.text();
+		var $row = $(row);
+		//for some reason $cols = $row.find('td') || $row.find('th') won't work...
+		var $cols = $row.find('td:gt('+skipcols+')'); 
+		if(!$cols.length) $cols = $row.find('th:gt('+skipcols+')');  
 
-        return $text.replace('"', '""'); // escape double quotes
+		return $cols.map(grabCol)
+		.get().join(tmpColDelim);
+	}
+	// Grab and format a column from the table 
+	function grabCol(j,col){
+		var $col = $(col),
+		$text = $col.text();
 
-    }
+		return $text.replace('"', '""'); // escape double quotes
+
+	}
 }

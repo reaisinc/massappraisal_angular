@@ -180,7 +180,18 @@ function getUserFiles(req,res)
 			result.rows.splice(0,1);
 			var comps=[];
 			var subj=[];
-			for(var i in result.rows)if(result.rows[i].type==0)comps.push(result.rows[i]);else subj.push(result.rows[i]);
+			var compid={};
+			for(var i in result.rows){
+				if(result.rows[i].type==0){
+					compid[result.rows[i].id]=result.rows[i].alias;
+					comps.push(result.rows[i]);
+				}
+				else {
+					if(result.rows[i].tid)
+					result.rows[i]['comp']=compid[result.rows[i].tid]
+					subj.push(result.rows[i]);
+				}
+			}
 				
 			// res.send(JSON.stringify({user:req.user.displayName,project:req.params.projectName,rows:result.rows?result.rows:[]}))
 			res.json({id:id,name:name,comps:comps,subjects:subj});
