@@ -327,7 +327,7 @@ function tableSummary(req, res){
 			var tableName = result.rows[0].name+tid;
 			var geomtype = result.rows[0].geometrytype;
 			var alias=result.rows[0].alias;
-			var sql="select include,id,depvar,saledate,soils,name,type from " + req.user.shortName + "." + tableName + "_vars where include<5 order by id desc,depvar desc,name asc";
+			var sql="select include,id,depvar,saledate,soils,uniqueid,name,type from " + req.user.shortName + "." + tableName + "_vars where include<5 order by id desc,uniqueid desc,depvar desc,soils asc,name asc";
 			console.log(sql);
 			client.query(sql, function(err, result) {
 				tableName = req.user.shortName+"."+ tableName+'_stats';
@@ -336,7 +336,7 @@ function tableSummary(req, res){
 				// console.log(result.rows);
 				for(var i in result.rows){
 					// names[result.rows[i].name]={"include":result.rows[i].include?'true':'false',"id":result.rows[i].id?'true':'false',"depvar":result.rows[i].depvar?'true':'false'};
-					names[result.rows[i].name]={"include":result.rows[i].include,"id":result.rows[i].id,"depvar":result.rows[i].depvar,"saledate":result.rows[i].saledate,"soils":result.rows[i].soils,"type":result.rows[i].type};
+					names[result.rows[i].name]={"include":result.rows[i].include,"id":result.rows[i].id,"depvar":result.rows[i].depvar,"uniqueid":result.rows[i].uniqueid,"saledate":result.rows[i].saledate,"soils":result.rows[i].soils,"type":result.rows[i].type};
 					if(result.rows[i].name.charAt(0) == result.rows[i].name.charAt(0).toUpperCase())
 						result.rows[i].name='"' + result.rows[i].name + '"';
 					else if(result.rows[i].name.indexOf(" ")!=-1)
@@ -1028,7 +1028,7 @@ function reportSubject(req,res){
 					//console.log(factors);
 					//client.query(sql, function(err, result) {
 					//if(err)console.log(err);
-					var sql="select name,saledate from " + req.user.shortName + "." + subtableName + "_vars where include>0 and depvar!=1 order by id desc,name asc";
+					var sql="select name,saledate from " + req.user.shortName + "." + subtableName + "_vars where include>0  order by id desc,name asc";
 					console.log(sql);
 					client.query(sql, function(err, result) {
 						var fields=[];
@@ -1057,6 +1057,9 @@ function reportSubject(req,res){
 								}
 							}
 							*/
+							fields.push("Date")
+							var d=new Date();
+							result.rows[0]["Date"]=""+(d.getMonth()+1) + '/' + d.getDate() + '/' +  d.getFullYear();
 							var data = processData(factors,result.rows[0],saledate);
 							if(err){console.log(err);res.json({err:err.toString()});throw err;}
 							res.json({depvar:factors.names[0],pid:pid,tid:tid,sid:sid,id:oid,fields:fields,alias:alias,subject:subtableName,rows:result.rows,result:data?data:{}});
@@ -1077,13 +1080,22 @@ function reportSubject(req,res){
 function calc(factors,row,saledate)
 {
 	var ret=factors.coef[0].Estimate;
-	var today =  new Date()/1000;
+	//need to get today's date.  use date.parse to get consistent number for entire day instead of using new Date()/1000 which changes every millisecond
+	var d =  new Date();
+	var today = Date.parse((d.getMonth()+1) + '/' + d.getDate() + '/' +  d.getFullYear())/1000;
+	console.log(ret);
 	for(var i=1;i<factors.names.length;i++)
 	{
-		if(saledate == factors.names[i])ret += factors.coef[i].Estimate * today;
-		else if(row[factors.names[i]])ret += factors.coef[i].Estimate * row[factors.names[i]];
+		if(saledate == factors.names[i]){
+			ret += factors.coef[i].Estimate * today;
+			console.log( factors.coef[i].Estimate + " * " + today + " = " + ret )
+		}
+		else if(row[factors.names[i]]){
+			ret += factors.coef[i].Estimate * row[factors.names[i]];
+			console.log( factors.coef[i].Estimate + " * " + row[factors.names[i]] + " = " + ret )
+		}
 	}
-	
+
 	return ret;
 }
 
