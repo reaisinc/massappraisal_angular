@@ -27,11 +27,11 @@ if(isLocal){
 	global.postgisStr = "dbname=soils user=dbuser password=dbuser host=localhost"
 }
 else{
-	global.ogrConnString = 'PG:host=localhost user=dbuser dbname=soils password=dbuser';
 	global.conString = "postgresql://dbuser:dbuser@127.11.25.130:5432/massappraisal";
 	global.adminConString = "postgres://adminwrhjewj:I2JGjbKe1ENG@localhost/massappraisal";
 	global.hostString = "http://massappraisal-reais.rhcloud.com";
 	global.ogrConnString = 'PG:host=127.11.25.130 user=dbuser dbname=massappraisal password=dbuser';
+	global.postgisStr = "dbname=massappraisal user=dbuser password=dbuser host=127.11.25.130"
 }	
 
 //Simple route middleware to ensure user is authenticated.
