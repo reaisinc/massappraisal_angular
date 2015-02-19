@@ -204,12 +204,30 @@ function execOgr2ogr(req,res,pid,tid,id,fileName,tableName){
 	.exec(function (er, data) {
 		console.log("Done");
 		if (er) console.error(er)
-		// console.log(data.toString())
-		// res.end(data.toString());
-		var msg={"step":step,"ret":data?data.toString():""};
-		if(er)msg['err']="Unable to load table:  "+er;
-		// shouldn't ever be called since handled in upload.js
-		res.json(msg);
+		if(er&&er.toString().indexOf("numeric field overflow")!=-1){
+			opts.push("-lco","PRECISION=NO")
+			var ogr = ogr2ogr( filePath)
+			.format('PostgreSQL') 
+			.options(opts)//
+			.skipfailures()  
+			.destination(global.ogrConnString + ' active_schema='+req.user.shortName) 	
+			.exec(function (er, data) {
+				console.log("Done");
+				if (er) console.error(er)
+				var msg={"step":step,"ret":data?data.toString():""};
+				if(er)msg['err']="Unable to load table:  "+er;
+				// shouldn't ever be called since handled in upload.js
+				res.json(msg);
+			});
+		}
+		else{
+			// console.log(data.toString())
+			// res.end(data.toString());
+			var msg={"step":step,"ret":data?data.toString():""};
+			if(er)msg['err']="Unable to load table:  "+er;
+			// shouldn't ever be called since handled in upload.js
+			res.json(msg);
+		}
 	});
 }
 

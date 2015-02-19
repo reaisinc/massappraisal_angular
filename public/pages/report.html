@@ -28,7 +28,7 @@
 			<tbody>
 				<tr ng-repeat="col in report.fields">
 					<td style='font-weight: bold'>{{col}}</td>
-					<td style='text-align: right'>{{report.rows[0][col]}}</td>
+					<td style='text-align: right'>{{report.rows[0][col] | numformat:report.names[col]}}</td>
 				</tr>
 
 				<!-- 

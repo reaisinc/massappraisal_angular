@@ -112,6 +112,7 @@ maApp.filter('numformat', function($filter) {
 		//$filter('currency')(amount, symbol, fractionSize)
 		if(type=='currency')out=$filter('currency')(out);
 		else if(type=='numeric')out=$filter('number',2)(out);
+		else if(type=='double precision')out=$filter('number',2)(out);
 		else if(type=='timestamp with time zone'){
 			out=$filter('date')(new Date(out * 1000), "MM/dd/yyyy")
 			//out=new Date(out * 1000).format('mm/dd/yyyy');
@@ -1014,7 +1015,7 @@ maApp.controller('subjectController', function($rootScope,$scope,$http,$location
 		}
 	};
 
-	$scope.deleteSubjTable = function (id) {
+	$scope.deleteSubjectTable = function (id) {
 		var modalInstance = $modal.open({
 			templateUrl: 'myModalContent.html',
 			controller: 'ModalDeleteInstanceCtrl',

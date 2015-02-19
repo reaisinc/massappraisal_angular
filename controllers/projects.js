@@ -1039,13 +1039,14 @@ function reportSubject(req,res){
 					//console.log(factors);
 					//client.query(sql, function(err, result) {
 					//if(err)console.log(err);
-					var sql="select name,saledate from " + req.user.shortName + "." + subtableName + "_vars where include>0  order by id desc,name asc";
+					var sql="select name,saledate,type from " + req.user.shortName + "." + subtableName + "_vars where include>0  order by id desc,name asc";
 					console.log(sql);
 					client.query(sql, function(err, result) {
 						var fields=[];
+						var names={};
 						//for(var i in result.rows)fields.push(result.rows[i].name);
 						for(var i = 0; i < result.rows.length;i++){
-
+							names[result.rows[i].name]=result.rows[i].type;
 							if(result.rows[i].name.charAt(0) == result.rows[i].name.charAt(0).toUpperCase())
 								result.rows[i].name='"' + result.rows[i].name + '"';
 							else if(result.rows[i].name.indexOf(" ")!=-1)
@@ -1068,12 +1069,14 @@ function reportSubject(req,res){
 								}
 							}
 							*/
+							//remove all double quotes from field names
+							for(var i=0;i<fields.length;i++)fields[i]=fields[i].replace(/\"/g,"");
 							fields.push("Date")
 							var d=new Date();
 							result.rows[0]["Date"]=""+(d.getMonth()+1) + '/' + d.getDate() + '/' +  d.getFullYear();
 							var data = processData(factors,result.rows[0],saledate);
 							if(err){console.log(err);res.json({err:err.toString()});throw err;}
-							res.json({depvar:factors.names[0],pid:pid,tid:tid,sid:sid,id:oid,fields:fields,alias:alias,subject:subtableName,rows:result.rows,result:data?data:{}});
+							res.json({depvar:factors.names[0],pid:pid,tid:tid,sid:sid,id:oid,names:names,fields:fields,alias:alias,subject:subtableName,rows:result.rows,result:data?data:{}});
 						});
 					})
 					//});

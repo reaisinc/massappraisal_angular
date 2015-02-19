@@ -84,7 +84,8 @@ li.disabled {
 			<!-- <td>{{x.comp}}</td>-->
 			<td>{{x.filetype}}</td>
 			<td>{{x.date}}</td>
-			<td align='right'><a ng-click="viewSubject(x.id,x.numtuples)" role="button" class="btn btn-primary"><i class="glyphicon glyphicon-stats"></i> View</a> <a ng-click="deleteTable(x.id)" role="button" class="btn btn-danger delete"><i class="glyphicon glyphicon-trash"></i> Delete</a></td>
+			<td align='right'><a ng-click="viewSubject(x.id,x.numtuples)" role="button" class="btn btn-primary"><i class="glyphicon glyphicon-stats"></i> View</a>
+			<a ng-click="deleteSubjectTable(x.id)" role="button" class="btn btn-danger delete"><i class="glyphicon glyphicon-trash"></i> Delete</a></td>
 		</tr>
 	</table>
 	<div class="col-lg-12 col-xs-12 text-right">Comparable: {{tableName}}</div>
