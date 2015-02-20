@@ -856,9 +856,14 @@ maApp.controller('residualsController', function($scope,$http,$location) {
 	$scope.getResiduals();
 });
 
-maApp.controller('predictController', function($scope,$http,$location,$filter) {
+maApp.controller('predictController', function($scope,$http,$location,$filter,$sce) {
+	
+	$scope.renderHtml = function(html_code)
+	{
+		return $sce.trustAsHtml(html_code);
+	};
 	$scope.getData=function(){
-		$http.get($location.$$url).
+		$http.get($location.$$url+($scope.useSW?"?nosw=1":"")).
 		success(function(data, status, headers, config) {
 			$scope.predictions = data;
 			$scope.tableName=data.alias;
@@ -886,6 +891,11 @@ maApp.controller('predictController', function($scope,$http,$location,$filter) {
 			// log error
 			//if(status==404)$location.path("/login")
 		});		
+	}
+	$scope.toggleRegression=function()
+	{
+		$scope.getData();
+		
 	}
 	$scope.getData();
 	$scope.calculatePrediction=function(){
@@ -948,7 +958,9 @@ maApp.controller('predictController', function($scope,$http,$location,$filter) {
 		//console.log(priceFormatter(result));
 		//		if(type=='currency')out=$filter('currency')(out);
 		//else if(type=='numeric')out=$filter('number',2)(out);
-		$scope.prediction="Predicted price: "+ $filter('currency')(result) ;
+		//data[i][depvar+"_inrng"] =  (data[i][depvar]<data[i][depvar+'_pred']+$scope.residuals.vars.stderr && data[i][depvar]>data[i][depvar+'_pred']-$scope.residuals.vars.stderr)?"Yes":"No";
+		$scope.prediction="Predicted price: "+ $filter('currency')(result) + "<br>Higher range price: "+ $filter('currency')(result+$scope.predictions.vars.stderr) + "<br>Lower range price: "+ $filter('currency')(result-$scope.predictions.vars.stderr);
+		
 	}	
 });
 
@@ -1244,7 +1256,7 @@ function checkStep($scope,$http,url,params){
 		{
 			// $('<div class="alert alert-danger"/>')
 			// .html(data.err).insertAfter('#stepsWizard');
-
+			$scope.errMsg=data.err;
 			return;
 		}
 		if(data.id){

@@ -145,3 +145,20 @@ AS '/var/lib/openshift/545108f14382eceab50005e9/app-root/data/R/lib64/R/lib/plr'
 LANGUAGE C;
 
 -Wl,-rpath,/var/lib/openshift/545108f14382eceab50005e9/app-root/data/R/lib64/R/lib/
+
+#copy from one schema to another
+
+create table arvelmhale40.demodata14                     (LIKE reaisincva.demodata14                     INCLUDING CONSTRAINTS INCLUDING INDEXES) ;
+create table arvelmhale40.demodata14_stats               (LIKE reaisincva.demodata14_stats               INCLUDING CONSTRAINTS INCLUDING INDEXES) ;
+create table arvelmhale40.demodata14_vars                (LIKE reaisincva.demodata14_vars                INCLUDING CONSTRAINTS INCLUDING INDEXES) ;
+create table arvelmhale40.demodatasubject15              (LIKE reaisincva.demodatasubject15              INCLUDING CONSTRAINTS INCLUDING INDEXES) ;
+create table arvelmhale40.demodatasubject15_stats        (LIKE reaisincva.demodatasubject15_stats        INCLUDING CONSTRAINTS INCLUDING INDEXES) ;
+create table arvelmhale40.demodatasubject15_vars         (LIKE reaisincva.demodatasubject15_vars         INCLUDING CONSTRAINTS INCLUDING INDEXES) ;
+create table arvelmhale40.homesite_singlesubject18       (LIKE reaisincva.homesite_singlesubject18       INCLUDING CONSTRAINTS INCLUDING INDEXES) ;
+create table arvelmhale40.homesite_singlesubject18_stats (LIKE reaisincva.homesite_singlesubject18_stats INCLUDING CONSTRAINTS INCLUDING INDEXES) ;
+create table arvelmhale40.homesite_singlesubject18_vars  (LIKE reaisincva.homesite_singlesubject18_vars  INCLUDING CONSTRAINTS INCLUDING INDEXES) ;
+create table arvelmhale40.homesites17                    (LIKE reaisincva.homesites17                    INCLUDING CONSTRAINTS INCLUDING INDEXES) ;
+create table arvelmhale40.homesites17_stats              (LIKE reaisincva.homesites17_stats              INCLUDING CONSTRAINTS INCLUDING INDEXES) ;
+create table arvelmhale40.homesites17_vars               (LIKE reaisincva.homesites17_vars               INCLUDING CONSTRAINTS INCLUDING INDEXES) ;
+create table arvelmhale40.projects                       (LIKE reaisincva.projects                       INCLUDING CONSTRAINTS INCLUDING INDEXES) ;
+create table arvelmhale40.tables                         (LIKE reaisincva.tables                         INCLUDING CONSTRAINTS INCLUDING INDEXES) ;

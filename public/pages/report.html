@@ -26,7 +26,7 @@
  		</thead>
  		 -->
 			<tbody>
-				<tr ng-repeat="col in report.fields">
+				<tr ng-repeat="col in report.fields track by $index">
 					<td style='font-weight: bold'>{{col}}</td>
 					<td style='text-align: right'>{{report.rows[0][col] | numformat:report.names[col]}}</td>
 				</tr>

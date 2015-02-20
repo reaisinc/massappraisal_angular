@@ -129,7 +129,7 @@ li.disabled {
 
 			</table>
 
-			<div ng-show="prediction" ng-class="prederror?'alert alert-danger':'alert alert-success'" id="events-result">{{prediction}}</div>
+			<div ng-show="prediction" ng-bind-html="renderHtml(prediction)" ng-class="prederror?'alert alert-danger':'alert alert-success'" id="events-result">{{prediction}}</div>
 			<input class="btn btn-success" type='submit' value='Calculate' ng-click="calculatePrediction()">
 		</form>
 	</div>
@@ -147,7 +147,7 @@ li.disabled {
 		<div class="panel-body">
 			<ul>
 				<li>Enter values for the variables that have been selected using stepwise regression</li>
-				<li>Or upload an Excel, CSV or dbf file containing multiple rows of data containing the selected variables. Note: the variable names must be identical in order to match the model.</li>
+				<li>Check the box next to Use full regression results to enter all fields.</li>
 			</ul>
 		</div>
 	</div>

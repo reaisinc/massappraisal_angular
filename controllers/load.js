@@ -106,6 +106,7 @@ function getOgrInfo(req,res,pid,tid,fileName){
 		console.log("Layer name: " + data["Layer name"]);
 		//var alias=fileName.slice(0,-4);
 		if(tid){
+			console.log(data);
 			pg.connect(global.conString,function(err, client, release) {
 				if (err){ res.json({"err":"No connection to database;"});throw err;}
 				var sql="select name from "+req.user.shortName +".tables where id="+tid;
@@ -202,7 +203,7 @@ function execOgr2ogr(req,res,pid,tid,id,fileName,tableName){
 	.skipfailures()  
 	.destination(global.ogrConnString + ' active_schema='+req.user.shortName) 	
 	.exec(function (er, data) {
-		console.log("Done");
+		console.log("Done loading data");
 		if (er) console.error(er)
 		if(er&&er.toString().indexOf("numeric field overflow")!=-1){
 			opts.push("-lco","PRECISION=NO")
@@ -212,7 +213,7 @@ function execOgr2ogr(req,res,pid,tid,id,fileName,tableName){
 			.skipfailures()  
 			.destination(global.ogrConnString + ' active_schema='+req.user.shortName) 	
 			.exec(function (er, data) {
-				console.log("Done");
+				console.log("Done loading data");
 				if (er) console.error(er)
 				var msg={"step":step,"ret":data?data.toString():""};
 				if(er)msg['err']="Unable to load table:  "+er;
@@ -224,7 +225,14 @@ function execOgr2ogr(req,res,pid,tid,id,fileName,tableName){
 			// console.log(data.toString())
 			// res.end(data.toString());
 			var msg={"step":step,"ret":data?data.toString():""};
-			if(er)msg['err']="Unable to load table:  "+er;
+			if(er){
+				msg['err']="Unable to load table:  "+er;
+				if(msg['err'].indexOf("Warning")!=1){
+					msg['warning']=msg['err'];
+					delete msg['err'];
+				}
+			}
+			
 			// shouldn't ever be called since handled in upload.js
 			res.json(msg);
 		}

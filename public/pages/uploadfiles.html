@@ -104,7 +104,9 @@
 	</div>
 </div>
 
-<span style="width: 100%; padding: 20px">{{stepMsg}}</span>
+<div style="width: 100%; padding: 20px">{{stepMsg}}</div>
+
+<div ng-show="errMsg" class="alert alert-danger" style="width: 100%; padding: 20px">{{errMsg}}</div>
 
 <div class="modal-footer">
 	<button ng-show="completed" class="btn btn-primary" ng-click="ok()">OK</button>

@@ -5,7 +5,7 @@ var pg = require("pg");
 router.use(function(req, res, next) {
 	if (!req.isAuthenticated()) { 
 		console.log("redirecting");
-		
+
 		//res.redirect('/login');
 		res.status(404).json({err:"Not logged in"})
 		return; 
@@ -140,7 +140,7 @@ function createProject(req,res)
 		// table_schema = '"+req.user.shortName+"' and table_name not like
 		// '%_stats' and table_name not like '%_soils' and table_name not like
 		// '%_vars'";
-		
+
 		var sql="insert into "+req.user.shortName+".projects(name,state,created_date,modified_date) values($1,'',NOW(),NOW()) returning id";
 		var vals=[req.body.name];//,req.body.state
 		console.log(sql);console.log(vals);
@@ -188,11 +188,11 @@ function getUserFiles(req,res)
 				}
 				else {
 					if(result.rows[i].tid)
-					result.rows[i]['comp']=compid[result.rows[i].tid]
+						result.rows[i]['comp']=compid[result.rows[i].tid]
 					subj.push(result.rows[i]);
 				}
 			}
-				
+
 			// res.send(JSON.stringify({user:req.user.displayName,project:req.params.projectName,rows:result.rows?result.rows:[]}))
 			res.json({id:id,name:name,comps:comps,subjects:subj});
 
@@ -229,12 +229,12 @@ function updateProject(req,res){
 function deleteProject(req,res){
 	pg.connect(global.conString,function(err, client, release) {
 		if (err){ res.json({"err":"No connection to database;"});throw err;}
-		var id=parseInt(req.params.pid);
+		var pid=parseInt(req.params.pid);
 		// var sql="SELECT table_name FROM information_schema.tables WHERE
 		// table_schema = '"+req.user.shortName+"' and table_name not like
 		// '%_stats' and table_name not like '%_soils' and table_name not like
 		// '%_vars'";
-		var sql="select name,id,geometrytype from "+req.user.shortName+".tables where pid="+id;
+		var sql="select name,id,geometrytype from "+req.user.shortName+".tables where pid="+pid;
 		console.log(sql);
 		client.query(sql, function(err, result) {
 			if (err){ res.json({"err":"Unable to get list of layers for this project;"});throw err;}
@@ -243,15 +243,20 @@ function deleteProject(req,res){
 				res.json({"status":"true"});
 				return;
 			}
-			var tableName=result.rows[0].name+result.rows[0].id;
-			var geomtype=result.rows[0].geometrytype;
-			var sql=["delete from "+req.user.shortName + ".tables where pid="+id,"drop table if exists "+ tableName + "_soils", "drop table if exists "+ tableName + "_vars"];
-			if(geomtype=='None')sql.push("drop view if exists "+ tableName + "_stats");else sql.push("drop table if exists "+ tableName + "_stats");
-			sql.push("drop table if exists "+tableName);//drop last since there might be a dependency on _stats if non-spatial
+			var sql=[];
+			for(var i in result.rows){
+				var tableName=result.rows[i].name+result.rows[i].id;
+				var geomtype=result.rows[i].geometrytype;
+				sql.push("delete from "+req.user.shortName + ".tables where pid="+pid);
+				sql.push("drop table if exists "+ tableName + "_soils");
+				sql.push("drop table if exists "+ tableName + "_vars");
+				if(geomtype=='None')sql.push("drop view if exists "+ tableName + "_stats");else sql.push("drop table if exists "+ tableName + "_stats");
+				sql.push("drop table if exists "+tableName);//drop last since there might be a dependency on _stats if non-spatial
+			}
 			console.log(sql);
 			client.query(sql.join(";"), function(err, result) {
 				if (err){ res.json({"err":"Unable to get delete layers for this project;"});throw err;}
-				var sql="delete from "+req.user.shortName + ".projects where id="+id;
+				var sql="delete from "+req.user.shortName + ".projects where id="+pid;
 				console.log(sql);
 				client.query(sql, function(err, result) {
 					release()
@@ -273,7 +278,8 @@ function deleteTable(req,res){
 	// in('id','ogc_fid','wkb_geometry','id','shape_leng','shape_area','_acres_total')
 	// and data_type in('numeric','double
 	// precision','float','integer','decimal')";
-	var sql="select name,geometrytype from "+req.user.shortName+".tables where id="+tid;
+	//make sure to delete any subject tables for a comp table
+	var sql="select id,name,geometrytype,type from "+req.user.shortName+".tables where tid="+tid+" or id="+tid;
 	console.log(sql);
 	pg.connect(global.conString,function(err, client, release) {
 		if (err){ res.json({"err":"No connection to database;"});throw err;}
@@ -281,13 +287,18 @@ function deleteTable(req,res){
 		client.query(sql, function(err, result) {
 			// add the schema to the tablename
 			// console.log(result);
-			var tableName = result.rows[0].name+tid;
-			var geomtype=result.rows[0].geometrytype;
-			var baseTableName=tableName;
-			tableName = req.user.shortName+"." + baseTableName;
-			var sql=["drop table if exists "+ tableName + "_soils", "drop table if exists "+ tableName + "_vars","delete from "+req.user.shortName+".tables where pid="+pid+" and id="+tid];
-			if(geomtype=='None')sql.push("drop view if exists "+ tableName + "_stats");else sql.push("drop table if exists "+ tableName + "_stats");
-			sql.push("drop table if exists "+tableName);//drop last since there might be a dependency on _stats if non-spatial
+			var sql=[];
+			for(var i in result.rows){
+				var tableName = result.rows[i].name+result.rows[i].id;
+				var geomtype=result.rows[i].geometrytype;
+				var baseTableName=tableName;
+				tableName = req.user.shortName+"." + baseTableName;
+				sql.push("drop table if exists "+ tableName + "_soils");
+				sql.push("drop table if exists "+ tableName + "_vars");
+				sql.push("delete from "+req.user.shortName+".tables where pid="+pid+" and id="+result.rows[i].id);
+				if(geomtype=='None')sql.push("drop view if exists "+ tableName + "_stats");else sql.push("drop table if exists "+ tableName + "_stats");
+				sql.push("drop table if exists "+tableName);//drop last since there might be a dependency on _stats if non-spatial
+			}
 			console.log(sql);
 			client.query(sql.join(";"), function(err, result) {
 				if (err){ res.json({"err":"Unable to delete table;"});throw err;}
@@ -443,7 +454,7 @@ function tableCorrelation(req, res){
 		client.query(sql, function(err, result) {
 			var tableName = result.rows[0].name+tid;
 			var alias=result.rows[0].alias;
-			
+
 			var sql="select name,include from " + req.user.shortName + "." + tableName + "_vars where include=1 and id=0 order by depvar desc,name asc";
 			console.log(sql);
 			if (err){ res.json({"err":"No connection to database;"});throw err;}
@@ -478,7 +489,7 @@ function tableCorrelation(req, res){
 				console.log(sql);
 				client.query(sql, function(err, result) {
 					release()
-					
+
 					//res.writeHead(200, {"Content-Type": "application/json"});
 					res.end('{"alias":"'+alias+'","depvar":"'+depvar+'","names":'+JSON.stringify(names)+',"results":'+result.rows[0].vars+"}");
 					// res.json({"names":names,"results":result.rows[0].vars});
@@ -759,7 +770,7 @@ function tablePredictions(req,res){
 					release();
 					//var vars=JSON.parse(result.rows[0].vals);
 					res.end('{"alias":"'+alias+'","fields":' + JSON.stringify(fields) + ',"vars":'+result.rows[0].vals+'}');
-					
+
 					//res.end(JSON.stringify({id:id,vars:vars}));
 				});
 				//});		  	
@@ -771,7 +782,7 @@ function tablePredictions(req,res){
 /*
  * Get subject data metadata for this comparable  
  * 
-*/
+ */
 function tableSubject(req,res){
 	var pid = parseInt(req.params.pid);
 	var tid = parseInt(req.params.tid);
@@ -786,7 +797,7 @@ function tableSubject(req,res){
 			var alias=result.rows[0].alias;
 			var geometrytype=result.rows[0].geometrytype;
 			var sql="select name,type,saledate from " + req.user.shortName + "." + tableName + "_vars where (include=1 or id=1) order by id desc,depvar desc,name asc";
-			
+
 			console.log(sql);
 			//strip off extension
 			client.query(sql, function(err, result) {
@@ -815,7 +826,7 @@ function tableSubject(req,res){
 				else
 					var sql = "select r_step_regression_variables as vals from public.r_step_regression_variables('" + depvar + "','" + cols.join(",") + "','" + tableName + "',0,0)";// s("+out.join(",")+")";
 				console.log(sql);
-				
+
 
 				client.query(sql, function(err, result) {
 					if(err)console.log(err);
@@ -825,7 +836,7 @@ function tableSubject(req,res){
 					for(var i=1;i<vars.names.length;i++)
 						if(vars.names[i]!=saledate)
 							fields.push(vars.names[i]);
-					
+
 					var sql="select id,name,type,numtuples,case when filetype IS NULL then 'Unknown' else filetype end,to_char(date_loaded, 'Month DD, YYYY') as date  from "+req.user.shortName + ".tables where type=1 and pid="+pid+" and tid="+tid;
 					//var sql="select count(*) as total from " + tableName;
 					console.log(sql);
@@ -857,7 +868,7 @@ function tableSubject(req,res){
 			var alias=result.rows[0].alias;
 			var geometrytype=result.rows[0].geometrytype;
 			var sql="select name,type from " + req.user.shortName + "." + tableName + "_vars where (include=1 or id=1) order by id desc,depvar desc,name asc";
-			
+
 			console.log(sql);
 			//strip off extension
 			client.query(sql, function(err, result) {
@@ -904,11 +915,11 @@ function tableSubject(req,res){
 		});
 	});
 }
-*/
+ */
 /*
  * Get list of all subject data tables for this comparable  
  * 
-*/
+ */
 /*
 function getSubjectTables(req,res){
 	pg.connect(global.conString,function(err, client, release) {
@@ -925,13 +936,13 @@ function getSubjectTables(req,res){
 			res.json({pid:pid,tid:tid,rows:result&&result.rows?result.rows:[]});
 		})
 	});
-	
+
 }
-*/
+ */
 /*
  * Print multiple rows in subject file  
  * 
-*/
+ */
 function tableReports(req,res){
 	var pid = parseInt(req.params.pid);
 	var tid = parseInt(req.params.tid);
@@ -976,7 +987,7 @@ function tableReports(req,res){
 /*
  * Create report for single subject  
  * 
-*/
+ */
 
 function reportSubject(req,res){
 	var pid = parseInt(req.params.pid);
@@ -1068,7 +1079,7 @@ function reportSubject(req,res){
 									depvar+=
 								}
 							}
-							*/
+							 */
 							//remove all double quotes from field names
 							for(var i=0;i<fields.length;i++)fields[i]=fields[i].replace(/\"/g,"");
 							fields.push("Date")
