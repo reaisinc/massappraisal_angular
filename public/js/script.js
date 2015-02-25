@@ -328,8 +328,9 @@ maApp.controller('contactController', function($scope) {
 
 });
 
-maApp.controller('loginController', function($scope,$http) {
+maApp.controller('loginController', function($rootScope,$scope,$http) {
 //	try to automatically log in if user still logged in to Google
+	$rootScope.username=null;
 	if(sessionStorage.getItem("username")){
 		console.log("Found username" + sessionStorage.getItem("username"));
 		$http.get('/auth/google').
@@ -354,10 +355,12 @@ maApp.controller('loginController', function($scope,$http) {
 maApp.controller('ModalInstanceCtrl', function ($scope,$location,$http,$modalInstance,FileUploader,$sce) {
 	$scope.hasStatus=false;
 	$scope.status="";
+	$scope.multiple=true;
 	$scope.soilscompleted=false;
 	$scope.soilsprogress=0;
 	$scope.pid =  $modalInstance.pid;
 	$scope.tid =  $modalInstance.tid;
+	$scope.info = $modalInstance.info;
 	$scope.maxSteps = $modalInstance.maxSteps;
 	$scope.msg={2:"Getting information about data...",3:"Loading data into database...",4:"Determining fields to include...",5:"Intersecting geometries with USDA Soils polygons...",6:"Creating new table containing uploaded data and soils information..."};
 	$scope.renderHtml = function(html_code)
@@ -367,6 +370,41 @@ maApp.controller('ModalInstanceCtrl', function ($scope,$location,$http,$modalIns
 	$scope.uploader=createUploader($scope,$http,FileUploader,$modalInstance);
 
 	$scope.processSoils = function() {
+		$scope.errMsg=null;
+		getSoilsStatus($scope,$http);
+	};
+
+	$scope.ok = function () {
+		$scope.hasStatus=false;
+		$modalInstance.close($scope.newfile);
+		//$modalInstance.close($scope.selected.item);
+	};
+
+	$scope.cancel = function () {
+		$scope.hasStatus=false;
+		$modalInstance.dismiss('cancel');
+	};
+
+});
+maApp.controller('ModalSalesInstanceCtrl', function ($scope,$location,$http,$modalInstance,FileUploader,$sce) {
+	$scope.hasStatus=false;
+	$scope.status="";
+	$scope.single=true;
+	$scope.soilscompleted=false;
+	$scope.soilsprogress=0;
+	$scope.pid =  $modalInstance.pid;
+	$scope.tid =  $modalInstance.tid;
+	$scope.info = $modalInstance.info;
+	$scope.maxSteps = $modalInstance.maxSteps;
+	$scope.msg={2:"Getting information about data...",3:"Loading data into database...",4:"Determining fields to include...",5:"Merging data with existing parcels...",6:"Updating summary table..."};
+	$scope.renderHtml = function(html_code)
+	{
+		return $sce.trustAsHtml(html_code);
+	};
+	$scope.uploader=createUploader($scope,$http,FileUploader,$modalInstance);
+
+	$scope.processSoils = function() {
+		$scope.errMsg=null;
 		getSoilsStatus($scope,$http);
 	};
 
@@ -441,7 +479,7 @@ maApp.controller('projectController', function($rootScope,$scope,$http,$location
 	}
 	$scope.list();
 	$scope.open = function (size, source) {
-
+		
 		var modalInstance = $modal.open({
 			templateUrl: 'pages/uploadfiles.html',
 			controller: 'ModalInstanceCtrl',
@@ -452,6 +490,8 @@ maApp.controller('projectController', function($rootScope,$scope,$http,$location
 		modalInstance.soilscompleted=false;
 		modalInstance.pid=$scope.pid;
 		modalInstance.maxSteps=$scope.maxSteps=6;
+		modalInstance.info="Upload ESRI Shapefile, ESRI FileGeodatabase, Microsoft Excel, Comma-separated values (CSV)"
+
 		modalInstance.result.then(function (newfile) {
 			//$scope.selected = selectedItem;
 			//insert file into list of layers
@@ -477,7 +517,29 @@ maApp.controller('projectController', function($rootScope,$scope,$http,$location
 			else $location.path(window.location.hash.substring(1) +"/"+tid);
 		}
 	};	
+	$scope.mergeSales = function (tid,id,numTuples) {
+		///projects/30/tables
+		var modalInstance = $modal.open({
+			templateUrl: 'pages/uploadfiles.html',
+			controller: 'ModalSalesInstanceCtrl',
+			size: 'lg'
 
+		});
+		//modalInstance.source=source;
+		modalInstance.soilscompleted=false;
+		modalInstance.pid=$scope.pid;
+		modalInstance.info="Upload sales data as Microsoft Excel or Comma-separated Values (CSV).  Note:  Sales must contain a) Unique document number b), Sale price, and c) sale date";
+		
+		modalInstance.maxSteps=$scope.maxSteps=6;
+		modalInstance.result.then(function (newfile) {
+			//$scope.selected = selectedItem;
+			//insert file into list of layers
+			$scope.list(Math.random());
+		}, function () {
+			//$log.info('Modal dismissed at: ' + new Date());
+			console.log('Modal dismissed at: ' + new Date());
+		});
+	};	
 	$scope.deleteCompTable = function (id) {
 		var modalInstance = $modal.open({
 			templateUrl: 'myModalContent.html',
@@ -1239,7 +1301,7 @@ function getSoilsStatus($scope,$http){
 	$scope.stepMsg=$scope.msg[2];
 	var url ="/load/" + $scope.pid+($scope.tid?"/tables/"+$scope.tid:"");
 	//var url = "/load/" + fileName+ "?step=2";
-	$scope.soilsprogress=0;
+	$scope.soilsprogress=10;
 	var params={step:2,fileName:$scope.filename,tableName:$scope.tableName};
 	if($scope.id)params.id=$scope.id;
 	checkStep($scope,$http,url,params);

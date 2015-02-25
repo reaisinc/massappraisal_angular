@@ -43,17 +43,32 @@
     showNewProject?'glyphicon glyphicon-minus':'glyphicon glyphicon-plus'"
     showNewProject?'btn btn-danger btn-default':'btn btn-success btn-default'
     -->
+	<div class='col-lg-6 col-xs-6'>
+		<a ng-click="viewModels()" class="btn btn-default btn-continue" id="previousBtn"><i class="glyphicon glyphicon-arrow-left"></i> Return to models</a>
+	</div>
+
+	<div class='col-lg-6 col-xs-6 text-right'>
+		<div id="startBtn" style='float: right'>
+			<a class="btn btn-success btn-default" ng-click="showNewProject=!showNewProject;open('lg','comp')"> Add comparable data 
+			<i class="glyphicon glyphicon-plus"></i></a>		
+		</div>
+
+	</div>
+	<!--  
 	<div class='col-lg-2' style='width: 100%'>
 		<div id="startBtn" style='float: right'>
 			<a class="btn btn-success btn-default" ng-click="showNewProject=!showNewProject;open('lg','comp')"> Add comparable data 
 			<i class="glyphicon glyphicon-plus"></i></a>		
 		</div>
 	</div>
+	-->
+	
 	<br> <br>
 
 	<table class="table">
 		<caption>
 			<h4>Comparable sales</h4>
+			 Note: you can either upload parcel polygons containing sales data or upload parcel polygon and merge a spreadsheet containing the latest sales.
 		</caption>
 		<tr>
 			<th>Filename</th>
@@ -68,6 +83,7 @@
 			<td align='right'>
 			<a ng-click="viewComparable(x.id)" role="button" class="btn btn-primary"><i class="glyphicon glyphicon-stats"></i> View</a>
 			<a ng-click="deleteCompTable(x.id)" role="button" class="btn btn-danger delete"><i class="glyphicon glyphicon-trash"></i> Delete</a>
+			<a ng-click="mergeSales(x.id)" role="button" class="btn btn-warning"><i class="glyphicon glyphicon-th-list"></i> Merge sales</a>
 			</td>
 		</tr>
 	</table>

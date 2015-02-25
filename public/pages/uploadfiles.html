@@ -1,6 +1,7 @@
 
 <div class="modal-header">
 	<h3 class="modal-title">Upload data files</h3>
+	<div>{{info}}</div>
 </div>
 <div class="modal-body" controller="projectController" nv-file-drop="" uploader="uploader" filters="queueLimit, customFilter">
 
@@ -20,8 +21,9 @@
 			</div>
 
 			<!-- Example: nv-file-select="" uploader="{Object}" options="{Object}" filters="{String}" -->
-			Multiple <input type="file" nv-file-select="" uploader="uploader" multiple /><br />
-			<!--  Single <input type="file" nv-file-select="" uploader="uploader" /> -->
+			<span ng-show="multiple">Upload multiple files <input type="file" nv-file-select="" uploader="uploader" multiple /></span>
+			<span ng-show="single">Upload single file<input type="file" nv-file-select="" uploader="uploader" /></span>
+			<br />
 		</div>
 
 		<div class="col-md-9" style="margin-bottom: 40px">

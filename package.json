@@ -19,7 +19,7 @@
     "node-static": "0.7.6",
     "require-dir": "0.1.0",
     "passport": "0.2.1",
-    "ogr2ogr": "0.5.0",
+    "ogr2ogr": "git+https://git@github.com/traderboy/ogr2ogr.git",
     "passport-google-oauth": "0.1.5",
     "passport-google": "0.3.0",
     "passport-local": "1.0.0",
@@ -27,7 +27,8 @@
     "pg.js": "3.6.2",
     "serve-static": "1.7.1",
     "pg-copy-streams": "0.3.0",
-    "rserve-client": "~0.3.0"
+    "rserve-client": "~0.3.0",
+    "memory-cache": "~0.1.0"
   },
   "devDependencies": {
     "grunt": "~0.4.5",

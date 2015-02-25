@@ -1,6 +1,7 @@
-var express = require('express');
-var router = express.Router();
-var pg = require("pg");
+var express = require('express')
+,router = express.Router()
+,pg = require("pg")
+,cache = require("memory-cache")
 
 router.use(function(req, res, next) {
 	if (!req.isAuthenticated()) { 
@@ -123,9 +124,9 @@ router.get('/:pid/tables/:tid/reports/:sid/table',  function(req, res){
 
 
 //delete project (alt - not used)
-router.get('/:pid/delete',  function(req, res){
-	deleteProject(req,res);
-});
+//router.get('/:pid/delete',  function(req, res){
+//	deleteProject(req,res);
+//});
 
 function createProject(req,res)
 {
@@ -149,65 +150,35 @@ function createProject(req,res)
 			if(err||!result)res.status(403).send('Project name already exists');
 			else {
 				res.json({"id":result.rows[0].id})
+				cache.del("p_"+req.user.shortName)
 				// getUserFiles(req,res,result.rows[0].id);
 			}
 		})
 	});
 }
-
-function getUserFiles(req,res)
+function getUserProjects(req,res)
 {
+	var c;
+	if(c = cache.get('p_'+req.user.shortName)){
+		console.log("Cache hit: " + 'p_'+req.user.shortName)
+		res.json(c);
+		return;
+	}
 	// res.writeHead(200, {"Content-Type": "application/json"});
 	pg.connect(global.conString,function(err, client, release) {
 		if (err){ res.json({"err":"No connection to database;"});throw err;}
-		var field="project";
-		var id=parseInt(req.params.pid);
-		// var vals=[req.params.id,req.params.id];
-
-		// var sql="SELECT table_name FROM information_schema.tables WHERE
-		// table_schema = '"+req.user.shortName+"' and table_name not like
-		// '%_stats' and table_name not like '%_soils' and table_name not like
-		// '%_vars'";
-		var sql="select name from "+req.user.shortName + ".projects where id="+id+";select id,alias,type,tid,numtuples,case when filetype IS NULL then 'Unknown' else filetype end,to_char(date_loaded, 'Month DD, YYYY') as date  from "+req.user.shortName + ".tables where pid="+id + " order by type";
-
+		var sql="select id,name,upper(state) as state,to_char(created_date, 'Month DD, YYYY') as created_date,to_char(modified_date, 'Month DD, YYYY') as modified_date from "+req.user.shortName + ".projects";
 		console.log(sql);
-		// console.log(vals);
 		client.query(sql, function(err, result) {
 			release()
-			if(err){console.log(err);res.json({err:err.toString()});throw err;}
-			// console.log(result);
-			var name=result.rows[0].name;
-			result.rows.splice(0,1);
-			var comps=[];
-			var subj=[];
-			var compid={};
-			for(var i in result.rows){
-				if(result.rows[i].type==0){
-					compid[result.rows[i].id]=result.rows[i].alias;
-					comps.push(result.rows[i]);
-				}
-				else {
-					if(result.rows[i].tid)
-						result.rows[i]['comp']=compid[result.rows[i].tid]
-					subj.push(result.rows[i]);
-				}
-			}
-
-			// res.send(JSON.stringify({user:req.user.displayName,project:req.params.projectName,rows:result.rows?result.rows:[]}))
-			res.json({id:id,name:name,comps:comps,subjects:subj});
-
-			// if (err) throw err;
-			// console.log("Count: "+result.rows[0])
-			/*
-			 * res.render('project', { user : req.user
-			 * ,project:req.params.projectName ,files:
-			 * result&&result.rows?result.rows:[] });
-			 */
-
+			// res.send(JSON.stringify({user:req.user.displayName,rows:result.rows?result.rows:[]}));
+			var result={user:req.user.displayName,rows:result&&result.rows?result.rows:[]};
+			console.log("Add to cache: " + 'f_'+req.user.shortName)
+			cache.put('p_'+req.user.shortName,result);
+			res.json(result);
 		})
 	});
 }
-
 function updateProject(req,res){
 	pg.connect(global.conString,function(err, client, release) {
 		if (err){ res.json({"err":"No connection to database;"});throw err;}
@@ -261,12 +232,78 @@ function deleteProject(req,res){
 				client.query(sql, function(err, result) {
 					release()
 					if(err)res.json({"status":"false"})
-					else res.json({"status":"true"})
+					else{
+						cache.del("p_"+req.user.shortName)
+						res.json({"status":"true"})
+					}
 				});
 			});
 		})
 	});
 }
+function getUserFiles(req,res)
+{
+	// res.writeHead(200, {"Content-Type": "application/json"});
+	var id=parseInt(req.params.pid);
+	var c;
+	if(c = cache.get('f_'+req.user.shortName+id)){
+		console.log("Cache hit: " + 'f_'+req.user.shortName+id)
+		res.json(c);
+		return;
+	}
+	pg.connect(global.conString,function(err, client, release) {
+		if (err){ res.json({"err":"No connection to database;"});throw err;}
+		var field="project";
+		
+		// var vals=[req.params.id,req.params.id];
+
+		// var sql="SELECT table_name FROM information_schema.tables WHERE
+		// table_schema = '"+req.user.shortName+"' and table_name not like
+		// '%_stats' and table_name not like '%_soils' and table_name not like
+		// '%_vars'";
+		var sql="select name from "+req.user.shortName + ".projects where id="+id+";select id,alias,type,tid,numtuples,case when filetype IS NULL then 'Unknown' else filetype end,to_char(date_loaded, 'Month DD, YYYY') as date  from "+req.user.shortName + ".tables where pid="+id + " order by type";
+
+		console.log(sql);
+		// console.log(vals);
+		client.query(sql, function(err, result) {
+			release()
+			if(err){console.log(err);res.json({err:err.toString()});throw err;}
+			// console.log(result);
+			var name=result.rows[0].name;
+			result.rows.splice(0,1);
+			var comps=[];
+			var subj=[];
+			var compid={};
+			for(var i in result.rows){
+				if(result.rows[i].type==0){
+					compid[result.rows[i].id]=result.rows[i].alias;
+					comps.push(result.rows[i]);
+				}
+				else {
+					if(result.rows[i].tid)
+						result.rows[i]['comp']=compid[result.rows[i].tid]
+					subj.push(result.rows[i]);
+				}
+			}
+
+			// res.send(JSON.stringify({user:req.user.displayName,project:req.params.projectName,rows:result.rows?result.rows:[]}))
+			var result={id:id,name:name,comps:comps,subjects:subj};
+			console.log("Add to cache: " + 'f_'+req.user.shortName+id)
+			cache.put('f_'+req.user.shortName,result);
+			res.json(result);
+
+			// if (err) throw err;
+			// console.log("Count: "+result.rows[0])
+			/*
+			 * res.render('project', { user : req.user
+			 * ,project:req.params.projectName ,files:
+			 * result&&result.rows?result.rows:[] });
+			 */
+
+		})
+	});
+}
+
 
 function deleteTable(req,res){
 	var pid = parseInt(req.params.pid);
@@ -303,26 +340,14 @@ function deleteTable(req,res){
 			client.query(sql.join(";"), function(err, result) {
 				if (err){ res.json({"err":"Unable to delete table;"});throw err;}
 				release()
+				cache.del("f_"+req.user.shortName+tid)
 				res.json({msg:"success"})
 			})
 		});
 	});
 }
 
-function getUserProjects(req,res)
-{
-	// res.writeHead(200, {"Content-Type": "application/json"});
-	pg.connect(global.conString,function(err, client, release) {
-		if (err){ res.json({"err":"No connection to database;"});throw err;}
-		var sql="select id,name,upper(state) as state,to_char(created_date, 'Month DD, YYYY') as created_date,to_char(modified_date, 'Month DD, YYYY') as modified_date from "+req.user.shortName + ".projects";
-		console.log(sql);
-		client.query(sql, function(err, result) {
-			release()
-			// res.send(JSON.stringify({user:req.user.displayName,rows:result.rows?result.rows:[]}));
-			res.json({user:req.user.displayName,rows:result&&result.rows?result.rows:[]});
-		})
-	});
-}
+
 
 function tableSummary(req, res){
 	console.log(req.params.pid);
@@ -331,7 +356,12 @@ function tableSummary(req, res){
 	res.setTimeout(0); 
 	var pid = parseInt(req.params.pid);
 	var tid = parseInt(req.params.tid);
-
+	var c;
+	if(c = cache.get('s_'+req.user.shortName+tid)){
+		console.log("Cache hit: " + 's_'+req.user.shortName+tid)
+		res.json(c);
+		return;
+	}
 	// var sql="select column_name from information_schema.columns where
 	// table_schema='"+req.user.shortName+"' and table_name = '"+tableName+"'
 	// and column_name not
@@ -383,7 +413,10 @@ function tableSummary(req, res){
 						}
 						 */
 						results=result.rows;
-						res.json({"alias":alias,"fields":results,status:names,"geomtype":geomtype});
+						var result={"alias":alias,"fields":results,status:names,"geomtype":geomtype};
+						console.log("Add to cache: " + 's_'+req.user.shortName)
+						cache.put('s_'+req.user.shortName+tid,result);
+						res.json(result);
 					}
 				});
 			});
@@ -432,7 +465,17 @@ function updateTableSummary(req,res)
 				client.query(sql, vals, function(err, result) {
 					release();
 					if(err)console.log(err);
+					cache.del("s_"+req.user.shortName+tid)
+					cache.del("c_"+req.user.shortName+tid)
+					cache.del("r_"+req.user.shortName+tid)
+					cache.del("sw_"+req.user.shortName+tid)
+					cache.del("pr_"+req.user.shortName+tid)
+					cache.del("rs_"+req.user.shortName+tid)
 					res.end("success");
+					
+					//now invalidate all database caches since the fields have changed
+					
+					
 					//res.end(JSON.stringify(result.rows));		
 				});
 			});
@@ -440,12 +483,19 @@ function updateTableSummary(req,res)
 	}	
 }
 function tableCorrelation(req, res){
-	console.log(req.params.pid);
+	//console.log(req.params.pid);
 	// return;
 	// res.writeHead(200, {"Content-Type": "application/json"});
 	res.setTimeout(0); 
 	var pid = parseInt(req.params.pid);
 	var tid = parseInt(req.params.tid);
+	//if in cache, just return it
+	var c;
+	if(c = cache.get('c_'+req.user.shortName+tid)){
+		console.log("Cache hit: " + 'c_'+req.user.shortName+tid)
+		res.json(c);
+		return;
+	}	
 	var sql="select name,alias from "+req.user.shortName + ".tables where id="+tid;
 	console.log(sql);
 	pg.connect(global.conString,function(err, client, release) {
@@ -489,9 +539,16 @@ function tableCorrelation(req, res){
 				console.log(sql);
 				client.query(sql, function(err, result) {
 					release()
-
+					if(err){
+						res.json({'err':err.toString()});
+					}
 					//res.writeHead(200, {"Content-Type": "application/json"});
-					res.end('{"alias":"'+alias+'","depvar":"'+depvar+'","names":'+JSON.stringify(names)+',"results":'+result.rows[0].vars+"}");
+					else {
+						var result='{"alias":"'+alias+'","depvar":"'+depvar+'","names":'+JSON.stringify(names)+',"results":'+result.rows[0].vars+"}";
+						console.log("Add to cache: " + 'c_'+req.user.shortName+tid)
+						cache.put("c_"+req.user.shortName+tid,JSON.parse(result))
+						res.end(result);
+					}
 					// res.json({"names":names,"results":result.rows[0].vars});
 					// res.writeHead(200, {"Content-Type": "application/json"});
 					// res.end(JSON.stringify(result.rows));
@@ -509,6 +566,12 @@ function tableRegression(req, res){
 	res.setTimeout(0); 
 	var pid = parseInt(req.params.pid);
 	var tid = parseInt(req.params.tid);
+	var c;
+	if(c = cache.get('r_'+req.user.shortName+tid)){
+		console.log("Cache hit: " + 'r_'+req.user.shortName+tid)
+		res.json(c);
+		return;
+	}	
 	var sql="select name,alias from "+req.user.shortName + ".tables where id="+tid;
 	console.log(sql);
 	pg.connect(global.conString,function(err, client, release) {
@@ -576,8 +639,15 @@ function tableRegression(req, res){
 					if(err)console.log(err);
 					// console.log(result.rows);
 					release();
-
-					res.end('{"alias":"'+alias+'","vals":'+result.rows[0].vals+'}');
+					if(err){
+						res.json({'err':err.toString()});
+					}
+					else {
+						var result='{"alias":"'+alias+'","vals":'+result.rows[0].vals+'}';
+						console.log("Add to cache: " + 'r_'+req.user.shortName+tid)
+						cache.put("r_"+req.user.shortName+tid,JSON.parse(result))
+						res.end(result);
+					}
 				});
 			});		  	
 		});	
@@ -586,12 +656,18 @@ function tableRegression(req, res){
 
 //table stepwise regression
 function tableSWRegression(req, res){
-	console.log(req.params.pid);
+	//console.log(req.params.pid);
 	// return;
 	// res.writeHead(200, {"Content-Type": "application/json"});
 	res.setTimeout(0); 
 	var pid = parseInt(req.params.pid);
 	var tid = parseInt(req.params.tid);
+	var c;
+	if(c = cache.get('sw_'+req.user.shortName+tid)){
+		console.log("Cache hit: " + 'sw_'+req.user.shortName+tid)
+		res.json(c);
+		return;
+	}		
 	var sql="select name,alias from "+req.user.shortName + ".tables where id="+tid;
 	console.log(sql);
 	pg.connect(global.conString,function(err, client, release) {
@@ -649,7 +725,15 @@ function tableSWRegression(req, res){
 					if(err)console.log(err);
 					// console.log(result.rows);
 					release();
-					res.end('{"alias":"'+alias+'","vals":'+result.rows[0].vals+'}');
+					if(err){
+						res.json({'err':err.toString()});
+					}
+					else {
+						var result='{"alias":"'+alias+'","vals":'+result.rows[0].vals+'}';
+						console.log("Add to cache: " + 'sw_'+req.user.shortName+tid)
+						cache.put("sw_"+req.user.shortName+tid,JSON.parse(result))
+						res.end(result);
+					}
 					//res.end(result.rows[0].vals);
 				});
 			});		  	
@@ -661,6 +745,12 @@ function tableResiduals(req,res){
 
 	var pid = parseInt(req.params.pid);
 	var tid = parseInt(req.params.tid);
+	var c;
+	if(c = cache.get('rs_'+req.user.shortName+tid)){
+		console.log("Cache hit: " + 'rs_'+req.user.shortName+tid)
+		res.json(c);
+		return;
+	}		
 	var sql="select name,alias from "+req.user.shortName + ".tables where id="+tid;
 	console.log(sql);
 	pg.connect(global.conString,function(err, client, release) {
@@ -706,7 +796,15 @@ function tableResiduals(req,res){
 					client.query(sql, function(err, result) {
 						if(err)console.log(err);
 						release();
-						res.json({alias:alias,id:id,names:names,vars:vars,total:parseInt(result.rows[0].total)});				    
+						if(err){
+							res.json({'err':err.toString()});
+						}
+						else {
+							var result={alias:alias,id:id,names:names,vars:vars,total:parseInt(result.rows[0].total)};
+							console.log("Add to cache: " + 'rs_'+req.user.shortName+tid)
+							cache.put("rs_"+req.user.shortName+tid,result)
+							res.json(result);				    
+						}
 					});
 				});
 			});
@@ -716,6 +814,12 @@ function tableResiduals(req,res){
 function tablePredictions(req,res){
 	var pid = parseInt(req.params.pid);
 	var tid = parseInt(req.params.tid);
+	var c;
+	if(c = cache.get('pr_'+req.user.shortName+tid)){
+		console.log("Cache hit: " + 'pr_'+req.user.shortName+tid)
+		res.json(c);
+		return;
+	}		
 	var sql="select name,alias from "+req.user.shortName + ".tables where id="+tid;
 	console.log(sql);
 	pg.connect(global.conString,function(err, client, release) {
@@ -768,8 +872,17 @@ function tablePredictions(req,res){
 					if(err)console.log(err);
 					console.log(result.rows);
 					release();
+					if(err){
+						res.json({'err':err.toString()});
+					}
+
 					//var vars=JSON.parse(result.rows[0].vals);
-					res.end('{"alias":"'+alias+'","fields":' + JSON.stringify(fields) + ',"vars":'+result.rows[0].vals+'}');
+					else {
+						var result='{"alias":"'+alias+'","fields":' + JSON.stringify(fields) + ',"vars":'+result.rows[0].vals+'}';
+						console.log("Add to cache: " + 'pr_'+req.user.shortName+tid)
+						cache.put("pr_"+req.user.shortName+tid,JSON.parse(result))
+						res.end(result);
+					}
 
 					//res.end(JSON.stringify({id:id,vars:vars}));
 				});
@@ -786,6 +899,12 @@ function tablePredictions(req,res){
 function tableSubject(req,res){
 	var pid = parseInt(req.params.pid);
 	var tid = parseInt(req.params.tid);
+	var c;
+	if(c = cache.get('sb_'+req.user.shortName+tid)){
+		console.log("Cache hit: " + 'sb_'+req.user.shortName+tid)
+		res.json(c);
+		return;
+	}	
 	//var sid = parseInt(req.params.sid);
 	var sql="select name,alias,numtuples,geometrytype from "+req.user.shortName + ".tables where id="+tid;
 	console.log(sql);
@@ -843,7 +962,15 @@ function tableSubject(req,res){
 					client.query(sql, function(err, result) {
 						if(err)console.log(err);
 						release();
-						res.json({alias:alias,geometrytype:geometrytype,fields:fields.join(", "),id:id,names:names,vars:vars,pid:pid,tid:tid,rows:result&&result.rows?result.rows:[]});				    
+						if(err){
+							res.json({'err':err.toString()});
+						}
+						else {
+							var result={alias:alias,geometrytype:geometrytype,fields:fields.join(", "),id:id,names:names,vars:vars,pid:pid,tid:tid,rows:result&&result.rows?result.rows:[]};
+							console.log("Add to cache: " + 'sb_'+req.user.shortName+tid)
+							cache.put("sb_"+req.user.shortName+tid,JSON.parse(result))
+							res.json(result);				    
+						}
 					});
 				});
 			});
@@ -977,7 +1104,10 @@ function tableReports(req,res){
 				client.query(sql, function(err, result) {
 					release()
 					if(err){console.log(err);res.json({err:err.toString()});throw err;}
-					res.json({pid:pid,tid:tid,sid:sid,fields:fields,alias:alias,rows:result&&result.rows?result.rows:[]});
+					else {
+						var result={pid:pid,tid:tid,sid:sid,fields:fields,alias:alias,rows:result&&result.rows?result.rows:[]}
+						res.json(result);
+					}
 				});
 			})
 		})
@@ -994,6 +1124,7 @@ function reportSubject(req,res){
 	var tid = parseInt(req.params.tid);
 	var sid = parseInt(req.params.sid);
 	var oid = req.params.id?parseInt(req.params.id):null;
+	
 	var sql=["select name,alias,geometrytype from "+req.user.shortName + ".tables where id="+sid,"select name,alias from "+req.user.shortName + ".tables where id="+tid];
 	console.log(sql);
 	pg.connect(global.conString,function(err, client, release) {

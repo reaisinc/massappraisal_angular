@@ -68,6 +68,7 @@ var express = require('express')
 , pg = require("pg")
 , passport = require('passport')
 , util = require('util')
+
 //, GoogleStrategy = require('passport-google-oauth').OAuth2Strategy
 //, jwt = require('jwt-simple');
 

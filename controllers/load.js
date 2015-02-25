@@ -265,7 +265,7 @@ function cleanTable(req,res,pid,tid,id,fileName,tableName) {
 			 'update '+tableName+' set wkb_geometry=st_cleangeometry(wkb_geometry)',
 			 'alter table '+tableName+' rename column ogc_fid to oid',		 
 			 // find all possible sale date fields
-			 "select public.update_saledate('"+req.user.shortName+"','" + baseTableName + "')",
+			 //"select public.update_saledate('"+req.user.shortName+"','" + baseTableName + "')",
 
 			 //"select column_name FROM information_schema.columns WHERE table_name='"+baseTableName+"' and table_schema='"+req.user.shortName+"'",
 			 'drop table if exists ' + tableName + '_vars',
@@ -434,7 +434,7 @@ function createStatsTable(req,res,pid,tid,id,fileName,tableName){
 				 + ' ,avg(c.airtempa_r) as "Air temperature"'
 				 + ' ,avg(c.ffd_r) as "Frost free days"'
 				 + ' ,avg(c.initsub_r) as "Init Subsidence"'
-				 + ' ,avg(c.totalsub_r) as "Total Subsidence"'
+				 //+ ' ,avg(c.totalsub_r) as "Total Subsidence"'
 				 + ' ,avg(c.map_l) as "Average precipitation"'
 				 + ' ,sum( (((10-c.nirrcapcl::int)+1)*10)*_acres_pct) as "Prod Index"'
 				 + " ,sum(case when c.wlrangeland='Fair' then _acres_pct*3 when c.wlrangeland='Poor' then _acres_pct*2 when c.wlrangeland='Very Poor' then _acres_pct else 0 end) as \"Range Potential\""
