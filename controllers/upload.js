@@ -50,6 +50,10 @@ router.post('/:pid', function(req, res) {
 router.post('/:pid/tables/:tid', function(req, res) {
 	upload(req,res,uploader.post);
 });
+router.post('/:pid/sales/:tid', function(req, res) {
+	upload(req,res,uploader.post);
+});
+
 //delete file
 router.delete('/:pid/:name', function(req, res) {
 	upload(req,res,uploader.delete);

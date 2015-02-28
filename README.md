@@ -214,6 +214,7 @@ insert into parcels159_vars(include,id,uniqueid,depvar,saledate,soils,name,type)
 
 #Notes:
 To merge sales data with parcels, you need to do the following:
+-need to detect the join field first
 -check to see if any fields from sales match fields in the parcels.  If so, update the field in parcels
 -make sure sales date, sales price are in sales
 -make sure there is an unique identifier linking the two tables
@@ -231,7 +232,8 @@ To merge sales data with parcels, you need to do the following:
 -ignore fields that are all blank
 -convert character fields to numeric (serialize?)
 -automatically remove fields that aren't meaningful
--use long names to describe fields -need to create weighted sums for parcels since they will contain multiple mkeys
+-use long names to describe fields 
+-need to create weighted sums for parcels since they will contain multiple mkeys
 -need to create better policy for determining relevance for real estate appraisal
 
 

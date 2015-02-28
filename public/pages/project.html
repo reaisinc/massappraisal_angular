@@ -81,9 +81,9 @@
 			<td>{{x.filetype}}</td>
 			<td>{{x.date}}</td>
 			<td align='right'>
+			<a ng-show="x.geometrytype!='None'" ng-click="mergeSales(x.id)" role="button" class="btn btn-warning"><i class="glyphicon glyphicon-th-list"></i> Merge sales</a>
 			<a ng-click="viewComparable(x.id)" role="button" class="btn btn-primary"><i class="glyphicon glyphicon-stats"></i> View</a>
 			<a ng-click="deleteCompTable(x.id)" role="button" class="btn btn-danger delete"><i class="glyphicon glyphicon-trash"></i> Delete</a>
-			<a ng-click="mergeSales(x.id)" role="button" class="btn btn-warning"><i class="glyphicon glyphicon-th-list"></i> Merge sales</a>
 			</td>
 		</tr>
 	</table>

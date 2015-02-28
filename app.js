@@ -68,6 +68,15 @@ var express = require('express')
 , pg = require("pg")
 , passport = require('passport')
 , util = require('util')
+, fs = require('fs')
+
+var log_file = fs.createWriteStream(__dirname + '/debug.log', {flags : 'w'});
+var log_stdout = process.stdout;
+
+console.log = function(d) { //
+  log_file.write(util.format(d) + '\n');
+  log_stdout.write(util.format(d) + '\n');
+};
 
 //, GoogleStrategy = require('passport-google-oauth').OAuth2Strategy
 //, jwt = require('jwt-simple');

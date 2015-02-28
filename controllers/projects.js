@@ -218,11 +218,13 @@ function deleteProject(req,res){
 			for(var i in result.rows){
 				var tableName=result.rows[i].name+result.rows[i].id;
 				var geomtype=result.rows[i].geometrytype;
+				
+				sql.push("drop table if exists "+ req.user.shortName + "." + tableName + "_soils");
+				sql.push("drop table if exists "+ +req.user.shortName + "." + tableName + "_vars");
+				sql.push("select delete_table_or_view('" + req.user.shortName + "','" + tableName + "_stats')");
+				//if(geomtype=='None')sql.push("drop view if exists "+ tableName + "_stats");else sql.push("drop table if exists "+ tableName + "_stats");
+				sql.push("drop table if exists " + req.user.shortName + "." + tableName);//drop last since there might be a dependency on _stats if non-spatial
 				sql.push("delete from "+req.user.shortName + ".tables where pid="+pid);
-				sql.push("drop table if exists "+ tableName + "_soils");
-				sql.push("drop table if exists "+ tableName + "_vars");
-				if(geomtype=='None')sql.push("drop view if exists "+ tableName + "_stats");else sql.push("drop table if exists "+ tableName + "_stats");
-				sql.push("drop table if exists "+tableName);//drop last since there might be a dependency on _stats if non-spatial
 			}
 			console.log(sql);
 			client.query(sql.join(";"), function(err, result) {
@@ -261,7 +263,7 @@ function getUserFiles(req,res)
 		// table_schema = '"+req.user.shortName+"' and table_name not like
 		// '%_stats' and table_name not like '%_soils' and table_name not like
 		// '%_vars'";
-		var sql="select name from "+req.user.shortName + ".projects where id="+id+";select id,alias,type,tid,numtuples,case when filetype IS NULL then 'Unknown' else filetype end,to_char(date_loaded, 'Month DD, YYYY') as date  from "+req.user.shortName + ".tables where pid="+id + " order by type";
+		var sql="select name from "+req.user.shortName + ".projects where id="+id+";select id,alias,type,tid,geometrytype,numtuples,case when filetype IS NULL then 'Unknown' else filetype end,to_char(date_loaded, 'Month DD, YYYY') as date  from "+req.user.shortName + ".tables where pid="+id + " order by type";
 
 		console.log(sql);
 		// console.log(vals);
@@ -333,7 +335,8 @@ function deleteTable(req,res){
 				sql.push("drop table if exists "+ tableName + "_soils");
 				sql.push("drop table if exists "+ tableName + "_vars");
 				sql.push("delete from "+req.user.shortName+".tables where pid="+pid+" and id="+result.rows[i].id);
-				if(geomtype=='None')sql.push("drop view if exists "+ tableName + "_stats");else sql.push("drop table if exists "+ tableName + "_stats");
+				sql.push("select delete_table_or_view('"+req.user.shortName+"','"+ baseTableName + "_stats')")
+				//if(geomtype=='None')sql.push("drop view if exists "+ tableName + "_stats");else sql.push("drop table if exists "+ tableName + "_stats");
 				sql.push("drop table if exists "+tableName);//drop last since there might be a dependency on _stats if non-spatial
 			}
 			console.log(sql);
@@ -379,7 +382,7 @@ function tableSummary(req, res){
 			var tableName = result.rows[0].name+tid;
 			var geomtype = result.rows[0].geometrytype;
 			var alias=result.rows[0].alias;
-			var sql="select include,id,depvar,saledate,soils,uniqueid,name,type from " + req.user.shortName + "." + tableName + "_vars where include<5 order by id desc,uniqueid desc,depvar desc,soils asc,name asc";
+			var sql="select include,id,depvar,saledate,soils,uniqueid,sales,name,type from " + req.user.shortName + "." + tableName + "_vars where include<5 order by id desc,uniqueid desc,depvar desc,sales desc,soils asc,name asc";
 			console.log(sql);
 			client.query(sql, function(err, result) {
 				tableName = req.user.shortName+"."+ tableName+'_stats';
@@ -388,7 +391,7 @@ function tableSummary(req, res){
 				// console.log(result.rows);
 				for(var i in result.rows){
 					// names[result.rows[i].name]={"include":result.rows[i].include?'true':'false',"id":result.rows[i].id?'true':'false',"depvar":result.rows[i].depvar?'true':'false'};
-					names[result.rows[i].name]={"include":result.rows[i].include,"id":result.rows[i].id,"depvar":result.rows[i].depvar,"uniqueid":result.rows[i].uniqueid,"saledate":result.rows[i].saledate,"soils":result.rows[i].soils,"type":result.rows[i].type};
+					names[result.rows[i].name]={"include":result.rows[i].include,"id":result.rows[i].id,"depvar":result.rows[i].depvar,"uniqueid":result.rows[i].uniqueid,"saledate":result.rows[i].saledate,"soils":result.rows[i].soils,"sales":result.rows[i].sales,"type":result.rows[i].type};
 					if(result.rows[i].name.charAt(0) == result.rows[i].name.charAt(0).toUpperCase())
 						result.rows[i].name='"' + result.rows[i].name + '"';
 					else if(result.rows[i].name.indexOf(" ")!=-1)

@@ -354,24 +354,27 @@ maApp.controller('loginController', function($rootScope,$scope,$http) {
 //It is not the same as the $modal service used above.
 maApp.controller('ModalInstanceCtrl', function ($scope,$location,$http,$modalInstance,FileUploader,$sce) {
 	$scope.hasStatus=false;
-	$scope.status="";
+	$scope.data="";
 	$scope.multiple=true;
 	$scope.soilscompleted=false;
-	$scope.soilsprogress=0;
+	$scope.uploadProgress=0;
 	$scope.pid =  $modalInstance.pid;
 	$scope.tid =  $modalInstance.tid;
 	$scope.info = $modalInstance.info;
 	$scope.maxSteps = $modalInstance.maxSteps;
 	$scope.msg={2:"Getting information about data...",3:"Loading data into database...",4:"Determining fields to include...",5:"Intersecting geometries with USDA Soils polygons...",6:"Creating new table containing uploaded data and soils information..."};
+	$scope.processMsg="Click the Start processing button to begin. Please wait while your data is loaded into the database and processed. This may take several minutes depending on the size of your input file.";
+
 	$scope.renderHtml = function(html_code)
 	{
 		return $sce.trustAsHtml(html_code);
 	};
-	$scope.uploader=createUploader($scope,$http,FileUploader,$modalInstance);
 
-	$scope.processSoils = function() {
+	$scope.uploader=createUploader($scope,$http,FileUploader,$modalInstance,'table');
+
+	$scope.processUploads = function() {
 		$scope.errMsg=null;
-		getSoilsStatus($scope,$http);
+		startUploadProgress($scope,$http,'tables');
 	};
 
 	$scope.ok = function () {
@@ -388,24 +391,26 @@ maApp.controller('ModalInstanceCtrl', function ($scope,$location,$http,$modalIns
 });
 maApp.controller('ModalSalesInstanceCtrl', function ($scope,$location,$http,$modalInstance,FileUploader,$sce) {
 	$scope.hasStatus=false;
-	$scope.status="";
+	$scope.data="";
 	$scope.single=true;
 	$scope.soilscompleted=false;
-	$scope.soilsprogress=0;
+	$scope.uploadProgress=0;
 	$scope.pid =  $modalInstance.pid;
 	$scope.tid =  $modalInstance.tid;
 	$scope.info = $modalInstance.info;
 	$scope.maxSteps = $modalInstance.maxSteps;
+	$scope.processMsg="Then click the Start processing button to begin. Please wait while your data is loaded into the database and processed. This may take several minutes depending on the size of your input file.";
+
 	$scope.msg={2:"Getting information about data...",3:"Loading data into database...",4:"Determining fields to include...",5:"Merging data with existing parcels...",6:"Updating summary table..."};
 	$scope.renderHtml = function(html_code)
 	{
 		return $sce.trustAsHtml(html_code);
 	};
-	$scope.uploader=createUploader($scope,$http,FileUploader,$modalInstance);
+	$scope.uploader=createUploader($scope,$http,FileUploader,$modalInstance,'sales');
 
-	$scope.processSoils = function() {
+	$scope.processUploads = function() {
 		$scope.errMsg=null;
-		getSoilsStatus($scope,$http);
+		startUploadProgress($scope,$http,'sales');
 	};
 
 	$scope.ok = function () {
@@ -517,7 +522,7 @@ maApp.controller('projectController', function($rootScope,$scope,$http,$location
 			else $location.path(window.location.hash.substring(1) +"/"+tid);
 		}
 	};	
-	$scope.mergeSales = function (tid,id,numTuples) {
+	$scope.mergeSales = function (tid) {
 		///projects/30/tables
 		var modalInstance = $modal.open({
 			templateUrl: 'pages/uploadfiles.html',
@@ -528,9 +533,10 @@ maApp.controller('projectController', function($rootScope,$scope,$http,$location
 		//modalInstance.source=source;
 		modalInstance.soilscompleted=false;
 		modalInstance.pid=$scope.pid;
+		modalInstance.tid=tid;
 		modalInstance.info="Upload sales data as Microsoft Excel or Comma-separated Values (CSV).  Note:  Sales must contain a) Unique document number b), Sale price, and c) sale date";
 		
-		modalInstance.maxSteps=$scope.maxSteps=6;
+		modalInstance.maxSteps=$scope.maxSteps=5;
 		modalInstance.result.then(function (newfile) {
 			//$scope.selected = selectedItem;
 			//insert file into list of layers
@@ -1250,10 +1256,10 @@ maApp.filter('radio', function() {
 /*
             maxFileSize: 250000000,
             acceptFileTypes: /(\.|\/)(shp|shx|dbf|prj|zip|csv|xls|xlsx)$/i
- */ 
-function getFileStatus($scope,$http){
+*/ 
+function getFileStatus($scope,$http,op){
 	var url ="/load/" + $scope.pid ;
-	if($scope.tid)url+="/tables/"+$scope.tid;
+	if($scope.tid)url+="/"+op+"/"+$scope.tid;
 	var params={step:1,fileName:$scope.filename};
 	if($scope.source=='subj')params['subj']=1;
 	$scope.hasStatus=true;
@@ -1262,48 +1268,97 @@ function getFileStatus($scope,$http){
 	.success(function(data,status,headers,config) {
 		$scope.err=false;
 		$scope.id=data.id;
-
+		if(op=='table')showUploadResults(data,$scope);
+		else if(op=='sales')showUploadSalesResults(data,$scope);
 		//id,name,state,created_date,modified_date
 		//$scope.newfile={id:999,name:data['Layer name'],type:data.file,state:'az',created_date:new Date().toString(),modified_date:new Date().toString()};
 
 		//href="/load" class="btn btn-default btn-continue" id="continueBtn"
 		//if(data['file'])
 		//	$("#continueBtn").prop("href","/load?type="+data['file']+(data["Geometry"]?"&stype="+data["Geometry"]:""));
-		if(data['Extent']||data['Layer name'])
-		{
-			var message="<h3>Successfully uploaded files:</h3><b>Layer name:</b> " + data["Layer name"] 
-			+ (data["Extent"]? "<br><b>Extent:</b> " + data["Extent"]:"")
-			+ "<br><b>Count:</b> " + data["Feature Count"]
-			+ "<br><b>File type:</b> " + data['file']
-			+ "<br><b>Geometry type:</b> "  + data["Geometry"];
-			$scope.status=message;
-			$scope.tableName = data["Layer name"];
-			$scope.geometype=data.Geometry;
-			if(data.Geometry=='None'){
-				$scope.isSpatial=false;
-				$scope.completed=true;
-				//$("#continueBtn").text("Continue to summary").prop("href","/summary");
-				//<a href="/load" class="btn btn-default btn-continue" id="">
-			}
-			else $scope.isSpatial=true;
-		}
-		else{
-			$scope.err=true;
-			$scope.status="Unable to recognize valid data " + data.err?data.err:"";
-		}
+
 	})
 	.error(function(data,status,headers,config){
 
 	});
 }
-
-function getSoilsStatus($scope,$http){
+function showUploadResults(data,$scope){
+	if(data['Extent']||data['Layer name'])
+	{
+		/*
+		var message="<h3>Successfully uploaded files:</h3><b>Layer name:</b> " + data["Layer name"] 
+		+ (data["Extent"]? "<br><b>Extent:</b> " + data["Extent"]:"")
+		+ "<br><b>Count:</b> " + data["Feature Count"]
+		+ "<br><b>File type:</b> " + data['file']
+		+ "<br><b>Geometry type:</b> "  + data["Geometry"];
+		*/
+		//$scope.status=message;
+		$scope.data=data;
+		$scope.tableName = data["Layer name"];
+		$scope.geometype=data.Geometry;
+		if(data.Geometry=='None'){
+			$scope.isSpatial=false;
+			$scope.completed=true;
+			//$("#continueBtn").text("Continue to summary").prop("href","/summary");
+			//<a href="/load" class="btn btn-default btn-continue" id="">
+		}
+		else{
+			$scope.processMsg="Click the Start processing button to begin. Please wait while your data is loaded into the database and processed. This may take several minutes depending on the size of your input file.";
+			$scope.isSpatial=true;
+		}
+	}
+	else{
+		$scope.err=true;
+		$scope.status="Unable to recognize valid data " + data.err?data.err:"";
+	}	
+}
+function showUploadSalesResults(data,$scope){
+	if(data.data['Extent']||data.data['Layer name'])
+	{
+		/*
+		var message="<h3>Successfully uploaded files:</h3><b>Layer name:</b> " + data["Layer name"] 
+		+ (data["Extent"]? "<br><b>Extent:</b> " + data["Extent"]:"")
+		+ "<br><b>Count:</b> " + data["Feature Count"]
+		+ "<br><b>File type:</b> " + data['file']
+		+ "<br><b>Geometry type:</b> "  + data["Geometry"]
+		+ "<br><br>Select the join attribute <select ng-model='correctlySelected' ng-options='fields'></select>";
+		*/
+		//var fields=[];
+		//for(var i in data)if(data[i].substring(0,6)=='String')fields.push(i)
+		$scope.fields=data.fields;
+		$scope.compSel = $scope.fields[0];
+		$scope.salesfields=data.sales;
+		$scope.saleSel = $scope.salesfields[0];
+		$scope.dupes = data.dupes&&data.dupes.length>0?data.dupes.join(", "):"No duplicate fields found";
+		$scope.data=data.data;
+		
+		//$scope.status=message;
+		$scope.tableName = data.data["Layer name"];
+		$scope.geometype=data.data.Geometry;
+		if(false && data.data.Geometry=='None'){
+			$scope.isSpatial=false;
+			$scope.completed=true;
+			//$("#continueBtn").text("Continue to summary").prop("href","/summary");
+			//<a href="/load" class="btn btn-default btn-continue" id="">
+		}
+		else{
+			$scope.isSpatial=true;
+		}
+	}
+	else{
+		$scope.err=true;
+		$scope.status="Unable to recognize valid data " + data.err?data.err:"";
+	}	
+}
+function startUploadProgress($scope,$http,op){
 	$scope.stepMsg=$scope.msg[2];
-	var url ="/load/" + $scope.pid+($scope.tid?"/tables/"+$scope.tid:"");
+	var url ="/load/" + $scope.pid+($scope.tid?"/"+op+"/"+$scope.tid:"");
 	//var url = "/load/" + fileName+ "?step=2";
-	$scope.soilsprogress=10;
+	$scope.uploadProgress=10;
 	var params={step:2,fileName:$scope.filename,tableName:$scope.tableName};
 	if($scope.id)params.id=$scope.id;
+	if($scope.compSel)params.compSel=$scope.compSel;
+	if($scope.saleSel)params.saleSel=$scope.saleSel;
 	checkStep($scope,$http,url,params);
 }
 
@@ -1331,7 +1386,7 @@ function checkStep($scope,$http,url,params){
 		}
 		data.step++;
 		$scope.stepMsg=$scope.msg[data.step];
-		$scope.soilsprogress += (100/($scope.maxSteps-2));
+		$scope.uploadProgress += (100/($scope.maxSteps-2));
 		//var param = (idName?"&idName="+idName:"");
 		//if(data.step==3)param+=($scope.filetype?"&type="+$scope.filetype:"")+($scope.geomtype?"&stype="+$scope.geomtype:"");
 
@@ -1351,9 +1406,9 @@ function checkStep($scope,$http,url,params){
 	});
 
 }
-function createUploader($scope,$http,FileUploader,$modalInstance){
+function createUploader($scope,$http,FileUploader,$modalInstance,op){
 	var uploader = $scope.uploader = new FileUploader({
-		url: '/upload/'+$modalInstance.pid+($modalInstance.tid?"/tables/"+$modalInstance.tid:"")
+		url: '/upload/'+$modalInstance.pid+($modalInstance.tid?"/"+op+"/"+$modalInstance.tid:"")
 	});
 //	maxFileSize: 250000000,
 //	acceptFileTypes: /(\.|\/)(shp|shx|dbf|prj|zip|csv|xls|xlsx)$/i
@@ -1425,7 +1480,7 @@ function createUploader($scope,$http,FileUploader,$modalInstance){
 	uploader.onCompleteAll = function() {
 		console.info('onCompleteAll');
 		$scope.filename=this.queue[0]._file.name;
-		getFileStatus($scope,$http);
+		getFileStatus($scope,$http,op);
 	};
 	return uploader;
 }

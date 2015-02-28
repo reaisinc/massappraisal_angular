@@ -3,9 +3,9 @@
 	<h3 class="modal-title">Upload data files</h3>
 	<div>{{info}}</div>
 </div>
-<div class="modal-body" controller="projectController" nv-file-drop="" uploader="uploader" filters="queueLimit, customFilter">
+<div ng-show="!isSpatial" class="modal-body" controller="projectController" nv-file-drop="" uploader="uploader" filters="queueLimit, customFilter">
 
-	<div class="row" ng-show="!isSpatial">
+	<div class="row" >
 		<div class="col-md-3">
 			<h3>Select files</h3>
 			<div ng-show="uploader.isHTML5">
@@ -83,32 +83,55 @@
 					<span class="glyphicon glyphicon-trash"></span> Remove all
 				</button>
 			</div>
-
 		</div>
-
-
 	</div>
 </div>
 
-<div ng-class="err?'alert alert-danger':'alert alert-success'" ng-show="hasStatus" style='padding: 20px'>
-	<span ng-show="status==''"><img src='../img/spinner_mac.gif'> Please wait...</span>
-	<p ng-bind-html="renderHtml(status)" />
+<div ng-class="err?'alert alert-danger':'alert alert-success'" ng-show="hasStatus" style='padding-left: 20px;padding-right:20px'>
+	<span ng-show="data==''"><img src='../img/spinner_mac.gif'> Please wait...</span>
+	<!--  <p ng-bind-html="renderHtml(status)" />-->
+	<div ng-show="data!=''">
+	<h3>Successfully uploaded file(s):</h3>
+	<table class='table'>
+	<tr><td><b>Layer name:</b></td><td> {{ data["Layer name"] }}</td></tr> 
+	<tr ng-show="data['Extent']"><td><b>Extent:</b></td><td> {{ data["Extent"] }}</td></tr>
+	<tr><td><b>Count:</b></td><td> {{ data["Feature Count"] }}</td></tr>
+	<tr><td><b>File type:</b></td><td> {{ data['file'] }}</td></tr>
+	<tr><td><b>Geometry type:</b></td><td> {{ data["Geometry"] }}</td></tr>
+	
+	</table>
+	</div>
 </div>
 
-<div ng-show="isSpatial" style="padding: 20px;">
-	<p>Click the Start processing button to begin. Please wait while your data is loaded into the database and processed. This may take several minutes depending on the size of your input file.</p>
-	<button type="button" class="btn btn-success btn-default" ng-click="processSoils()">
+<div ng-show="isSpatial" style="padding-left: 20px;padding-right:20px">
+	<div ng-show="fields">
+	Choose the fields in the parcels and sales to join tables.<br> 
+	<div class="row" style="padding:5px">
+  	<div class="col-md-4"><b>Select comparable join field </b></div>
+  	<div class="col-md-2"><select style='width:100%' ng-model="compSel"><option ng-repeat="item in fields" value="{{item}}">{{item}}</option></select></div>
+  	
+  	<div class="col-md-4"><b>Select sales join field</b> </div>
+  	<div class="col-md-2"><select style='width:100%' ng-model="saleSel"><option ng-repeat="item in salesfields" value="{{item}}">{{item}}</option></select></div>
+  	</div>
+  	<br>
+	The following fields will be updated from the sales file: {{dupes}}
+	
+	</div>
+	<br>
+	<p>{{processMsg}}</p>
+	<button type="button" class="btn btn-success btn-default" ng-click="processUploads()">
 		<span class="glyphicon glyphicon-upload"></span> Start processing
 	</button>
 	<br> <br>
 	<div ng-class="completed?'':'active'" class="progress progress-striped" style="margin-bottom: 0;">
-		<div role="progressbar" class="progress-bar" ng-style="{ 'width': soilsprogress + '%' }"></div>
+		<div role="progressbar" class="progress-bar" ng-style="{ 'width': uploadProgress + '%' }"></div>
 	</div>
 </div>
 
-<div style="width: 100%; padding: 20px">{{stepMsg}}</div>
 
-<div ng-show="errMsg" class="alert alert-danger" style="width: 100%; padding: 20px">{{errMsg}}</div>
+<div style="width: 100%; padding: 5px">{{stepMsg}}</div>
+
+<div ng-show="errMsg" class="alert alert-danger" style="width: 100%; padding-left: 20px;padding-right:20px">{{errMsg}}</div>
 
 <div class="modal-footer">
 	<button ng-show="completed" class="btn btn-primary" ng-click="ok()">OK</button>
