@@ -134,7 +134,7 @@ router.put('/flush',  function(req, res){
 
 //delete project (alt - not used)
 //router.get('/:pid/delete',  function(req, res){
-//	deleteProject(req,res);
+//deleteProject(req,res);
 //});
 
 function createProject(req,res)
@@ -229,7 +229,7 @@ function deleteProject(req,res){
 				var geomtype=result.rows[i].geometrytype;
 				cache.del("f_"+req.user.shortName+result.rows[i].id)
 				cache.del("sb_"+req.user.shortName+result.rows[i].id)
-				
+
 				sql.push("drop table if exists "+ req.user.shortName + "." + tableName + "_soils");
 				sql.push("drop table if exists "+ +req.user.shortName + "." + tableName + "_vars");
 				sql.push("select delete_table_or_view('" + req.user.shortName + "','" + tableName + "_stats')");
@@ -247,7 +247,7 @@ function deleteProject(req,res){
 					if(err)res.json({"status":"false"})
 					else{
 						cache.del("p_"+req.user.shortName)
-						
+
 						res.json({"status":"true"})
 					}
 				});
@@ -268,7 +268,7 @@ function getUserFiles(req,res)
 	pg.connect(global.conString,function(err, client, release) {
 		if (err){ res.json({"err":"No connection to database;"});throw err;}
 		var field="project";
-		
+
 		// var vals=[req.params.id,req.params.id];
 
 		// var sql="SELECT table_name FROM information_schema.tables WHERE
@@ -489,12 +489,12 @@ function updateTableSummary(req,res)
 					cache.del("sw_"+req.user.shortName+tid)
 					cache.del("pr_"+req.user.shortName+tid)
 					cache.del("rs_"+req.user.shortName+tid)
-					*/
+					 */
 					res.end("success");
-					
+
 					//now invalidate all database caches since the fields have changed
-					
-					
+
+
 					//res.end(JSON.stringify(result.rows));		
 				});
 			});
@@ -502,14 +502,14 @@ function updateTableSummary(req,res)
 	}	
 }
 function flushAllCache(name){
-	
+
 	cache.del("s_"+name)
 	cache.del("c_"+name)
 	cache.del("r_"+name)
 	cache.del("sw_"+name)
 	cache.del("pr_"+name)
 	cache.del("rs_"+name)
-	
+
 }
 function tableCorrelation(req, res){
 	//console.log(req.params.pid);
@@ -520,7 +520,7 @@ function tableCorrelation(req, res){
 	var tid = parseInt(req.params.tid);
 	//if in cache, just return it
 	var c;
-	
+
 	if(c = cache.get('c_'+req.user.shortName+tid)){
 		console.log("Cache hit: " + 'c_'+req.user.shortName+tid)
 		res.json(c);
@@ -532,15 +532,25 @@ function tableCorrelation(req, res){
 		if (err){ res.json({"err":"No connection to database;"});throw err;}
 		// strip off extension
 		client.query(sql, function(err, result) {
+			if(err){
+				console.log(err);
+				release();
+				res.json({'err':err});
+				return;
+			}
 			var tableName = result.rows[0].name+tid;
 			var alias=result.rows[0].alias;
 
 			var sql="select name,include from " + req.user.shortName + "." + tableName + "_vars where include=1 and id=0 order by depvar desc,name asc";
 			console.log(sql);
-			if (err){ res.json({"err":"No connection to database;"});throw err;}
 			// strip off extension
 			client.query(sql, function(err, result) {
-				if(err)console.log(err);
+				if(err){
+					console.log(err);
+					release();
+					res.json({'err':err});
+					return;
+				}
 				// add the schema to the tablename
 				// release()
 				var names=[];
@@ -570,6 +580,7 @@ function tableCorrelation(req, res){
 				client.query(sql, function(err, result) {
 					release()
 					if(err){
+						console.log(err);
 						res.json({'err':err});
 					}
 					//res.writeHead(200, {"Content-Type": "application/json"});
@@ -608,12 +619,23 @@ function tableRegression(req, res){
 		if (err){ res.json({"err":"No connection to database;"});throw err;}
 		// strip off extension
 		client.query(sql, function(err, result) {
+			if(err){
+				console.log(err);
+				release();
+				res.json({'err':err});
+				return;
+			}
 			var tableName = result.rows[0].name+tid;
 			var alias=result.rows[0].alias;
 			var sql="select name from " + req.user.shortName + "." + tableName + "_vars where include=1 and id=0 order by depvar desc,name asc";
 			console.log(sql);
 			client.query(sql, function(err, result) {
-				if(err)console.log(err);
+				if(err){
+					console.log(err);
+					release();
+					res.json({'err':err});
+					return;
+				}
 				// add the schema to the tablename
 				tableName = req.user.shortName+"."+ tableName+'_stats';
 				var cols=[];
@@ -666,10 +688,11 @@ function tableRegression(req, res){
 				// database;"}));throw err;}
 				// strip off extension
 				client.query(sql, function(err, result) {
-					if(err)console.log(err);
+
 					// console.log(result.rows);
 					release();
 					if(err){
+						console.log(err);
 						res.json({'err':err});
 					}
 					else {
@@ -704,12 +727,23 @@ function tableSWRegression(req, res){
 		if (err){ res.json({"err":"No connection to database;"});throw err;}
 		// strip off extension
 		client.query(sql, function(err, result) {
+			if(err){
+				console.log(err);
+				release();
+				res.json({'err':err});
+				return;
+			}
 			var tableName = result.rows[0].name+tid;
 			var alias=result.rows[0].alias;
 			var sql="select name from " + req.user.shortName + "." + tableName + "_vars where include=1 and id=0 order by depvar desc,name asc";
 			console.log(sql);
 			client.query(sql, function(err, result) {
-				if(err)console.log(err);
+				if(err){
+					console.log(err);
+					release();
+					res.json({'err':err});
+					return;
+				}
 				// add the schema and extension to the tablename
 				tableName = req.user.shortName+"."+ tableName+'_stats';
 				var cols=[];
@@ -752,10 +786,10 @@ function tableSWRegression(req, res){
 				// database;"}));throw err;}
 				// strip off extension
 				client.query(sql, function(err, result) {
-					if(err)console.log(err);
 					// console.log(result.rows);
 					release();
 					if(err){
+						console.log(err);
 						res.json({'err':err});
 					}
 					else {
@@ -787,13 +821,24 @@ function tableResiduals(req,res){
 		if (err){ res.json({"err":"No connection to database;"});throw err;}
 		// strip off extension
 		client.query(sql, function(err, result) {
+			if(err){
+				console.log(err);
+				release();
+				res.json({'err':err});
+				return;
+			}
 			var tableName = result.rows[0].name+tid;
 			var alias=result.rows[0].alias;
 			var sql="select name,type from " + req.user.shortName + "." + tableName + "_vars where (include=1 or id=1) order by id desc,depvar desc,name asc";
 
 			//strip off extension
 			client.query(sql, function(err, result) {
-				if(err)console.log(err);
+				if(err){
+					console.log(err);
+					release();
+					res.json({'err':err});
+					return;
+				}
 				//add the schema to the tablename
 				tableName = req.user.shortName+"."+ tableName+'_stats';
 				var cols=[];
@@ -818,16 +863,21 @@ function tableResiduals(req,res){
 					var sql = "select r_step_regression_variables as vals from public.r_step_regression_variables('" + depvar + "','" + cols.join(",") + "','" + tableName + "',0,0)";// s("+out.join(",")+")";
 				console.log(sql);
 				client.query(sql, function(err, result) {
-					if(err)console.log(err);
+					if(err){
+						console.log(err);
+						release();
+						res.json({'err':err});
+						return;
+					}
 					console.log(result.rows);
 					var vars=JSON.parse(result.rows[0].vals);
 					var sql="select count(*) as total from " + tableName;
 					console.log(sql);
 					client.query(sql, function(err, result) {
-						if(err)console.log(err);
 						release();
 						if(err){
-							res.json({'err':err.toString()});
+							console.log(err);
+							res.json({'err':err});
 						}
 						else {
 							var result={alias:alias,id:id,names:names,vars:vars,total:parseInt(result.rows[0].total)};
@@ -855,14 +905,24 @@ function tablePredictions(req,res){
 	pg.connect(global.conString,function(err, client, release) {
 		if (err){ res.json({"err":"No connection to database;"});throw err;}
 		client.query(sql, function(err, result) {
-			if (err){ res.json({"err":"Unable to find table;"});throw err;}
+			if(err){
+				console.log(err);
+				release();
+				res.json({'err':err});
+				return;
+			}
 			var tableName = result.rows[0].name+tid;
 			var alias=result.rows[0].alias;
 			var sql="select name,type from " + req.user.shortName + "." + tableName + "_vars where (include=1 or id=1) order by id desc,depvar desc,name asc";
 			console.log(sql);
 			//strip off extension
 			client.query(sql, function(err, result) {
-				if(err)console.log(err);
+				if(err){
+					console.log(err);
+					release();
+					res.json({'err':err});
+					return;
+				}
 				//add the schema to the tablename
 				tableName = req.user.shortName+"."+ tableName+'_stats';
 				var cols=[];
@@ -899,13 +959,12 @@ function tablePredictions(req,res){
 				//if (err){ res.end(JSON.stringify({"err":"No connection to database;"}));throw err;}
 				//strip off extension
 				client.query(sql, function(err, result) {
-					if(err)console.log(err);
-					console.log(result.rows);
+
 					release();
 					if(err){
-						res.json({'err':err.toString()});
+						console.log(err);
+						res.json({'err':err});
 					}
-
 					//var vars=JSON.parse(result.rows[0].vals);
 					else {
 						var result='{"alias":"'+alias+'","fields":' + JSON.stringify(fields) + ',"vars":'+result.rows[0].vals+'}';
@@ -942,6 +1001,12 @@ function tableSubject(req,res){
 		if (err){ res.json({"err":"No connection to database;"});throw err;}
 		// strip off extension
 		client.query(sql, function(err, result) {
+			if(err){
+				console.log(err);
+				release();
+				res.json({'err':err});
+				return;
+			}
 			var tableName = result.rows[0].name+tid;
 			var alias=result.rows[0].alias;
 			var geometrytype=result.rows[0].geometrytype;
@@ -950,7 +1015,12 @@ function tableSubject(req,res){
 			console.log(sql);
 			//strip off extension
 			client.query(sql, function(err, result) {
-				if(err)console.log(err);
+				if(err){
+					console.log(err);
+					release();
+					res.json({'err':err});
+					return;
+				}
 				//add the schema to the tablename
 				tableName = req.user.shortName+"."+ tableName+'_stats';
 				var cols=[];
@@ -978,8 +1048,12 @@ function tableSubject(req,res){
 
 
 				client.query(sql, function(err, result) {
-					if(err)console.log(err);
-					console.log(result.rows);
+					if(err){
+						console.log(err);
+						release();
+						res.json({'err':err});
+						return;
+					}
 					var vars=JSON.parse(result.rows[0].vals);
 					var fields=[];
 					for(var i=1;i<vars.names.length;i++)
@@ -990,10 +1064,10 @@ function tableSubject(req,res){
 					//var sql="select count(*) as total from " + tableName;
 					console.log(sql);
 					client.query(sql, function(err, result) {
-						if(err)console.log(err);
 						release();
 						if(err){
-							res.json({'err':err.toString()});
+							console.log(err)
+							res.json({'err':err});
 						}
 						else {
 							var results={alias:alias,geometrytype:geometrytype,fields:fields.join(", "),id:id,names:names,vars:vars,pid:pid,tid:tid,rows:result&&result.rows?result.rows:[]};
@@ -1110,13 +1184,24 @@ function tableReports(req,res){
 		var sql=["select name,geometrytype,type,alias from "+req.user.shortName + ".tables where id=" + sid,"select alias from "+req.user.shortName + ".tables where id=" + tid];
 		console.log(sql);
 		client.query(sql.join(";"), function(err, result) {
-			if(err){console.log(err);res.json({err:err.toString()});throw err;}
+			if(err){
+				console.log(err);
+				release();
+				res.json({'err':err});
+				return;
+			}
 			var tableName = result.rows[0].name+sid;
 			var alias = result.rows[0].alias;
 			var alias = result.rows[1].alias;
 			var sql="select name,type from " + req.user.shortName + "." + tableName + "_vars where include>0 and depvar!=1 order by id desc,name asc";
 			console.log(sql);
 			client.query(sql, function(err, result) {
+				if(err){
+					console.log(err);
+					release();
+					res.json({'err':err});
+					return;
+				}
 				var fields=[];
 				//for(var i in result.rows)fields.push(result.rows[i].name);
 				for(var i = 0; i < result.rows.length;i++){
@@ -1133,7 +1218,10 @@ function tableReports(req,res){
 				console.log(sql);
 				client.query(sql, function(err, result) {
 					release()
-					if(err){console.log(err);res.json({err:err.toString()});throw err;}
+					if(err){
+						console.log(err);
+						res.json({'err':err});
+					}
 					else {
 						var result={pid:pid,tid:tid,sid:sid,fields:fields,alias:alias,rows:result&&result.rows?result.rows:[]}
 						res.json(result);
@@ -1154,13 +1242,18 @@ function reportSubject(req,res){
 	var tid = parseInt(req.params.tid);
 	var sid = parseInt(req.params.sid);
 	var oid = req.params.id?parseInt(req.params.id):null;
-	
+
 	var sql=["select name,alias,geometrytype from "+req.user.shortName + ".tables where id="+sid,"select name,alias from "+req.user.shortName + ".tables where id="+tid];
 	console.log(sql);
 	pg.connect(global.conString,function(err, client, release) {
 		if (err){ res.json({"err":"No connection to database;"});throw err;}
 		client.query(sql.join(";"), function(err, result) {
-			if (err){ res.json({"err":"Unable to find table;"});throw err;}
+			if(err){
+				console.log(err);
+				release();
+				res.json({'err':err});
+				return;
+			}
 			var tableName = result.rows[1].name+tid;
 			var subtableName = result.rows[0].name+sid;
 			var geometrytype=result.rows[0].geometrytype;
@@ -1170,7 +1263,12 @@ function reportSubject(req,res){
 			console.log(sql);
 			//strip off extension
 			client.query(sql, function(err, result) {
-				if(err)console.log(err);
+				if(err){
+					console.log(err);
+					release();
+					res.json({'err':err});
+					return;
+				}
 				//add the schema to the tablename
 				tableName = req.user.shortName+"."+ tableName+'_stats';
 				var cols=[];
@@ -1204,7 +1302,12 @@ function reportSubject(req,res){
 				//if (err){ res.end(JSON.stringify({"err":"No connection to database;"}));throw err;}
 				//strip off extension
 				client.query(sql, function(err, result) {
-					if(err)console.log(err);
+					if(err){
+						console.log(err);
+						release();
+						res.json({'err':err});
+						return;
+					}
 					//console.log(result.rows);
 
 					var factors = JSON.parse(result.rows[0].vals);
@@ -1214,6 +1317,12 @@ function reportSubject(req,res){
 					var sql="select name,saledate,type from " + req.user.shortName + "." + subtableName + "_vars where include>0  order by id desc,name asc";
 					console.log(sql);
 					client.query(sql, function(err, result) {
+						if(err){
+							console.log(err);
+							release();
+							res.json({'err':err});
+							return;
+						}
 						var fields=[];
 						var names={};
 						//for(var i in result.rows)fields.push(result.rows[i].name);
@@ -1230,6 +1339,7 @@ function reportSubject(req,res){
 						if(geometrytype!="None")sql.push("select replace(replace(substring(box2d(st_transform(st_setsrid(st_extent(wkb_geometry),3857),4326))::text,5),' ',','),')','') as extent from " + req.user.shortName + "." + subtableName + (oid?" where oid="+oid:""));
 						console.log(sql);
 						client.query(sql.join(";"), function(err, result) {
+
 							release()
 							//calculate the depvar price. result should only contain one row
 							/*
@@ -1241,14 +1351,20 @@ function reportSubject(req,res){
 								}
 							}
 							 */
-							//remove all double quotes from field names
-							for(var i=0;i<fields.length;i++)fields[i]=fields[i].replace(/\"/g,"");
-							fields.push("Date")
-							var d=new Date();
-							result.rows[0]["Date"]=""+(d.getMonth()+1) + '/' + d.getDate() + '/' +  d.getFullYear();
-							var data = processData(factors,result.rows[0],saledate);
-							if(err){console.log(err);res.json({err:err.toString()});throw err;}
-							res.json({depvar:factors.names[0],pid:pid,tid:tid,sid:sid,id:oid,names:names,fields:fields,alias:alias,subject:subtableName,rows:result.rows,result:data?data:{}});
+							if(err){
+								console.log(err);
+								res.json({'err':err});
+							}
+							else {
+								//remove all double quotes from field names
+								for(var i=0;i<fields.length;i++)fields[i]=fields[i].replace(/\"/g,"");
+								fields.push("Date")
+								var d=new Date();
+								result.rows[0]["Date"]=""+(d.getMonth()+1) + '/' + d.getDate() + '/' +  d.getFullYear();
+								var data = processData(factors,result.rows[0],saledate);
+
+								res.json({depvar:factors.names[0],pid:pid,tid:tid,sid:sid,id:oid,names:names,fields:fields,alias:alias,subject:subtableName,rows:result.rows,result:data?data:{}});
+							}
 						});
 					})
 					//});

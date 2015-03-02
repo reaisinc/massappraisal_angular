@@ -859,9 +859,15 @@ maApp.controller('stepwise_regressionController', function($scope,$http,$locatio
 maApp.controller('residualsController', function($scope,$http,$location) {
 	$scope.useSW=false;
 	$scope.getResiduals=function(){
+		$scope.err=null;
 		$http.get($location.$$url+($scope.useSW?"?nosw=1":"")).
 		success(function(data, status, headers, config) {
-			
+			if(data.err){
+				if(!data.err.detail)data.err={"detail":data.err}
+				$scope.err=data.err;
+				$scope.residualsdata=true;
+				return;
+			}			
 			$scope.residuals = data;
 			$scope.totalItems = data.total;
 			$scope.currentPage = 0;
@@ -880,6 +886,7 @@ maApp.controller('residualsController', function($scope,$http,$location) {
 	$scope.tableURL = $location.$$url.slice(0,-10);
 
 	$scope.getData = function(page){
+		$scope.err=null;
 		$http.get($scope.tableURL+"?offset="+($scope.maxSize*page)+"&limit="+$scope.maxSize+($scope.useSW?"&nosw=1":"")).
 		success(function(data, status, headers, config) {
 			if(data.err){
@@ -963,11 +970,13 @@ maApp.controller('predictController', function($scope,$http,$location,$filter,$s
 		return $sce.trustAsHtml(html_code);
 	};
 	$scope.getData=function(){
+		$scope.err=null;
 		$http.get($location.$$url+($scope.useSW?"?nosw=1":"")).
 		success(function(data, status, headers, config) {
 			if(data.err){
 				if(!data.err.detail)data.err={"detail":data.err}
 				$scope.err=data.err;
+				$scope.predictions=true;
 				return;
 			}
 			$scope.predictions = data;
