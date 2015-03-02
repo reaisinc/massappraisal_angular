@@ -353,8 +353,12 @@ function deleteTable(req,res){
 			}
 			console.log(sql);
 			client.query(sql.join(";"), function(err, result) {
-				if (err){ res.json({"err":"Unable to delete table;"});throw err;}
-				release()
+				release();
+				if(err){
+					console.log(err);
+					res.json({'err':err});
+					return;
+				}
 				cache.del("f_"+req.user.shortName+tid)
 				cache.del("sb_"+req.user.shortName+tid)
 				res.json({msg:"success"})
@@ -390,6 +394,12 @@ function tableSummary(req, res){
 		if (err){ res.json({"err":"No connection to database;"});throw err;}
 		// strip off extension
 		client.query(sql, function(err, result) {
+			if(err){
+				console.log(err);
+				release();
+				res.json({'err':err});
+				return;
+			}
 			// add the schema to the tablename
 			// console.log(result);
 			var tableName = result.rows[0].name+tid;
@@ -398,6 +408,12 @@ function tableSummary(req, res){
 			var sql="select include,id,depvar,saledate,soils,uniqueid,sales,name,type from " + req.user.shortName + "." + tableName + "_vars where include<5 order by id desc,uniqueid desc,depvar desc,sales desc,soils asc,name asc";
 			console.log(sql);
 			client.query(sql, function(err, result) {
+				if(err){
+					console.log(err);
+					release();
+					res.json({'err':err});
+					return;
+				}
 				tableName = req.user.shortName+"."+ tableName+'_stats';
 				var cols=[];
 				var names={};
@@ -416,6 +432,7 @@ function tableSummary(req, res){
 				client.query(sql, function(err, result) {
 					release()
 					if (err) {
+						console.log(err);
 						res.json({'err':err});
 					}
 					// var obj=result.rows;
