@@ -19,7 +19,7 @@ table.clrs td {border:1px solid #ddd;padding:5px;}
 
 <div class="container">
 		  <ol class="breadcrumb" style="float:left">
-			<li><a ng-click="gotoUrl('',3)">Data</a></li>	
+			<li><a ng-click="gotoUrl('',3)">Model</a></li>	
 			<li><a ng-click="gotoUrl('summary')">Summary</a></li>
 		  	<li>Correlation matrix</li>
 		  	<li><a ng-click="gotoUrl('regression')">Regression</a></li>
@@ -67,6 +67,7 @@ The correlation matrix can be used to identify the independent variables that sh
     <br>
 
     <div ng-show="!correlation" id='loader'><img src="img/spinner_mac.gif"> Loading table.....  Please wait</div>
+    <div ng-show="err" class="alert alert-danger">{{err.detail}}</div>
     
 	<table ng-show='correlation' class='table table-striped table-bordered'>
 		<th>&nbsp;</th>

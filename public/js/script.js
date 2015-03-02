@@ -713,6 +713,12 @@ maApp.controller('summaryController', function($rootScope,$scope,$http,$location
 
 	$http.get($location.$$url).
 	success(function(data, status, headers, config) {
+		if(data.err){
+			if(!data.err.detail)data.err={"detail":data.err}
+			$scope.err=data.err;
+			$scope.summary=true;
+			return;
+		}
 		$scope.id=1;
 		$scope.depvar=1;
 		$scope.saledate=1;
@@ -750,7 +756,14 @@ maApp.controller('correlationController', function($rootScope,$scope,$http,$loca
 	$scope.getData = function(){
 		$http.get($location.$$url).
 		success(function(data, status, headers, config) {
+			if(data.err){
+				if(!data.err.detail)data.err={"detail":data.err}
+				$scope.err=data.err;
+				$scope.correlation=true;
+				return;
+			}
 			$scope.tableName=data.alias;
+			
 
 			var tmpdata=[];
 			$scope.id=1;
@@ -805,6 +818,12 @@ maApp.directive('dollarChangeDirective', function ($timeout) {
 maApp.controller('regressionController', function($scope,$http,$location) {
 	$http.get($location.$$url).
 	success(function(data, status, headers, config) {
+		if(data.err){
+			if(!data.err.detail)data.err={"detail":data.err}
+			$scope.err=data.err;
+			$scope.regression=true;
+			return;
+		}
 		for(var i=0;i<data.vals.coef.length;i++)data.vals.coef[i]['name']=data.vals.names[i];
 		$scope.regression = data.vals;
 		$scope.tableName=data.alias;
@@ -817,6 +836,12 @@ maApp.controller('regressionController', function($scope,$http,$location) {
 maApp.controller('stepwise_regressionController', function($scope,$http,$location) {
 	$http.get($location.$$url).
 	success(function(data, status, headers, config) {
+		if(data.err){
+			if(!data.err.detail)data.err={"detail":data.err}
+			$scope.err=data.err;
+			$scope.swregression=true;
+			return;
+		}
 		for(var i=0;i<data.vals.coef.length;i++)data.vals.coef[i]['name']=data.vals.names[i];
 		var sum="<b>Formula: </b>" + data.vals.names[0] + " = " + data.vals.coef[0]['Estimate'] ;
 		for(var i=1;i<data.vals.coef.length;i++)
@@ -836,6 +861,7 @@ maApp.controller('residualsController', function($scope,$http,$location) {
 	$scope.getResiduals=function(){
 		$http.get($location.$$url+($scope.useSW?"?nosw=1":"")).
 		success(function(data, status, headers, config) {
+			
 			$scope.residuals = data;
 			$scope.totalItems = data.total;
 			$scope.currentPage = 0;
@@ -856,6 +882,12 @@ maApp.controller('residualsController', function($scope,$http,$location) {
 	$scope.getData = function(page){
 		$http.get($scope.tableURL+"?offset="+($scope.maxSize*page)+"&limit="+$scope.maxSize+($scope.useSW?"&nosw=1":"")).
 		success(function(data, status, headers, config) {
+			if(data.err){
+				if(!data.err.detail)data.err={"detail":data.err}
+				$scope.err=data.err;
+				$scope.residualsdata=true;
+				return;
+			}
 			$scope.residualsdata = $scope.processData(data.rows);
 		}).
 		error(function(data, status, headers, config) {
@@ -933,6 +965,11 @@ maApp.controller('predictController', function($scope,$http,$location,$filter,$s
 	$scope.getData=function(){
 		$http.get($location.$$url+($scope.useSW?"?nosw=1":"")).
 		success(function(data, status, headers, config) {
+			if(data.err){
+				if(!data.err.detail)data.err={"detail":data.err}
+				$scope.err=data.err;
+				return;
+			}
 			$scope.predictions = data;
 			$scope.tableName=data.alias;
 			/*

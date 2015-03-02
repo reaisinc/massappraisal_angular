@@ -121,7 +121,16 @@ router.get('/:pid/tables/:tid/reports/:sid/table',  function(req, res){
 	tableReports(req,res);	
 });
 
-
+//create project
+router.put('/flush',  function(req, res){
+	var pid = parseInt(req.params.pid);
+	var tid = parseInt(req.params.tid);
+	if(tid){
+		flushAllCache(req.user.shortName+tid);
+		cache.del("f_"+req.user.shortName+tid)
+	}
+	else cache.del("p_"+req.user.shortName)
+});
 
 //delete project (alt - not used)
 //router.get('/:pid/delete',  function(req, res){
@@ -218,6 +227,8 @@ function deleteProject(req,res){
 			for(var i in result.rows){
 				var tableName=result.rows[i].name+result.rows[i].id;
 				var geomtype=result.rows[i].geometrytype;
+				cache.del("f_"+req.user.shortName+result.rows[i].id)
+				cache.del("sb_"+req.user.shortName+result.rows[i].id)
 				
 				sql.push("drop table if exists "+ req.user.shortName + "." + tableName + "_soils");
 				sql.push("drop table if exists "+ +req.user.shortName + "." + tableName + "_vars");
@@ -236,6 +247,7 @@ function deleteProject(req,res){
 					if(err)res.json({"status":"false"})
 					else{
 						cache.del("p_"+req.user.shortName)
+						
 						res.json({"status":"true"})
 					}
 				});
@@ -344,6 +356,7 @@ function deleteTable(req,res){
 				if (err){ res.json({"err":"Unable to delete table;"});throw err;}
 				release()
 				cache.del("f_"+req.user.shortName+tid)
+				cache.del("sb_"+req.user.shortName+tid)
 				res.json({msg:"success"})
 			})
 		});
@@ -403,7 +416,7 @@ function tableSummary(req, res){
 				client.query(sql, function(err, result) {
 					release()
 					if (err) {
-						res.json({'err':err.toString()});
+						res.json({'err':err});
 					}
 					// var obj=result.rows;
 					else if(result){
@@ -468,12 +481,15 @@ function updateTableSummary(req,res)
 				client.query(sql, vals, function(err, result) {
 					release();
 					if(err)console.log(err);
+					flushAllCache(req.user.shortName+tid);
+					/*
 					cache.del("s_"+req.user.shortName+tid)
 					cache.del("c_"+req.user.shortName+tid)
 					cache.del("r_"+req.user.shortName+tid)
 					cache.del("sw_"+req.user.shortName+tid)
 					cache.del("pr_"+req.user.shortName+tid)
 					cache.del("rs_"+req.user.shortName+tid)
+					*/
 					res.end("success");
 					
 					//now invalidate all database caches since the fields have changed
@@ -485,6 +501,16 @@ function updateTableSummary(req,res)
 		});
 	}	
 }
+function flushAllCache(name){
+	
+	cache.del("s_"+name)
+	cache.del("c_"+name)
+	cache.del("r_"+name)
+	cache.del("sw_"+name)
+	cache.del("pr_"+name)
+	cache.del("rs_"+name)
+	
+}
 function tableCorrelation(req, res){
 	//console.log(req.params.pid);
 	// return;
@@ -494,6 +520,7 @@ function tableCorrelation(req, res){
 	var tid = parseInt(req.params.tid);
 	//if in cache, just return it
 	var c;
+	
 	if(c = cache.get('c_'+req.user.shortName+tid)){
 		console.log("Cache hit: " + 'c_'+req.user.shortName+tid)
 		res.json(c);
@@ -543,7 +570,7 @@ function tableCorrelation(req, res){
 				client.query(sql, function(err, result) {
 					release()
 					if(err){
-						res.json({'err':err.toString()});
+						res.json({'err':err});
 					}
 					//res.writeHead(200, {"Content-Type": "application/json"});
 					else {
@@ -643,7 +670,7 @@ function tableRegression(req, res){
 					// console.log(result.rows);
 					release();
 					if(err){
-						res.json({'err':err.toString()});
+						res.json({'err':err});
 					}
 					else {
 						var result='{"alias":"'+alias+'","vals":'+result.rows[0].vals+'}';
@@ -729,7 +756,7 @@ function tableSWRegression(req, res){
 					// console.log(result.rows);
 					release();
 					if(err){
-						res.json({'err':err.toString()});
+						res.json({'err':err});
 					}
 					else {
 						var result='{"alias":"'+alias+'","vals":'+result.rows[0].vals+'}';
@@ -969,10 +996,10 @@ function tableSubject(req,res){
 							res.json({'err':err.toString()});
 						}
 						else {
-							var result={alias:alias,geometrytype:geometrytype,fields:fields.join(", "),id:id,names:names,vars:vars,pid:pid,tid:tid,rows:result&&result.rows?result.rows:[]};
+							var results={alias:alias,geometrytype:geometrytype,fields:fields.join(", "),id:id,names:names,vars:vars,pid:pid,tid:tid,rows:result&&result.rows?result.rows:[]};
 							console.log("Add to cache: " + 'sb_'+req.user.shortName+tid)
-							cache.put("sb_"+req.user.shortName+tid,JSON.parse(result))
-							res.json(result);				    
+							cache.put("sb_"+req.user.shortName+tid,results)
+							res.json(results);				    
 						}
 					});
 				});

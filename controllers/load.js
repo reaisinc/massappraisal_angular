@@ -52,6 +52,7 @@ function runSteps(req,res){
 			return;
 		}
 	}
+	
 	var tableName=req.query.tableName?req.query.tableName.replace(/\W/g, '').toLowerCase():null;
 	var pid=parseInt(req.params.pid);
 	var tid=req.params.tid?parseInt(req.params.tid):null;
@@ -577,7 +578,7 @@ function createStatsTable(req,res,pid,tid,id,fileName,tableName){
 			// strip off extension
 			client.query(sql.join(";"), function(err, result) {
 				if (err) {console.log(err);}
-				var sql=["insert into " + tableName + "_vars(include,id,uniqueid,depvar,saledate,soils,name,type) (select 1 as include,0 as id,0 as uniqueid,0 as depvar,0 as saledate,1 as soils,column_name as name,data_type as type from information_schema.columns where table_schema='"+req.user.shortName+"' and table_name = '"+baseTableName+"_stats' and column_name!='_acres_total' and upper(substring(column_name,1,1))=substring(column_name,1,1))",// and
+				var sql=["insert into " + tableName + "_vars(include,id,uniqueid,depvar,saledate,soils,sales,name,type) (select 1 as include,0 as id,0 as uniqueid,0 as depvar,0 as saledate,1 as soils,0 as sales,column_name as name,data_type as type from information_schema.columns where table_schema='"+req.user.shortName+"' and table_name = '"+baseTableName+"_stats' and column_name!='_acres_total' and upper(substring(column_name,1,1))=substring(column_name,1,1))",// and
 				         'select count(*) as count from '+tableName+'_stats'];
 				console.log(sql);
 				client.query(sql.join(";"), function(err, result) {
@@ -998,8 +999,8 @@ function cleanSalesTable(req,res,pid,tid,id,fileName,tableName) {
 				 // set the oid as the default unique identifier
 				 ,"update " + parcelTable + "_vars set include=3,id=1 where name='oid'"
 				 // set the first numeric field found as the
-				 ,// dependent variable
-				 "update " + parcelTable + "_vars set depvar=1 where name=(select name from "+parcelTable+"_vars where include=1 limit 1)"
+				 //dependent variable-skip for sales
+				 //"update " + parcelTable + "_vars set depvar=1 where name=(select name from "+parcelTable+"_vars where include=1 limit 1)"
 				 //update sales date
 				 ,"update " + parcelTable + "_vars set saledate=2 where type='timestamp with time zone'"
 				 //update default sales date
@@ -1127,14 +1128,19 @@ function updateStatsTableWithSales(req,res,pid,tid,id,fileName,tableName){
 					*/
 					//cols.push(result.rows[i].column_name);
 				}
+				//if _stats is a table, rename it to _init
+				//if _stats is a view, drop it
 				var sql=
 					[
+					 /*
 					 "drop table if exists " + parcelTable + "_tmp"
 					 ,"alter table if exists " + parcelTable + "_init rename to "+baseParcelTable+"_tmp"
-					 ,"drop view if exists " + parcelTable + "_stats"
+					 //,"drop view if exists " + parcelTable + "_stats"
 					 ,"alter table if exists " + parcelTable + "_tmp rename to "+baseParcelTable+"_stats"
 					 //"drop table if exists " + parcelTable + "_init"
 					 ,"alter table if exists " + parcelTable + "_stats rename to "+ baseParcelTable + "_init"
+					 */
+					 "select create_stats_view('"+req.user.shortName+"','"+baseParcelTable+"')"
 					 ,"create view  " + parcelTable + "_stats as select a.\"" + parcels.join('",a."') + "\",b.\""+sales.join('",b."')+"\" from "+parcelTable+"_init a,"+tableName+" b where b."+saleSel+"=a."+compSel
 					 ,"select count(*)  as count from "+ parcelTable + "_stats"
 					 //'alter table '+tableName+'_stats add column oid serial'
