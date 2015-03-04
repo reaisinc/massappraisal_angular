@@ -12,8 +12,8 @@
 			</div>
 			<div class="col-lg-4 col-xs-4 list-group">
 				<a id="dl_summary" class="list-group-item" ng-click="downloadTable()"> <i class="glyphicon glyphicon-file"></i> Download table
-				</a> <a ng-show="summary.geomtype=='Polygon'" class="list-group-item" target=_blank ng-click="showMap()"> <i class="glyphicon glyphicon-globe"></i> Show on map
-				</a> <a ng-show="summary.geomtype=='Polygon'" class="list-group-item" target=_blank ng-click="downloadLayer()"> <i class="glyphicon glyphicon-download"></i> Download map data
+				</a> <a ng-show="summary.geomtype!='None'" class="list-group-item" target=_blank ng-click="showMap()"> <i class="glyphicon glyphicon-globe"></i> Show on map
+				</a> <a ng-show="summary.geomtype!='None'" class="list-group-item" target=_blank ng-click="downloadLayer()"> <i class="glyphicon glyphicon-download"></i> Download map data
 				</a>
 			</div>
 		</div>
