@@ -32,10 +32,12 @@ router.get('/',  function(req, res){
 });
  */
 router.get('/:pid',  function(req, res){
+	cache.del("t_"+req.user.shortName+req.params.pid)
 	runSteps(req,res);
 });
 
-router.get('/:pid/tables/:tid',  function(req, res){
+router.get('/:pid/table/:tid',  function(req, res){
+	cache.del("sb_"+req.user.shortName+req.params.tid)
 	runSteps(req,res);
 });
 router.get('/:pid/sales/:tid',  function(req, res){
@@ -309,6 +311,7 @@ function execOgr2ogr(req,res,pid,tid,id,fileName,tableName){
 
 	var ogr = ogr2ogr( filePath)
 	.format('PostgreSQL') 
+	.timeout(60*60*1000)
 	.options(opts)//
 	.skipfailures()  
 	.destination(global.ogrConnString + ' active_schema='+req.user.shortName) 	
@@ -318,6 +321,7 @@ function execOgr2ogr(req,res,pid,tid,id,fileName,tableName){
 		if(er&&er.toString().indexOf("numeric field overflow")!=-1){
 			opts.push("-lco","PRECISION=NO")
 			var ogr = ogr2ogr( filePath)
+			.timeout(60*60*1000)
 			.format('PostgreSQL') 
 			.options(opts)//
 			.skipfailures()  
@@ -485,7 +489,7 @@ function createSoilsTable(req,res,pid,tid,id,fileName,tableName){
 				 // "begin",
 				 "drop table if exists "+tableName+"_soils",
 				 "CREATE TABLE "+tableName+"_soils AS ("
-				 +" SELECT part_2."+idName+",part_2._acres_total,part_1.areasymbol, part_1.spatialver, part_1.musym, part_1.mukey ,ST_Intersection(part_1.wkb_geometry, part_2.wkb_geometry) as wkb_geometry"	  
+				 +" SELECT part_2."+idName+",part_2.oid as pid,part_2._acres_total,part_1.areasymbol, part_1.spatialver, part_1.musym, part_1.mukey ,ST_Intersection(part_1.wkb_geometry, part_2.wkb_geometry) as wkb_geometry"	  
 				 +" FROM "+state_abbr+".mupolygon AS part_1, "+tableName+" AS part_2"
 				 +" WHERE ST_Intersects(part_1.wkb_geometry, part_2.wkb_geometry))",
 				 "alter table "+tableName+"_soils add _acres_pct double precision",
@@ -537,6 +541,7 @@ function createStatsTable(req,res,pid,tid,id,fileName,tableName){
 				 +' SELECT d.*,s.* FROM('
 				 // +"acres_/total_aums,"
 				 + ' select '+idName+" as "+idName+"_tmp"
+				 + ', min(h.pid) as pid'
 				 + ' ,sum(c.slope_r*_acres_pct) as "Slope"'
 				 + ' ,avg(c.elev_r) as "Elevation"'
 				 + ' ,avg(c.rsprod_r) as "Range Forage"'
@@ -625,6 +630,7 @@ function loadNonSpatial(req,res,pid,tid,fileName,filePath,data){
 			 * isCSV=f[f.length-1]!='dbf'; tableName = tableName.split(".")[0]; } }
 			 */
 			var ogr = ogr2ogr( filePath)
+			.timeout(60*60*1000)
 			.format('PostgreSQL') 
 			.options(opts)//
 			.skipfailures()  
@@ -786,6 +792,7 @@ function loadSalesFile(req,res,pid,tid,id,fileName,tableName){
 			 * isCSV=f[f.length-1]!='dbf'; tableName = tableName.split(".")[0]; } }
 			 */
 			var ogr = ogr2ogr( filePath)
+			.timeout(60*60*1000)
 			.format('PostgreSQL') 
 			.options(opts)//
 			.skipfailures()  

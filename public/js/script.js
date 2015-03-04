@@ -77,18 +77,23 @@ maApp.config(function($routeProvider,$locationProvider) {
 		templateUrl : 'pages/subject.html',
 		controller  : 'subjectController'
 	})
+		// route for the subject summary page
+	.when('/projects/:id/tables/:tid/subject/:sid/summary', {
+		templateUrl : 'pages/subject_summary.html',
+		controller  : 'subsummaryController'
+	})
 	// route for the report page
-	.when('/projects/:id/tables/:tid/reports/:sid/table', {
+	.when('/projects/:id/tables/:tid/subject/:sid/report', {
 		templateUrl : 'pages/ma.html',
 		controller  : 'maController'
 	})
 	// route for the report page
-	.when('/projects/:id/tables/:tid/reports/:sid', {
+	.when('/projects/:id/tables/:tid/subject/:sid', {
 		templateUrl : 'pages/report.html',
 		controller  : 'reportController'
 	})
 	// route for the report page
-	.when('/projects/:id/tables/:tid/reports/:sid/row/:id', {
+	.when('/projects/:id/tables/:tid/subject/:sid/report/:id', {
 		templateUrl : 'pages/report.html',
 		controller  : 'reportController'
 	})
@@ -179,23 +184,28 @@ maApp.controller('mainController', function($rootScope,$scope, $http, $location)
 	};
 	//report using subject property
 	$scope.viewSubject = function () {
-		$location.path(getURL("subject"));
+		if(id)$location.path(getURL(id+"/summary",1));
+		else $location.path(getURL("summary"))
+		//$location.path(getURL("subject"));
 	};
 
 	//report using subject property
-	$scope.viewReport = function () {
-		$location.path(getURL("reports"));
-	};
+	//$scope.viewReport = function () {
+	//	$location.path(getURL("reports"));
+	//};
 	//report using subject property
 	$scope.viewMAReport = function (id) {
 		//$location.path(window.location.hash.substring(1)+"/row/" + id);
-		$location.path(getURL("row")+"/"+ id);
+		$location.path(getURL("report")+"/"+ id);
 	};
 
 	//goto using breadcrumbs
 	$scope.gotoUrl = function (name,len) {
 		$location.path(getURL(name,len));
 	};
+	$scope.previous = function(){
+		window.history.back();
+	}
 	/*
 	if(sessionStorage.getItem("username")){
 		console.log("Found username" + sessionStorage.getItem("username"));
@@ -374,7 +384,7 @@ maApp.controller('ModalInstanceCtrl', function ($scope,$location,$http,$modalIns
 
 	$scope.processUploads = function() {
 		$scope.errMsg=null;
-		startUploadProgress($scope,$http,'tables');
+		startUploadProgress($scope,$http,'table');
 	};
 
 	$scope.ok = function () {
@@ -509,6 +519,10 @@ maApp.controller('projectController', function($rootScope,$scope,$http,$location
 	};
 	$scope.viewSubject = function (tid,id,numTuples) {
 		///projects/30/tables
+		$rootScope.numTuples=numTuples;
+		if(id)$location.path(window.location.hash.substring(1)+"/"+tid+"/subject/"+id+"/summary")
+		else $location.path(window.location.hash.substring(1) +"/"+tid);
+		/*
 		if(numTuples>1)
 		{
 			///projects/30/tables/102/reports/105/table
@@ -521,6 +535,7 @@ maApp.controller('projectController', function($rootScope,$scope,$http,$location
 			if(id)$location.path(window.location.hash.substring(1)+"/"+tid+"/reports/"+id)
 			else $location.path(window.location.hash.substring(1) +"/"+tid);
 		}
+		*/
 	};	
 	$scope.mergeSales = function (tid) {
 		///projects/30/tables
@@ -671,7 +686,10 @@ maApp.controller('summaryController', function($rootScope,$scope,$http,$location
 			if(status==404)$location.path("/login")
 		});
 	};
-
+	$scope.downloadLayer = function(){
+		var url = getURL("spatial");
+		$window.open(url);
+	}
 	$scope.downloadTable = function() {
 		/*
 		var headers=$('.table tr').eq(0).get().map(function(row) {
@@ -1128,7 +1146,14 @@ maApp.controller('subjectController', function($rootScope,$scope,$http,$location
 			console.log('Modal dismissed at: ' + new Date());
 		});
 	};
-	$scope.viewSubject = function (id,numTuples) {
+	$scope.viewSubject = function (tid,id,numTuples) {
+		//$location.path(getURL("",1) + id + "/summary");
+		$rootScope.numTuples=numTuples;
+		if(id)$location.path(window.location.hash.substring(1)+"/"+id+"/summary")
+		
+		//if(id)$location.path(window.location.hash.substring(1)+"/"+tid+"/subject/"+id+"/summary")
+		//else $location.path(window.location.hash.substring(1) +"/"+tid);
+		/*
 		if(numTuples>1)
 		{
 			if(id)$location.path(getURL("reports") + "/" + id + "/table")
@@ -1139,6 +1164,7 @@ maApp.controller('subjectController', function($rootScope,$scope,$http,$location
 			if(id)$location.path(getURL("reports") + "/" + id)
 			else $location.path(getURL(id+"/reports",1) + "/" + id);
 		}
+		*/
 	};
 
 	$scope.deleteSubjectTable = function (id) {
@@ -1225,6 +1251,140 @@ maApp.controller('maController', function($rootScope,$scope,$http,$location,$mod
 	}
 	$scope.list();
 });
+maApp.controller('subsummaryController', function($rootScope,$scope,$http,$location,$window) {
+		$scope.selectField = function(field,include) {
+			//console.log(field)
+			//console.log($scope.include);
+			$http.put(getURL("summary"),{ name:field, field: 'include',value: include?1:0})
+			.success(function(data, status, headers, config) {
+				console.log(data);
+			})
+			.error(function(data, status, headers, config) {
+				// log error
+				if(status==404)$location.path("/login")
+			});		
+			// $http.put("/projects/update?name="+name+"&field="+field+"&value="+value,function(data){
+			// console.log(data);
+			// });
+		};
+		$scope.selectId = function(field) {
+			console.log(field)
+			$http.put(getURL("summary"),{ name:field, field: 'id',value: 1})
+			.success(function(data, status, headers, config) {
+				console.log(data);
+			})
+			.error(function(data, status, headers, config) {
+				// log error
+				if(status==404)$location.path("/login")
+			});
+		};
+		$scope.selectDepVar = function(field) {
+			console.log(field)
+			$http.put(getURL("summary"),{ name:field, field: 'depvar',value: 1})
+			.success(function(data, status, headers, config) {
+				console.log(data);
+			})
+			.error(function(data, status, headers, config) {
+				// log error
+				if(status==404)$location.path("/login")
+			});
+		};
+
+		$scope.selectSaleDate = function(field) {
+			console.log(field)
+			$http.put(getURL("summary"),{ name:field, field: 'saledate',value: 1})
+			.success(function(data, status, headers, config) {
+				console.log(data);
+			})
+			.error(function(data, status, headers, config) {
+				// log error
+				if(status==404)$location.path("/login")
+			});
+		};
+		$scope.downloadLayer = function(){
+			var url = getURL("spatial");
+			$window.open(url);
+		}
+		$scope.downloadTable = function() {
+			/*
+			var headers=$('.table tr').eq(0).get().map(function(row) {
+				return $(row).find('th:gt(3)').get().map(function(cell) {
+					return $(cell).html();
+				});
+			});
+			var data=$('.table tr').get().map(function(row) {
+				return $(row).find('td.ng-binding').get().map(function(cell) {
+					return $(cell).html();
+				});
+			});
+			 */
+			exportTableToCSV($(".table"),$scope.summary.alias+'_summary.csv','dl_summary',3);
+
+
+			//exportTableToCSV(headers,data,$scope.summary.alias+".csv")
+			// CSV
+			//exportTableToCSV.apply(this, [$('.table'), outputFile]);
+			//var url = getURL("download");
+			//$window.open(url);
+
+			/*
+			$http.get(getURL("download")).
+			success(function(data, status, headers, config) {
+				console.log("Download successful")
+			}).
+			error(function(data, status, headers, config) {
+				// log error
+				if(status==404)$location.path("/login")
+				console.log("Error in download: " + data)
+			});			
+			 */
+		}
+		$scope.viewReport = function() {
+			var numTuples = $rootScope.numTuples;
+			if(numTuples>1)
+			{
+				$location.path(getURL("report"));
+				///projects/30/tables/102/reports/105/table
+				///projects/:id/tables/:tid/reports/:sid/table
+				//if(id)$location.path(window.location.hash.substring(1)+"/"+tid+"/reports/"+id+"/table")
+				//else $location.path(window.location.hash.substring(1) +"/"+tid);
+			}
+			else
+			{
+				$location.path(getURL("report")+"/0");
+				///projects/30/tables/102/reports/104
+				//if(id)$location.path(window.location.hash.substring(1)+"/"+tid+"/reports/"+id)
+				//else $location.path(window.location.hash.substring(1) +"/"+tid);
+			}
+
+			//gotoUrl('report')
+		}
+		$scope.showMap = function() {
+			var url = getURL("map");
+			$window.open(url);
+		}
+
+		$http.get($location.$$url).
+		success(function(data, status, headers, config) {
+			if(data.err){
+				if(!data.err.detail)data.err={"detail":data.err}
+				$scope.err=data.err;
+				$scope.summary=true;
+				return;
+			}
+			$scope.id=1;
+			$scope.depvar=1;
+			$scope.saledate=1;
+			$scope.summary = data;
+			$scope.tableName=data.alias;
+
+			// hide
+		}).
+		error(function(data, status, headers, config) {
+			// log error
+			if(status==404)$location.path("/login")
+		});			
+	});
 maApp.controller('reportController', function($rootScope,$scope,$http,$location) {
 
 	$http.get($location.$$url).
@@ -1515,6 +1675,7 @@ function createUploader($scope,$http,FileUploader,$modalInstance,op){
 	};
 	uploader.onErrorItem = function(fileItem, response, status, headers) {
 		console.info('onErrorItem', fileItem, response, status, headers);
+		$scope.stepMsg="Error uploading file!";
 	};
 	uploader.onCancelItem = function(fileItem, response, status, headers) {
 		console.info('onCancelItem', fileItem, response, status, headers);

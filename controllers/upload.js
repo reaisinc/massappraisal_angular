@@ -47,7 +47,7 @@ router.post('/:pid', function(req, res) {
 	});
 */
 });
-router.post('/:pid/tables/:tid', function(req, res) {
+router.post('/:pid/table/:tid', function(req, res) {
 	upload(req,res,uploader.post);
 });
 router.post('/:pid/sales/:tid', function(req, res) {
@@ -69,7 +69,7 @@ router.delete('/:pid/:name', function(req, res) {
 	});
 	*/
 });
-router.delete('/:pid/tables/:tid', function(req, res) {
+router.delete('/:pid/table/:tid', function(req, res) {
 	upload(req,res,uploader.delete);
 });
 function upload(req,res,op){

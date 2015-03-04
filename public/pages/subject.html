@@ -25,7 +25,7 @@ li.disabled {
 </style>
 
 <div class="container">
-	<ol class="breadcrumb" style="float: left">
+	<ol class="breadcrumb">
 		<li><a ng-click="gotoUrl('',3)">Model</a></li>
 		<li><a ng-click="gotoUrl('summary')">Summary</a></li>
 		<li><a ng-click="gotoUrl('correlation')">Correlation</a></li>
@@ -35,13 +35,15 @@ li.disabled {
 		<li><a ng-click="gotoUrl('predictions')">Predictions</a></li>
 		<li>Subject property</li>
 	</ol>
-	<br> <br>
 
 	<div class="jumbotron">
 		<h4>Subject property</h4>
 		Before uploading subject property data, please follow the checklist below:
 		<ol>
 			<li>Must contain the following fields in order to calculate estimated sales price:
+			<div ng-show="!subject" id='loader'>
+			<img src="img/spinner_mac.gif"> Loading fields..... Please wait
+			</div>
 				<p style='font-weight: bold'>{{subject.fields}}</p>
 			</li>
 			<li ng-show="subject.geometrytype!='None'">Must be in ESRI Shapefile format</li>
@@ -84,7 +86,7 @@ li.disabled {
 			<!-- <td>{{x.comp}}</td>-->
 			<td>{{x.filetype}}</td>
 			<td>{{x.date}}</td>
-			<td align='right'><a ng-click="viewSubject(x.id,x.numtuples)" role="button" class="btn btn-primary"><i class="glyphicon glyphicon-stats"></i> View</a>
+			<td align='right'><a ng-click="viewSubject(x.tid,x.id,x.numtuples)" role="button" class="btn btn-primary"><i class="glyphicon glyphicon-stats"></i> View</a>
 			<a ng-click="deleteSubjectTable(x.id)" role="button" class="btn btn-danger delete"><i class="glyphicon glyphicon-trash"></i> Delete</a></td>
 		</tr>
 	</table>

@@ -57,7 +57,10 @@ router.get('/:pid/tables/:tid/map',  function(req, res){
 router.get('/:pid/tables/:tid/download',  function(req, res){
 	downloadTable(req,res);
 });
-
+//download gis table
+router.get('/:pid/tables/:tid/spatial', function(req,res){
+	downloadSpatialTable(req,res);
+})
 //table summary
 router.get('/:pid/tables/:tid/summary',  function(req, res){
 	tableSummary(req,res);	
@@ -96,28 +99,33 @@ router.get('/:pid/tables/:tid/subject',  function(req, res){
 	tableSubject(req,res);	
 });
 //subject tables
+/*
 router.get('/:pid/tables/:tid/subject/tables',  function(req, res){
 	getSubjectTables(req,res);	
 });
-
+*/
 //subject table info
 router.get('/:pid/tables/:tid/subject/:sid',  function(req, res){
 	listSubject(req,res);	
+});
+//subject table summary
+router.get('/:pid/tables/:tid/subject/:sid/summary',  function(req, res){
+	tableSubjectSummary(req,res);	
 });
 //subject delete
 router.delete('/:pid/tables/:tid/subject/:sid',  function(req, res){
 	deleteSubject(req,res);	
 });
 //subject table report single
-router.get('/:pid/tables/:tid/reports/:sid',  function(req, res){
-	reportSubject(req,res);	
-});
-router.get('/:pid/tables/:tid/reports/:sid/row/:id',  function(req, res){
+//router.get('/:pid/tables/:tid/subject/:sid/report',  function(req, res){
+	//reportSubject(req,res);	
+//});
+router.get('/:pid/tables/:tid/subject/:sid/report/:id',  function(req, res){
 	reportSubject(req,res);	
 });
 
 //subject table reports - mass appraisal
-router.get('/:pid/tables/:tid/reports/:sid/table',  function(req, res){
+router.get('/:pid/tables/:tid/subject/:sid/report',  function(req, res){
 	tableReports(req,res);	
 });
 
@@ -526,6 +534,7 @@ function flushAllCache(name){
 	cache.del("sw_"+name)
 	cache.del("pr_"+name)
 	cache.del("rs_"+name)
+	cache.del("sb_"+name)
 
 }
 function tableCorrelation(req, res){
@@ -1099,6 +1108,94 @@ function tableSubject(req,res){
 	});
 }
 
+function tableSubjectSummary(req, res){
+	console.log(req.params.pid);
+	// return;
+	// res.writeHead(200, {"Content-Type": "application/json"});
+	res.setTimeout(0); 
+	var pid = parseInt(req.params.pid);
+	var tid = parseInt(req.params.tid);
+	var sid = parseInt(req.params.sid);
+	var c;
+	if(c = cache.get('s_'+req.user.shortName+tid)){
+		console.log("Cache hit: " + 'ss_'+req.user.shortName+tid)
+		res.json(c);
+		return;
+	}
+	// var sql="select column_name from information_schema.columns where
+	// table_schema='"+req.user.shortName+"' and table_name = '"+tableName+"'
+	// and column_name not
+	// in('id','ogc_fid','wkb_geometry','id','shape_leng','shape_area','_acres_total')
+	// and data_type in('numeric','double
+	// precision','float','integer','decimal')";
+	var sql="select geometrytype,name,alias from "+req.user.shortName+".tables where id="+sid;
+	console.log(sql);
+	pg.connect(global.conString,function(err, client, release) {
+		if (err){ res.json({"err":"No connection to database;"});throw err;}
+		// strip off extension
+		client.query(sql, function(err, result) {
+			if(err){
+				console.log(err);
+				release();
+				res.json({'err':err});
+				return;
+			}
+			// add the schema to the tablename
+			// console.log(result);
+			var tableName = result.rows[0].name+sid;
+			var geomtype = result.rows[0].geometrytype;
+			var alias=result.rows[0].alias;
+			var sql="select include,id,depvar,saledate,soils,uniqueid,sales,name,type from " + req.user.shortName + "." + tableName + "_vars where include<5 order by id desc,uniqueid desc,depvar desc,sales desc,soils asc,name asc";
+			console.log(sql);
+			client.query(sql, function(err, result) {
+				if(err){
+					console.log(err);
+					release();
+					res.json({'err':err});
+					return;
+				}
+				tableName = req.user.shortName+"."+ tableName+'_stats';
+				var cols=[];
+				var names={};
+				// console.log(result.rows);
+				for(var i in result.rows){
+					// names[result.rows[i].name]={"include":result.rows[i].include?'true':'false',"id":result.rows[i].id?'true':'false',"depvar":result.rows[i].depvar?'true':'false'};
+					names[result.rows[i].name]={"include":result.rows[i].include,"id":result.rows[i].id,"depvar":result.rows[i].depvar,"uniqueid":result.rows[i].uniqueid,"saledate":result.rows[i].saledate,"soils":result.rows[i].soils,"sales":result.rows[i].sales,"type":result.rows[i].type};
+					if(result.rows[i].name.charAt(0) == result.rows[i].name.charAt(0).toUpperCase())
+						result.rows[i].name='"' + result.rows[i].name + '"';
+					else if(result.rows[i].name.indexOf(" ")!=-1)
+						result.rows[i].name='"' + result.rows[i].name + '"';
+					cols.push(result.rows[i].name);
+				}
+				var sql = "select name,vars,n,mean,sd,median,trimmed,mad,min,max,range,se from public.r_table_summary('" + cols.join(",") + "','" + tableName + "')";
+				console.log(sql);
+				client.query(sql, function(err, result) {
+					release()
+					if (err) {
+						console.log(err);
+						res.json({'err':err});
+					}
+					// var obj=result.rows;
+					else if(result){
+						var results=[];
+						/*
+						for(var i in result.rows){
+							for(var j in result.rows[i]){
+								names[ result.rows[i].name ][ j ]=result.rows[i][j];
+							}
+						}
+						 */
+						results=result.rows;
+						var result={"alias":alias,"fields":results,status:names,"geomtype":geomtype};
+						console.log("Add to cache: " + 'ss_'+req.user.shortName)
+						cache.put('ss_'+req.user.shortName+sid,result);
+						res.json(result);
+					}
+				});
+			});
+		})
+	})
+}
 
 
 /*
@@ -1445,6 +1542,94 @@ function processData(factors,data,saledate){
 	res["Higher range"]   = res["Appraisal price"] + factors.stderr;
 	//data[depvar+"_inrng"] =  (data[depvar]<data[depvar+'_pred']+factors.vars.stderr && data[depvar]>data[depvar+'_pred']-factors.vars.stderr)?"Yes":"No";
 	return res;
+}
+function downloadSpatialTable(req,res)
+{
+	var ogr2ogr = require("ogr2ogr");
+	var pid = parseInt(req.params.pid);
+	var tid = parseInt(req.params.tid);
+	var sid = parseInt(req.params.sid);
+	var sql=["select name,alias from "+req.user.shortName + ".tables where id="+tid];
+	console.log(sql);
+	pg.connect(global.conString,function(err, client, release) {
+		if (err){ res.json({"err":"No connection to database;"});throw err;}
+		client.query(sql.join(";"), function(err, result) {
+			if(err){
+				console.log(err);
+				release();
+				res.json({'err':err});
+				return;
+			}
+			var tableName = result.rows[0].name+tid;
+			var baseTableName=tableName;
+			var zipName = result.rows[0].name+"_soils";
+			var sql="select name,saledate from " + req.user.shortName + "." + tableName + "_vars where (include=1 or id=1) order by id desc,depvar desc,name asc";
+			console.log(sql);
+			//strip off extension
+			client.query(sql, function(err, result) {
+				if(err){
+					console.log(err);
+					release();
+					res.json({'err':err});
+					return;
+				}
+				//add the schema to the tablename
+				tableName = req.user.shortName+"."+ tableName+'_stats';
+				var cols=[];
+				var depvar;
+				var id=result.rows[0].name;
+				var saledate='';
+
+				//var out=["name text"];
+				for(var i = 1; i < result.rows.length;i++){
+					if(result.rows[i].saledate==1)saledate=result.rows[i].name;
+					if(result.rows[i].name.charAt(0) == result.rows[i].name.charAt(0).toUpperCase())
+						result.rows[i].name='"' + result.rows[i].name + '"';
+					else if(result.rows[i].name.indexOf(" ")!=-1)
+						result.rows[i].name='"' + result.rows[i].name + '"';// as '+ result.rows[i].name.replace(/ /g,"_");
+					if(depvar)cols.push(result.rows[i].name);
+					else depvar=result.rows[i].name
+				}
+				var sql="select a.mukey,a.wkb_geometry,a.musym,"+cols.join(",b.")+" from "+tableName+" b, "+  req.user.shortName+"."+ baseTableName+'_soils a where a.pid=b.pid';
+
+
+				console.log(sql);
+				release()
+				if(/^win/.test(process.platform))
+					process.env['GDAL_DATA'] = 'C:\\PostgreSQL93\\gdal-data';
+				//res.setHeader ('Content-Length', size);
+			    res.setHeader ('Content-Type', 'application/zip');
+			    res.setHeader('Content-Disposition', 'attachment; filename=' + zipName+".zip");
+				// is it not a spatial file?
+				var opts=["-t_srs","epsg:3857","-overwrite","-lco", "DROP_TABLE=IF_EXISTS", "-lco", "WRITE_EWKT_GEOM=ON", "-nlt", "MULTIPOLYGON", "-nln",tableName];
+				var opts=[req.user.shortName + "." + tableName+tid+"_soils"];
+				var opts=["-sql",sql,'-nln',zipName];
+				var ogr = ogr2ogr( global.ogrConnString ) //+ ' active_schema='+req.user.shortName + ' tables=' + req.user.shortName + "." + tableName+"_soils")
+				.format('ESRI Shapefile') 
+				.timeout(60*60*1000)
+				.options(opts)//
+				.skipfailures()  
+				.stream().pipe(res)
+			});
+		});
+	});
+
+	//.destination(global.ogrConnString + ' active_schema='+req.user.shortName) 	
+	//.exec(function (er, data) {
+	/*		
+	var shapefile = ogr2ogr('/path/to/spatial/file.geojson')
+
+    .format('ESRI Shapefile')
+    .skipfailures()
+    .stream()
+
+    shapefile.pipe(fs.createWriteStream('/shapefile.zip'))
+var st = ogr2ogr('../test/samples/sample.shp.zip').stream()
+st.on('error', console.error)
+st.pipe(process.stdout)
+
+.format('kml').stream().pipe(process.stdout)
+	 */
 }
 
 function deleteSubject(req,res){
