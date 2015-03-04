@@ -184,9 +184,10 @@ maApp.controller('mainController', function($rootScope,$scope, $http, $location)
 	};
 	//report using subject property
 	$scope.viewSubject = function () {
-		if(id)$location.path(getURL(id+"/summary",1));
-		else $location.path(getURL("summary"))
-		//$location.path(getURL("subject"));
+		
+		//if(id)$location.path(getURL(id+"/summary",1));
+		//else $location.path(getURL("summary"))
+		$location.path(getURL("subject"));
 	};
 
 	//report using subject property
