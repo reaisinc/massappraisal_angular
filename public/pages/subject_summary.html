@@ -40,7 +40,7 @@
 				<th data-field="name">Name</th>
 			</tr>
 			<tr ng-repeat="x in summary.fields" ng-class="summary.status[x.name].soils?'info':summary.status[x.name].sales?'success':''">
-				<td><input ng-show="summary.status[x.name].include<2" type='checkbox' ng-change="selectField(x.name,include)" ng-model="include" ng-checked="summary.status[x.name].include" ng-disabled="summary.status[x.name].include==2" /></td>
+				<td><input  type='checkbox' ng-change="selectField(x.name,include)" ng-model="include" ng-checked="summary.status[x.name].include"  /></td>
 
 				<td style="text-align: left">{{ x.name }}</td>
 
