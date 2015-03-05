@@ -689,7 +689,8 @@ maApp.controller('summaryController', function($rootScope,$scope,$http,$location
 	};
 	$scope.downloadLayer = function(){
 		var url = getURL("spatial");
-		$window.open(url);
+		$('#dl_summary').attr('href', url)[0].click();
+		//$window.open(url);
 	}
 	$scope.downloadTable = function() {
 		/*
@@ -1304,9 +1305,11 @@ maApp.controller('subsummaryController', function($rootScope,$scope,$http,$locat
 		};
 		$scope.downloadLayer = function(){
 			var url = getURL("spatial");
-			$window.open(url);
+			$('#dl_summary').attr('href', url)[0].click();
+			//$window.open(url);
 		}
 		$scope.downloadTable = function() {
+
 			/*
 			var headers=$('.table tr').eq(0).get().map(function(row) {
 				return $(row).find('th:gt(3)').get().map(function(cell) {
@@ -1727,14 +1730,17 @@ function exportTableToCSV($table, filename,aid,skipcols) {
 
 	// Data URI
 	var csvData = 'data:application/csv;charset=utf-8,' + encodeURIComponent(csv);
-
+	//window.location = csvData;
+	$('#'+aid).attr('href', csvData).attr("download",filename)[0].click();
+	
+	/*
 	$("#"+aid)
 	.attr({
 		'download': filename
 		,'href': csvData
 		//,'target' : '_blank' //if you want it to open in a new window
-	});
-
+	}).trigger('click').click();
+	*/
 	//------------------------------------------------------------
 	// Helper Functions 
 	//------------------------------------------------------------

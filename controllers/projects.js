@@ -116,7 +116,10 @@ router.get('/:pid/tables/:tid/subject/:sid/summary',  function(req, res){
 router.put('/:pid/tables/:tid/subject/:sid/summary',  function(req, res){
 	updateTableSummary(req,res);	
 });
-
+//show map
+router.get('/:pid/tables/:tid/subject/:sid/map',  function(req, res){
+	showMap(req,res);	
+});
 //subject delete
 router.delete('/:pid/tables/:tid/subject/:sid',  function(req, res){
 	deleteSubject(req,res);	
@@ -1720,7 +1723,9 @@ function getTable(req,res){
 function downloadTable(req,res){
 	var pid = parseInt(req.params.pid);
 	var tid = parseInt(req.params.tid);
-
+	var sid = parseInt(req.params.sid);
+	if(sid)tid=sid;
+	
 	var sql="select name from "+req.user.shortName+".tables where id="+tid;
 	console.log(sql);
 	pg.connect(global.conString,function(err, client, release) {
@@ -1750,7 +1755,8 @@ function downloadTable(req,res){
 function showMap(req,res){
 	var pid = parseInt(req.params.pid);
 	var tid = parseInt(req.params.tid);
-
+	var sid = parseInt(req.params.sid);
+	if(sid)tid=sid;
 	var sql="select name from "+req.user.shortName+".tables where id="+tid;
 	pg.connect(global.conString,function(err, client, release) {
 		client.query(sql, function(err, result) {
