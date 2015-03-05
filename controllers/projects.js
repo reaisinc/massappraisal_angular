@@ -1600,7 +1600,7 @@ function downloadSpatialTable(req,res)
 					if(depvar)cols.push(result.rows[i].name);
 					else depvar=result.rows[i].name
 				}
-				var sql="select a.mukey,a.wkb_geometry,a.musym,"+cols.join(",b.")+" from "+tableName+" b, "+  req.user.shortName+"."+ baseTableName+'_soils a where a.pid=b.pid';
+				var sql="select a.mukey,a.wkb_geometry,a.musym,"+cols.join(",b.")+" from "+tableName+" b, "+  req.user.shortName+"."+ baseTableName+'_soils a where a._parcelid=b._parcelid';
 
 
 				console.log(sql);

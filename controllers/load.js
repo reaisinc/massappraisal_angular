@@ -377,7 +377,8 @@ function cleanTable(req,res,pid,tid,id,fileName,tableName) {
 		var sql=
 			[
 			 'update '+tableName+' set wkb_geometry=st_cleangeometry(wkb_geometry)',
-			 'alter table '+tableName+' rename column ogc_fid to oid',		 
+			 'alter table '+tableName+' rename column ogc_fid to oid',
+			 'alter table '+tableName+' drop column if exists _parcelid',
 			 // find all possible sale date fields
 			 //"select public.update_saledate('"+req.user.shortName+"','" + baseTableName + "')",
 
@@ -489,7 +490,7 @@ function createSoilsTable(req,res,pid,tid,id,fileName,tableName){
 				 // "begin",
 				 "drop table if exists "+tableName+"_soils",
 				 "CREATE TABLE "+tableName+"_soils AS ("
-				 +" SELECT part_2."+idName+",part_2.oid as pid,part_2._acres_total,part_1.areasymbol, part_1.spatialver, part_1.musym, part_1.mukey ,ST_Intersection(part_1.wkb_geometry, part_2.wkb_geometry) as wkb_geometry"	  
+				 +" SELECT part_2."+idName+",part_2.oid as _parcelid,part_2._acres_total,part_1.areasymbol, part_1.spatialver, part_1.musym, part_1.mukey ,ST_Intersection(part_1.wkb_geometry, part_2.wkb_geometry) as wkb_geometry"	  
 				 +" FROM "+state_abbr+".mupolygon AS part_1, "+tableName+" AS part_2"
 				 +" WHERE ST_Intersects(part_1.wkb_geometry, part_2.wkb_geometry))",
 				 "alter table "+tableName+"_soils add _acres_pct double precision",
@@ -541,7 +542,7 @@ function createStatsTable(req,res,pid,tid,id,fileName,tableName){
 				 +' SELECT d.*,s.* FROM('
 				 // +"acres_/total_aums,"
 				 + ' select '+idName+" as "+idName+"_tmp"
-				 + ', min(h.pid) as pid'
+				 + ', min(h._parcelid) as _parcelid'
 				 + ' ,sum(c.slope_r*_acres_pct) as "Slope"'
 				 + ' ,avg(c.elev_r) as "Elevation"'
 				 + ' ,avg(c.rsprod_r) as "Range Forage"'
