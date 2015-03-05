@@ -584,7 +584,7 @@ function createStatsTable(req,res,pid,tid,id,fileName,tableName){
 			// strip off extension
 			client.query(sql.join(";"), function(err, result) {
 				if (err) {console.log(err);}
-				var sql=["insert into " + tableName + "_vars(include,id,uniqueid,depvar,saledate,soils,sales,name,type) (select 1 as include,0 as id,0 as uniqueid,0 as depvar,0 as saledate,1 as soils,0 as sales,column_name as name,data_type as type from information_schema.columns where table_schema='"+req.user.shortName+"' and table_name = '"+baseTableName+"_stats' and column_name!='_acres_total' and upper(substring(column_name,1,1))=substring(column_name,1,1))",// and
+				var sql=["insert into " + tableName + "_vars(include,id,uniqueid,depvar,saledate,soils,sales,name,type) (select 1 as include,0 as id,0 as uniqueid,0 as depvar,0 as saledate,1 as soils,0 as sales,column_name as name,data_type as type from information_schema.columns where table_schema='"+req.user.shortName+"' and table_name = '"+baseTableName+"_stats' and column_name!='_acres_total' and column_name!='_parcelid' and upper(substring(column_name,1,1))=substring(column_name,1,1))",// and
 				         'select count(*) as count from '+tableName+'_stats'];
 				console.log(sql);
 				client.query(sql.join(";"), function(err, result) {
