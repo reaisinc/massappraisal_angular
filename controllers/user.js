@@ -8,16 +8,6 @@ var express = require('express');
 var pg=require("pg");
 var router = express.Router();
 
-router.use(function(req, res, next) {
-	if (!req.isAuthenticated()) { 
-		console.log("redirecting");
-		res.redirect('/login');
-		return; 
-	}
-
-	next();
-});
-
 router.get('/', function(req, res){
 	  console.log(req.user.shortName);
 	  //console.log(req.user.emails[0].value);

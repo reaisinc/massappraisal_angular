@@ -3,30 +3,6 @@ var express = require('express')
 ,pg = require("pg")
 ,cache = require("memory-cache")
 
-if(!global.standalone){
-	/*
-	router.use(function(req, res, next) {
-		//console.log(global.conString);
-		//console.log(req.user.shortName);
-		req.user={shortName:"demo"};
-		//console.log(req.user.shortName);
-		next();
-	});
-}
-else {
-*/
-	router.use(function(req, res, next) {
-		if (!req.isAuthenticated()) { 
-			console.log("redirecting");
-
-			//res.redirect('/login');
-			res.status(404).json({err:"Not logged in"})
-			return; 
-		}
-		next();
-	});
-}
-
 //read list of projects
 router.get('/',  function(req, res){	
 	getUserProjects(req,res);

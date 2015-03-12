@@ -68,7 +68,7 @@ router.use('/map', require('./map'))
 //router.use('/subject', require('./subject'))
 
 router.use('/user', require('./user'))
-router.use('/auth', require('./login'))
+
 
 //enable when needed
 //router.use('/mapcache', require('./mapcache'))
@@ -131,7 +131,7 @@ router.get('/account', function(req, res) {
 		})
 	});
 });
-
+/*
 router.get('/login', function(req, res) {
 	console.log("Login");
 	if(req.user){
@@ -146,6 +146,7 @@ router.get('/login', function(req, res) {
 	//else getUserFiles(req,res);
 
 });
+*/
 router.get('/logout', function(req, res) {
 	//order below may be important
 	res.clearCookie('connect.sid');

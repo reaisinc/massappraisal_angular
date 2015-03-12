@@ -61,15 +61,16 @@ $BODY$
   COST 100
   ROWS 1000;
   
-ALTER FUNCTION update_unique(text, text, text)
-  OWNER TO postgres;
-
-CREATE FUNCTION public.is_valid_date(text) returns boolean language plpgsql immutable as $$
+CREATE OR REPLACE FUNCTION public.is_valid_date(text) returns boolean language plpgsql immutable as $$
 begin
   return case when $1::date is null then false else true end;
 exception when others then
   return false;
 end;$$;
+
+-- Function: update_saledate(text, text)
+
+-- DROP FUNCTION update_saledate(text, text);
 
 CREATE OR REPLACE FUNCTION public.update_saledate(_sch text, _tbl text)
   RETURNS SETOF void AS
@@ -83,13 +84,8 @@ BEGIN
   --raise notice '%', columnsql;
   FOR var_match IN EXECUTE(columnsql) LOOP
    EXECUTE format('select public.is_valid_date("%s") from %s.%s',var_match.column_name,_sch,_tbl) into c; 
-   
-IF c THEN
-     BEGIN
+   IF c THEN
       EXECUTE format('ALTER TABLE %s.%s ALTER COLUMN "%s" SET DATA TYPE timestamp with time zone using cast("%s"::date as timestamp)',_sch,_tbl,var_match.column_name,var_match.column_name);
-exception when others then
-END
-
 --EXECUTE format('ALTER TABLE %s.%s ALTER COLUMN "%s" SET DATA TYPE integer using cast(extract(epoch from cast("%s"::date as timestamp)) as integer)',_sch,_tbl,var_match.column_name,var_match.column_name);
       --raise notice 'Found: %', var_match.column_name;
       --raise notice 'Found: %', format('ALTER TABLE %s.%s ALTER COLUMN "%s" SET DATA TYPE timestamp with time zone using cast("%s"::date as timestamp)',_sch,_tbl,var_match.column_name,var_match.column_name);
@@ -103,8 +99,7 @@ $BODY$
   LANGUAGE plpgsql VOLATILE
   COST 100
   ROWS 1000;
-ALTER FUNCTION update_saledate(text, text)
-  OWNER TO postgres;
+
 
 CREATE OR REPLACE FUNCTION public.update_saledate_to_int(_sch text, _tbl text)
   RETURNS SETOF void AS
@@ -125,13 +120,11 @@ $BODY$
   LANGUAGE plpgsql VOLATILE
   COST 100
   ROWS 1000;
-ALTER FUNCTION update_saledate_to_int(text, text)
-  OWNER TO postgres;
 
 --cast(extract(epoch from "sale date") as integer)
 --to_char(to_timestamp(cast(extract(epoch from "sale date") as integer)),'mm/dd/yyyy')
 
-CREATE FUNCTION merge_db(key varchar(40), data integer) RETURNS VOID AS
+CREATE OR REPLACE FUNCTION public.merge_db(key varchar(40), data integer) RETURNS VOID AS
     $$ -- souce: http://stackoverflow.com/questions/1109061/insert-on-duplicate-update-postgresql
     BEGIN
         LOOP
@@ -151,7 +144,7 @@ CREATE FUNCTION merge_db(key varchar(40), data integer) RETURNS VOID AS
     LANGUAGE plpgsql;
 
 
-CREATE OR REPLACE FUNCTION create_stats_view(schName varchar,objectName varchar) RETURNS integer AS $$
+CREATE OR REPLACE FUNCTION public.create_stats_view(schName varchar,objectName varchar) RETURNS integer AS $$
 DECLARE
     isTable integer;
     isView integer;
@@ -178,7 +171,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 
-CREATE OR REPLACE FUNCTION delete_table_or_view(schName varchar,objectName varchar) RETURNS integer AS $$
+CREATE OR REPLACE FUNCTION public.delete_table_or_view(schName varchar,objectName varchar) RETURNS integer AS $$
 DECLARE
     isTable integer;
     isView integer;
@@ -201,7 +194,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE OR REPLACE FUNCTION table_or_view(schName varchar,objectName varchar) RETURNS integer AS $$
+CREATE OR REPLACE FUNCTION public.table_or_view(schName varchar,objectName varchar) RETURNS integer AS $$
 DECLARE
     isTable integer;
     isView integer;
@@ -487,63 +480,6 @@ ALTER FUNCTION public.r_step_regression_variables(text, text, text)
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-=--unused-=
-R Function for printing summary (min,max,stddev,etc)
-CREATE OR REPLACE FUNCTION public.r_table_summary(in fieldnames text,in tablename text)
-RETURNS TABLE (name text,vars double precision, n double precision,mean double precision,sd double precision,median double precision,trimmed double precision,mad double precision,min double precision,max double precision,range double precision,se double precision) AS
-$$
-sql <- paste("select ",fieldnames," from ",tablename)
-salescomps <<- pg.spi.exec(sql)
-attach(salescomps) #make fields global
-library(psych)
-cbind(names(salescomps),round(describe(salescomps,na.rm = TRUE,skew=FALSE),2))
-$$
-language 'plr'; 
-
-Ex:
-select * from public.r_table_summary('priceac,"sale date",acres,paved,quality','reaisincva.r');
-select * from public.r_table_summary('id,sale_price,parcel_ac,parcel_lv,parcel_bv,parcel_tv,sale_acres,sale_ppa,elevation,climate_zn,_acres_total as acres_total,"Slope","Elevation","Prod Index","Range Potential","Drought Index","All Crop Prod Index"', 'reaisincva.homesites_stats');
-
-R Function for printing correlation matrix
-
-CREATE OR REPLACE FUNCTION public.r_table_cor(in fieldnames text,in tablename text)
-returns setof record as
-$$
-sql <- paste("select ",fieldnames," from ",tablename)
-salescomps <<- pg.spi.exec(sql)
-attach(salescomps) #make fields global
-cr = round(cor(salescomps),4)
-cbind(names(salescomps),cr)
-
-$$
-language 'plr'; 
-
-Ex:
-select * from public.r_table_cor('priceac,"sale date",acres,paved,quality','reaisincva.r_stats') s(name text,priceac double precision,"sale date" double precision,acres double precision,paved double precision,quality double precision)
-
-R Function returning plot graphic
-
 CREATE OR REPLACE FUNCTION plot() RETURNS bytea AS $$
 library(RGtk2)
 library(cairoDevice)
@@ -558,178 +494,5 @@ plot_pixbuf <- gdkPixbufGetFromDrawable(NULL, pixmap,pixmap$getColormap(),0, 0, 
 buffer <- gdkPixbufSaveToBufferv(plot_pixbuf, "png",character(0),character(0))$buffer
 return(buffer)
 $$ LANGUAGE plr;
-select plot();
-
-R Function for printing regression
-
-CREATE OR REPLACE FUNCTION public.r_table_regression_summary(in fieldnames text,in tablename text) 
-RETURNS text AS
-$$
-sql <- paste("select ",fieldnames," from ",tablename)
-salescomps <<- pg.spi.exec(sql)
-attach(salescomps) #make fields global
-#remove null values
-salescomps <- na.omit(salescomps)
-names=names(salescomps)
-depvar=names[2]
-#create string for dependent variable plus independents.
-nm=sprintf("%s ~ `%s`",depvar,paste(names[-c(1,2)],collapse="` + `"))
-model = lm(nm, data=salescomps)
-s=summary(model)
-lst=list("nm"=gsub("`", '"', nm),"call"=gsub("`", '"', paste(s$call[2])),"coef"=s$coefficients,"rsquared"=s$r.squared,"adjrsquared"=s$adj.r.squared,"fstats"=s$fstatistic,"stderr"=s$sigma)
-library(RJSONIO)
-toJSON(lst)
-
-#out=step(model, direction="backward")
-#cll=paste(capture.output(s$call[2]), sep =" ", collapse=" ")
-#reportoutput <- sprintf("%s",paste(capture.output(lst), sep =" ", collapse="\n  "))
-#return lst
-#return(reportoutput)
-
-$$
-language 'plr'; 
-
-select * from public.r_table_regression_summary('id,priceac,"sale date",acres,paved,quality','reaisincva.r_stats');
-
-R Function for printing stepwise regression
-
-drop function public.r_table_stepwise_regression_summary(in fieldnames text,in tablename text) ;
-
-CREATE OR REPLACE FUNCTION public.r_table_stepwise_regression_summary(in fieldnames text,in tablename text) 
-RETURNS text AS
-$$
-sql <- paste("select ",fieldnames," from ",tablename)
-salescomps <<- pg.spi.exec(sql)
-attach(salescomps) #make fields global
-#remove null values
-salescomps <- na.omit(salescomps)
-names=names(salescomps)
-depvar=names[2]
-#create string for dependent variable plus independents.
-nm=sprintf("%s ~ `%s`",depvar,paste(names[-c(1,2)],collapse="` + `"))
-model = lm(nm, data=salescomps)
-out=step(model, direction="backward")
-s=summary(out)
-#cll=paste(capture.output(s$call[2]), sep =" ", collapse=" ")
-
-lst=list("nm"=gsub("`", '"', nm),"call"=gsub("`", '"', paste(s$call[2])),"coef"=s$coefficients,"rsquared"=s$r.squared,"adjrsquared"=s$adj.r.squared,"fstats"=s$fstatistic,"stderr"=s$sigma)
-
-#reportoutput <- sprintf("%s",paste(capture.output(lst), sep =" ", collapse="\n  "))
-#return lst
-#return(reportoutput)
-
-library(RJSONIO)
-toJSON(lst)
-$$
-language 'plr'; 
-
-select * from public.r_table_stepwise_regression_summary('id,priceac,"sale date",acres,paved,quality','reaisincva.r_stats');
-
-
-R Function for printing stepwise regression coefficients
-
-CREATE OR REPLACE FUNCTION public.r_table_stepwise_regression_coefficients(in fieldnames text,in tablename text,out text,out double precision) 
-returns setof record as
-$$
-sql <- paste("select ",fieldnames," from ",tablename)
-salescomps <<- pg.spi.exec(sql)
-attach(salescomps) #make fields global
-#remove null values
-salescomps <- na.omit(salescomps)
-names=names(salescomps)
-depvar=names[2]
-#create string for dependent variable plus independents.
-nm=sprintf("%s ~ `%s`",depvar,paste(names[-c(1,2)],sep="`,`",collapse="` + `"))
-model = lm(nm, data=salescomps)
-out=step(model, direction="backward")
-s=summary(out)
-names=names(s$coefficients[,1])
-names[1]=""
-names=gsub("`", '"', names)
-
-ret = cbind(names,s$coefficients[,1])
-ret
-#s$coefficients
-#cll=paste(capture.output(s$call[2]), sep =" ", collapse=" ")
-#lst=list("nm"=nm,"call"=paste(s$call[2]),"coef"=s$coefficients,"rsquared"=s$r.squared,"adjrsquared"=s$adj.r.squared,"fstats"=s$fstatistic,"stderr"=s$sigma)
-#reportoutput <- sprintf("%s",paste(capture.output(lst), sep =" ", collapse="\n  "))
-#return lst
-#return(reportoutput)
-#library(RJSONIO)
-#toJSON(s$coefficients)
-$$
-language 'plr'; 
-
-select * from public.r_table_stepwise_regression_coefficients('id,priceac,"sale date" as sale_date,acres,paved,quality','reaisincva.r_stats');
-
-R Function for printing regression residuals-unfinished
-
-CREATE OR REPLACE FUNCTION public.r_table_stepwise_regression_residuals(in fieldnames text,in tablename text,out text,out double precision) 
-returns setof record as
-$$
-sql <- paste("select ",fieldnames," from ",tablename)
-salescomps <<- pg.spi.exec(sql)
-attach(salescomps) #make fields global
-#remove null values
-salescomps <- na.omit(salescomps)
-names=names(salescomps)
-depvar=names[2]
-#create string for dependent variable plus independents.
-nm=sprintf("%s ~ `%s`",depvar,paste(names[-c(1,2)],sep="`,`",collapse="` + `"))
-model = lm(nm, data=salescomps)
-out=step(model, direction="backward")
-s=summary(out)
-names=names(s$coefficients[,1])
-names[1]=depvar
-names=gsub("`", '"', names)
-ret = cbind(names,s$coefficients[,1])
-ret
-
-#s$coefficients
-#cll=paste(capture.output(s$call[2]), sep =" ", collapse=" ")
-#lst=list("nm"=nm,"call"=paste(s$call[2]),"coef"=s$coefficients,"rsquared"=s$r.squared,"adjrsquared"=s$adj.r.squared,"fstats"=s$fstatistic,"stderr"=s$sigma)
-#reportoutput <- sprintf("%s",paste(capture.output(lst), sep =" ", collapse="\n  "))
-#return lst
-#return(reportoutput)
-#library(RJSONIO)
-#toJSON(s$coefficients)
-$$
-language 'plr'; 
-
-select * from public.r_table_stepwise_regression_residuals('id,priceac,"sale date",acres,paved,quality','reaisincva.r_stats');
-
-R Function for printing regression residuals predictions
-
-CREATE OR REPLACE FUNCTION public.r_table_stepwise_regression_predict(in fieldnames text,in tablename text) 
-RETURNS text AS
-$$
-sql <- paste("select ",fieldnames," from ",tablename)
-salescomps <<- pg.spi.exec(sql)
-attach(salescomps) #make fields global
-#remove null values
-salescomps <- na.omit(salescomps)
-names=names(salescomps)
-depvar=names[2]
-#create string for dependent variable plus independents.
-nm=sprintf("%s ~ `%s`",depvar,paste(names[-c(1,2)],collapse="` + `"))
-model = lm(nm, data=salescomps)
-out=step(model, direction="backward")
-s=summary(out)
-
-lst=list("nm"=gsub("`", '"', nm),"call"=gsub("`", '"', paste(s$call[2])),"coef"=s$coefficients,"rsquared"=s$r.squared,"adjrsquared"=s$adj.r.squared,"fstats"=s$fstatistic,"stderr"=s$sigma)
-library(RJSONIO)
-toJSON(lst)
-
-#cll=paste(capture.output(s$call[2]), sep =" ", collapse=" ")
-#lst=gsub("`", '"', lst)
-#reportoutput <- sprintf("%s",paste(capture.output(lst), sep =" ", collapse="\n  "))
-#return lst
-#return(reportoutput)
-
-$$
-language 'plr'; 
-
-select * from public.r_table_stepwise_regression_predict('id,priceac,"sale date",acres,paved,quality','reaisincva.r_stats');
-
-
+--select plot();
 

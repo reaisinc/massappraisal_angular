@@ -129,8 +129,9 @@ maApp.filter('numformat', function($filter) {
 //create the controller and inject Angular's $scope
 maApp.controller('mainController', function($rootScope,$scope, $http, $location) {
 	if(location.port==8899){
-		$rootScope.username="Demo";
+		$rootScope.username1="Demo";
 		$rootScope.noLogin=true;
+		//$scope.noLogin=true;
 	}else{
 		$rootScope.mode="user";
 		$rootScope.username=null;
@@ -343,7 +344,7 @@ maApp.controller('contactController', function($scope) {
 
 });
 
-maApp.controller('loginController', function($rootScope,$scope,$http) {
+maApp.controller('loginController', function($rootScope,$scope,$http,$location) {
 //	try to automatically log in if user still logged in to Google
 	$rootScope.username=null;
 	if(sessionStorage.getItem("username")){
@@ -360,7 +361,8 @@ maApp.controller('loginController', function($rootScope,$scope,$http) {
 			//if(status==404)$location.path("/login")		
 		});			
 	}
-	else $location.path(getURL("/models"));
+	else $location.path("/login")
+	//else $location.path(getURL("/models"));
 
 });	
 

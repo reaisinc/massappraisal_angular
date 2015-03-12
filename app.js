@@ -192,6 +192,7 @@ app.use('/img', express.static(__dirname + '/public/img'));
 app.use('/data', express.static(__dirname + '/public/data'));
 app.use('/media', express.static(__dirname + '/public/media'));
 
+
 //app.use(serveStatic('/css', {'index': ['default.html', 'default.htm']}))
 if(global.standalone){
 	app.use(function(req, res, next) {
@@ -222,7 +223,33 @@ else{
 //	Initialize Passport!  Also use passport.session() middleware, to support
 //	persistent login sessions (recommended).
 	app.use(passport.initialize());
-	app.use(passport.session());	
+	app.use(passport.session());
+	//need to put login outside of isAuthenticated
+	app.use('/auth', require('./controllers/login'))
+	app.get('/login', function(req, res) {
+		console.log("Login");
+		if(req.user){
+			res.redirect('/');
+		}
+		else {
+			console.log("Not authenticated")
+			res.render('login', {
+				user : req.user
+			});
+		}
+		//else getUserFiles(req,res);
+
+	});	
+	app.use(function(req, res, next) {
+		if (!req.isAuthenticated()) { 
+			console.log("redirecting");
+
+			//res.redirect('/login');
+			res.status(404).json({err:"Not logged in"})
+			return; 
+		}
+		next();
+	});
 }
 app.use(require('./controllers'))
 

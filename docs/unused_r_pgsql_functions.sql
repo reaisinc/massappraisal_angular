@@ -261,21 +261,21 @@ ALTER FUNCTION public.r_step_regression_variables(text, text, text, integer, int
 
 
 --more functions---
-CREATE OR REPLACE FUNCTION update_unique(_sch text, _tbl text)
-  RETURNS SETOF void AS
-$BODY$
-DECLARE
-var_match RECORD;
-columnsql text;
-BEGIN
-		columnsql := format('SELECT column_name from information_schema.columns where table_schema=%L and table_name=''%s_stats''',_sch,_tbl);
-		FOR var_match IN EXECUTE(columnsql) LOOP
-        EXECUTE format('UPDATE %s.%s_vars SET uniqueid = (select case when count(distinct("%s"))=count(*) then 1 else 0 end from %s.%s_stats) where name = ''%s''',_sch,_tbl,var_match.column_name,_sch,_tbl,var_match.column_name); 
-    END LOOP;
-END;
-$BODY$
-  LANGUAGE plpgsql VOLATILE
-  COST 100
-  ROWS 1000;
-ALTER FUNCTION update_unique(text, text)
-  OWNER TO postgres;
+--CREATE OR REPLACE FUNCTION update_unique(_sch text, _tbl text)
+--  RETURNS SETOF void AS
+--$BODY$
+--DECLARE
+--var_match RECORD;
+--columnsql text;
+--BEGIN
+--		columnsql := format('SELECT column_name from information_schema.columns where table_schema=%L and table_name=''%s_stats''',_sch,_tbl);
+--		FOR var_match IN EXECUTE(columnsql) LOOP
+--        EXECUTE format('UPDATE %s.%s_vars SET uniqueid = (select case when count(distinct("%s"))=count(*) then 1 else 0 end from %s.%s_stats) where name = ''%s''',_sch,_tbl,var_match.column_name,_sch,_tbl,var_match.column_name); 
+--    END LOOP;
+--END;
+--$BODY$
+--  LANGUAGE plpgsql VOLATILE
+--  COST 100
+--  ROWS 1000;
+--ALTER FUNCTION update_unique(text, text)
+--  OWNER TO postgres;

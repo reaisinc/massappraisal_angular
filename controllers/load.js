@@ -5,34 +5,6 @@ var ogr2ogr = require("ogr2ogr");
 var pg = require("pg");
 var cache = require("memory-cache")
 
-if(!global.standalone){
-
-	router.use(function(req, res, next) {
-		if (!req.isAuthenticated()) { 
-			console.log("redirecting");
-			//res.redirect('/login');
-			res.status(404);
-			return; 
-		}
-
-		next();
-	});
-}
-/*
-router.get('/',  function(req, res){
-	console.log(req.query);
-	// return;
-	// if(!req.query){
-	res.render('load', {
-		user : req.user,
-		tableName: req.query.tableName,
-		type:req.query.type||'',
-		stype:req.query.stype||''
-	});
-	return;
-	// }
-});
- */
 router.get('/:pid',  function(req, res){
 	cache.del("t_"+req.user.shortName+req.params.pid)
 	runSteps(req,res);
