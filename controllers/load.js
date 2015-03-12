@@ -625,7 +625,8 @@ function loadNonSpatial(req,res,pid,tid,fileName,filePath,data){
 			tableName+=id;
 
 			// is it not a spatial file?
-			var opts=["-overwrite","-lco", "DROP_TABLE=IF_EXISTS","-nln",tableName];
+			var opts=["-overwrite","-nln",tableName];
+			if(!global.standalone){opts.push("-lco");opts.push( "DROP_TABLE=IF_EXISTS")}
 			// var f = tableName.toLowerCase().split(".");
 			var isCSV = fileName.substring(fileName.length-3)!='dbf';
 			console.log("isCSV: " +  isCSV);
@@ -787,7 +788,8 @@ function loadSalesFile(req,res,pid,tid,id,fileName,tableName){
 			tableName+=id;
 
 			// is it not a spatial file?
-			var opts=["-overwrite","-lco", "DROP_TABLE=IF_EXISTS","-nln",tableName];
+			var opts=["-overwrite","-nln",tableName];
+			if(!global.standalone){opts.push("-lco");opts.push( "DROP_TABLE=IF_EXISTS")}
 			// var f = tableName.toLowerCase().split(".");
 			//var isCSV = fileName.substring(fileName.length-3)!='dbf';
 			//console.log("isCSV: " +  isCSV);
