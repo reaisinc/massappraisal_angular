@@ -196,6 +196,8 @@ app.use('/media', express.static(__dirname + '/public/media'));
 if(global.standalone){
 	app.use(function(req, res, next) {
 		req.user={shortName:"demo",displayName:"Demo"};
+		req.user.displayName="Demo";
+		console.log(req.user);
 		next();
 	});
 }

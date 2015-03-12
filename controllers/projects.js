@@ -3,7 +3,8 @@ var express = require('express')
 ,pg = require("pg")
 ,cache = require("memory-cache")
 
-if(global.standalone){
+if(!global.standalone){
+	/*
 	router.use(function(req, res, next) {
 		//console.log(global.conString);
 		//console.log(req.user.shortName);
@@ -13,6 +14,7 @@ if(global.standalone){
 	});
 }
 else {
+*/
 	router.use(function(req, res, next) {
 		if (!req.isAuthenticated()) { 
 			console.log("redirecting");

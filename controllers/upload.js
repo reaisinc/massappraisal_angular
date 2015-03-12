@@ -1,6 +1,6 @@
 var express = require('express');
 var router = express.Router();
-
+if(!global.standalone){
 router.use(function(req, res, next) {
 	if (!req.isAuthenticated()) { 
 		console.log("redirecting");
@@ -10,7 +10,7 @@ router.use(function(req, res, next) {
 	}
 	next();
 });
-
+}
 var options={      
 		//tmpDir: __dirname + '/tmp',
 		//uploadDir:  __dirname + '/public/files',

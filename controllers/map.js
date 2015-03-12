@@ -5,7 +5,7 @@ var path=require("path");
 
 var mapserv = require('mapserv'), // the Mapserv module
 fs = require('fs');                  // for filesystem operations
-
+if(!global.standalone){
 router.use(function(req, res, next) {
 	if (!req.isAuthenticated()) { 
 		console.log("redirecting");
@@ -14,6 +14,7 @@ router.use(function(req, res, next) {
 	}
 	next();
 });
+}
 //replace(substring(st_extent(wkb_geometry)::text,4),' ',',')
 
 router.get('/',  function(req, res){
