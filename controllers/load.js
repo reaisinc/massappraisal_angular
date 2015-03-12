@@ -310,8 +310,8 @@ function execOgr2ogr(req,res,pid,tid,id,fileName,tableName){
 
 	// is it not a spatial file?
 	//var opts=["-t_srs","epsg:3857","-overwrite","-lco", "DROP_TABLE=IF_EXISTS", "-lco", "WRITE_EWKT_GEOM=ON", "-nlt", "MULTIPOLYGON", "-nln",tableName];
-	var opts=["-t_srs","epsg:3857","-overwrite", "-lco", "WRITE_EWKT_GEOM=ON", "-nlt", "MULTIPOLYGON", "-nln",tableName];
-	if(!global.standalone){opts.push("-lco");opts.push( "DROP_TABLE=IF_EXISTS")}
+	var opts=["-t_srs","epsg:3857","-overwrite", "-nlt", "MULTIPOLYGON", "-nln",tableName];
+	if(!global.standalone){opts.push("-lco");opts.push( "DROP_TABLE=IF_EXISTS");opts.push("-lco");opts.push("WRITE_EWKT_GEOM=ON");}
 
 	var ogr = ogr2ogr( filePath)
 	.format('PostgreSQL') 
