@@ -17,12 +17,12 @@ var os = require("os");
 os.hostname();
 if(/^win/.test(process.platform))
 	isLocal=true;
-if(process.env.conString){
-	global.conString = process.env.conString || "postgres://dbuser:dbuser@localhost/soils";
-	global.adminConString = process.env.adminConString || "postgres://postgres:postgres@localhost/soils";
+if(process.env.portable){
+	global.conString = process.env.conString || "postgres://dbuser:dbuser@localhost/magis";
+	global.adminConString = process.env.adminConString || "postgres://postgres:postgres@localhost/magis";
 	global.hostString = process.env.hostString || "http://127.0.0.1:8888";
-	global.ogrConnString = process.env.ogrConnString || 'PG:host=localhost user=dbuser dbname=soils password=dbuser';
-	global.postgisStr = process.env.postgisStr || "dbname=soils user=dbuser password=dbuser host=localhost"
+	global.ogrConnString = process.env.ogrConnString || 'PG:host=localhost user=dbuser dbname=magis password=dbuser';
+	global.postgisStr = process.env.postgisStr || "dbname=magis user=dbuser password=dbuser host=localhost"
 	global.standalone=true;
 
 }
