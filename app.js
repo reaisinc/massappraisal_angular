@@ -194,6 +194,12 @@ app.use('/media', express.static(__dirname + '/public/media'));
 
 //app.use(serveStatic('/css', {'index': ['default.html', 'default.htm']}))
 if(global.standalone){
+	app.use(function(req, res, next) {
+		req.user={shortName:"demo"};
+		next();
+	});
+}
+else{
 	app.use(session({
 		secret: 'keyboard cat',
 		resave: false,
@@ -214,13 +220,7 @@ if(global.standalone){
 //	Initialize Passport!  Also use passport.session() middleware, to support
 //	persistent login sessions (recommended).
 	app.use(passport.initialize());
-	app.use(passport.session());
-}
-else{
-	router.use(function(req, res, next) {
-		req.user={shortName:"demo"};
-		next();
-	});
+	app.use(passport.session());	
 }
 app.use(require('./controllers'))
 
