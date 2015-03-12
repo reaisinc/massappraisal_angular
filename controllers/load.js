@@ -305,11 +305,13 @@ function execOgr2ogr(req,res,pid,tid,id,fileName,tableName){
 		res.end(JSON.stringify({"err":"File "+fileName+" not found!."}));
 		return;
 	}
-	if(/^win/.test(process.platform))
-		process.env['GDAL_DATA'] = 'C:\\PostgreSQL93\\gdal-data';
+	//if(/^win/.test(process.platform))
+	//	process.env['GDAL_DATA'] = 'C:\\PostgreSQL93\\gdal-data';
 
 	// is it not a spatial file?
-	var opts=["-t_srs","epsg:3857","-overwrite","-lco", "DROP_TABLE=IF_EXISTS", "-lco", "WRITE_EWKT_GEOM=ON", "-nlt", "MULTIPOLYGON", "-nln",tableName];
+	//var opts=["-t_srs","epsg:3857","-overwrite","-lco", "DROP_TABLE=IF_EXISTS", "-lco", "WRITE_EWKT_GEOM=ON", "-nlt", "MULTIPOLYGON", "-nln",tableName];
+	var opts=["-t_srs","epsg:3857","-overwrite", "-lco", "WRITE_EWKT_GEOM=ON", "-nlt", "MULTIPOLYGON", "-nln",tableName];
+	if(!global.standalone){opts.push("-lco");opts.push( "DROP_TABLE=IF_EXISTS")}
 
 	var ogr = ogr2ogr( filePath)
 	.format('PostgreSQL') 
@@ -609,8 +611,8 @@ function createStatsTable(req,res,pid,tid,id,fileName,tableName){
  * Verify file upload.
  */
 function loadNonSpatial(req,res,pid,tid,fileName,filePath,data){
-	if(/^win/.test(process.platform))
-		process.env['GDAL_DATA'] = 'C:\\PostgreSQL93\\gdal-data';
+	//if(/^win/.test(process.platform))
+	//	process.env['GDAL_DATA'] = 'C:\\PostgreSQL93\\gdal-data';
 	pg.connect(global.conString,function(err, client, release) {
 		if (err){ res.json({"err":"No connection to database;"});throw err;}
 		var sql="select nextval('"+req.user.shortName + ".tables_id_seq'::regclass) as id";
@@ -770,8 +772,8 @@ function loadSalesFile(req,res,pid,tid,id,fileName,tableName){
 		res.end(JSON.stringify({"err":"File "+fileName+" not found!."}));
 		return;
 	}
-	if(/^win/.test(process.platform))
-		process.env['GDAL_DATA'] = 'C:\\PostgreSQL93\\gdal-data';
+	//if(/^win/.test(process.platform))
+	//	process.env['GDAL_DATA'] = 'C:\\PostgreSQL93\\gdal-data';
 	pg.connect(global.conString,function(err, client, release) {
 		if (err){ res.json({"err":"No connection to database;"});throw err;}
 		var sql="select nextval('"+req.user.shortName + ".tables_id_seq'::regclass) as id";
