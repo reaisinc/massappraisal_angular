@@ -197,6 +197,7 @@ function getUserProjects(req,res)
 {
 	console.log(global.conString);
 	console.log(req.user.shortName);
+	console.log(req.user.displayName);
 	var c;
 	if(c = cache.get('p_'+req.user.shortName)){
 		console.log("Cache hit: " + 'p_'+req.user.shortName)

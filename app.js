@@ -195,7 +195,7 @@ app.use('/media', express.static(__dirname + '/public/media'));
 //app.use(serveStatic('/css', {'index': ['default.html', 'default.htm']}))
 if(global.standalone){
 	app.use(function(req, res, next) {
-		req.user={shortName:"demo"};
+		req.user={shortName:"demo",displayName:"Demo"};
 		next();
 	});
 }
