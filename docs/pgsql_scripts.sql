@@ -1,4 +1,4 @@
-PG Functions converting character fields to numeric (int or double)
+--PG Functions converting character fields to numeric (int or double)
 CREATE OR REPLACE FUNCTION public.isdouble(text) RETURNS BOOLEAN AS $$
 DECLARE x DOUBLE PRECISION;
 BEGIN
@@ -37,7 +37,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 
-select public.tonumeric('acres','r_stats');
+--select public.tonumeric('acres','r_stats');
 
 CREATE OR REPLACE FUNCTION public.update_unique(_sch text, _tbl text,_alttbl text DEFAULT NULL)
   RETURNS SETOF void AS
@@ -225,7 +225,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 ------------------------------------------------------------------------------
-Production functions
+--Production functions
 ------------------------------------------------------------------------------
 -- Function: r_table_summary(text, text)
 
@@ -303,7 +303,7 @@ $BODY$
   LANGUAGE plr VOLATILE
   COST 100;
 
-select * from public.r_correlation_variables('parcel_ac,acres_tota,"Air temperature","All Crop Prod Index","Average precipitation","Drought Index","Elevation","Frost free days","Init Subsidence",parcel_bv,parcel_lv,parcel_tv,"Prod Index","Range Forage","Range Potential",sale_acres,sale_ppa,sale_price,"Slope","Total Subsidence"','reaisincva.homesites_stats');
+--select * from public.r_correlation_variables('parcel_ac,acres_tota,"Air temperature","All Crop Prod Index","Average precipitation","Drought Index","Elevation","Frost free days","Init Subsidence",parcel_bv,parcel_lv,parcel_tv,"Prod Index","Range Forage","Range Potential",sale_acres,sale_ppa,sale_price,"Slope","Total Subsidence"','reaisincva.homesites_stats');
 
 
 

@@ -128,13 +128,17 @@ maApp.filter('numformat', function($filter) {
 
 //create the controller and inject Angular's $scope
 maApp.controller('mainController', function($rootScope,$scope, $http, $location) {
-
-
-	$rootScope.mode="user";
-	$rootScope.username=null;
-	if(sessionStorage.getItem("username")){
-		$rootScope.username=sessionStorage.getItem("username");
+	if(location.port==8899){
+		$rootScope.username="Demo";
+		$rootScope.noLogin=true;
+	}else{
+		$rootScope.mode="user";
+		$rootScope.username=null;
+		if(sessionStorage.getItem("username")){
+			$rootScope.username=sessionStorage.getItem("username");
+		}
 	}
+
 	$scope.viewModels=function(){
 		$location.path("/models");	
 	}

@@ -5,17 +5,19 @@ var ogr2ogr = require("ogr2ogr");
 var pg = require("pg");
 var cache = require("memory-cache")
 
+if(!global.standalone){
 
-router.use(function(req, res, next) {
-	if (!req.isAuthenticated()) { 
-		console.log("redirecting");
-		//res.redirect('/login');
-		res.status(404);
-		return; 
-	}
+	router.use(function(req, res, next) {
+		if (!req.isAuthenticated()) { 
+			console.log("redirecting");
+			//res.redirect('/login');
+			res.status(404);
+			return; 
+		}
 
-	next();
-});
+		next();
+	});
+}
 /*
 router.get('/',  function(req, res){
 	console.log(req.query);
@@ -54,7 +56,7 @@ function runSteps(req,res){
 			return;
 		}
 	}
-	
+
 	var tableName=req.query.tableName?req.query.tableName.replace(/\W/g, '').toLowerCase():null;
 	var pid=parseInt(req.params.pid);
 	var tid=req.params.tid?parseInt(req.params.tid):null;
@@ -203,7 +205,7 @@ function verifyMatchingFields(req,res,pid,tid,fileName,filePath,data){
 			});
 		});
 	})
-	
+
 }
 
 function verifySalesMatchingFields(req,res,pid,tid,fileName,filePath,data){
@@ -263,7 +265,7 @@ function verifySalesMatchingFields(req,res,pid,tid,fileName,filePath,data){
 			});
 		});
 	})
-	
+
 }
 
 function initializeTable(req,res,pid,tid,fileName,filePath,data){
@@ -346,7 +348,7 @@ function execOgr2ogr(req,res,pid,tid,id,fileName,tableName){
 					delete msg['err'];
 				}
 			}
-			
+
 			// shouldn't ever be called since handled in upload.js
 			res.json(msg);
 		}
@@ -813,13 +815,13 @@ function loadSalesFile(req,res,pid,tid,id,fileName,tableName){
 						delete msg['err'];
 					}
 				}
-				
+
 				// shouldn't ever be called since handled in upload.js
 				res.json(msg);
 			});
 		});
 	});
-/*
+	/*
 				var sql="select column_name from information_schema.columns where table_schema='"+req.user.shortName+"' and table_name = '"+tableName+"' and column_name not in('ogc_fid','wkb_geometry','id','shape_leng','shape_area','_acres_total') and data_type not in('numeric','double precision','float','integer','decimal')";
 				console.log(sql);
 				// strip off extension
@@ -884,13 +886,13 @@ function loadSalesFile(req,res,pid,tid,id,fileName,tableName){
 
 					           ,'drop view if exists ' + tableName + "_stats"
 					           ,"create view " + tableName + "_stats as select * from " + tableName
-					           
+
 					           //,'drop table if exists ' + tableName + "_stats"
 					          // ,"create table " + tableName+"_stats as select * from " + tableName
 					           //,"alter table " + tableName + "_stats drop if exists wkb_geometry"
 					           //,"alter table " + tableName + "_stats drop if exists ogc_fid"
 					           //,"alter table " + tableName + "_stats add oid serial"
-					            
+
 
 					           //,"delete from "+req.user.shortName+".tables where name='"+baseTableName+"'"
 					           ,"insert into "+req.user.shortName+".tables(id,alias,name,filename,pid,tid,type,geometrytype,filetype,date_loaded,numtuples) values("+id+",'"+alias+"','"+baseTableName + "','"+fileName+"',"+pid+","+(tid?tid:"NULL")+"," +(tid?"1":"0") +",'"+data['Geometry']+"','" + data['file'] + "',NOW(),"+data["Feature Count"]+")"
@@ -924,7 +926,7 @@ function loadSalesFile(req,res,pid,tid,id,fileName,tableName){
 			//convertCSV2Numeric(req,res,pid,tid,id,fileName,tableName,data,isCSV);
 		});
 	})
-	*/
+	 */
 }
 //step three: load into database
 function cleanSalesTable(req,res,pid,tid,id,fileName,tableName) {
@@ -933,7 +935,7 @@ function cleanSalesTable(req,res,pid,tid,id,fileName,tableName) {
 	//tableName+=id;
 	pg.connect(global.conString,function(err, client, release) {
 		if (err){ res.json({"err":"No connection to database;"});throw err;}
-		
+
 		var sql=["select name from "+req.user.shortName+".tables where id="+tid,"select column_name from information_schema.columns where table_schema='"+req.user.shortName+"' and table_name = '"+baseTableName+"' and column_name not in('ogc_fid','wkb_geometry','id','shape_leng','shape_area','_acres_total') and data_type not in('numeric','double precision','float','integer','decimal')"];
 		console.log(sql);
 		// strip off extension
@@ -1014,7 +1016,7 @@ function cleanSalesTable(req,res,pid,tid,id,fileName,tableName) {
 				 //update default sales date
 				 ,"update " + parcelTable + "_vars set saledate=1 where saledate=2 and ctid in(select ctid from " + parcelTable + "_vars where saledate=2 limit 1)"
 				 //now convert all date formats to integers for calculations
-				,"select public.update_saledate_to_int('"+req.user.shortName+"','" + baseTableName + "')"
+				 ,"select public.update_saledate_to_int('"+req.user.shortName+"','" + baseTableName + "')"
 
 				 // find all the fields that have all distinct/unique
 				 // values. These are the only fields that can be
@@ -1099,7 +1101,7 @@ function updateStatsTableWithSales(req,res,pid,tid,id,fileName,tableName){
 			var baseParcelTable=result.rows[0].name+tid;
 			var parcelTable=req.user.shortName+"."+baseParcelTable;
 			var sql="select include,id,depvar,saledate,soils,sales,uniqueid,name,type from " + parcelTable + "_vars order by id desc,uniqueid desc,depvar desc,soils asc,name asc";
-  
+
 			//var sql=["select column_name from information_schema.columns where table_schema='"+req.user.shortName+"' and table_name = '"+baseTableName+"' and column_name not in('ogc_fid','wkb_geometry','id','shape_leng','shape_area','_acres_total') and data_type in('numeric','double precision','float','integer','decimal')"];
 			console.log(sql);
 			client.query(sql, function(err, result) {
@@ -1116,8 +1118,8 @@ function updateStatsTableWithSales(req,res,pid,tid,id,fileName,tableName){
 						continue;
 					if(result.rows[i].sales==1)
 						sales.push(result.rows[i].name)
-					else 
-						parcels.push(result.rows[i].name);
+						else 
+							parcels.push(result.rows[i].name);
 					//if(result.rows[i].name.charAt(0) == result.rows[i].name.charAt(0).toUpperCase())
 					//	result.rows[i].name='"' + result.rows[i].name + '"';
 					//else if(result.rows[i].name.indexOf(" ")!=-1)
@@ -1133,7 +1135,7 @@ function updateStatsTableWithSales(req,res,pid,tid,id,fileName,tableName){
 						}
 					}
 					if(!found)parcels.push(result.rows[i].name);
-					*/
+					 */
 					//cols.push(result.rows[i].column_name);
 				}
 				//if _stats is a table, rename it to _init
@@ -1147,7 +1149,7 @@ function updateStatsTableWithSales(req,res,pid,tid,id,fileName,tableName){
 					 ,"alter table if exists " + parcelTable + "_tmp rename to "+baseParcelTable+"_stats"
 					 //"drop table if exists " + parcelTable + "_init"
 					 ,"alter table if exists " + parcelTable + "_stats rename to "+ baseParcelTable + "_init"
-					 */
+					  */
 					 "select create_stats_view('"+req.user.shortName+"','"+baseParcelTable+"')"
 					 ,"create view  " + parcelTable + "_stats as select a.\"" + parcels.join('",a."') + "\",b.\""+sales.join('",b."')+"\" from "+parcelTable+"_init a,"+tableName+" b where b."+saleSel+"=a."+compSel
 					 ,"select count(*)  as count from "+ parcelTable + "_stats"
@@ -1217,7 +1219,7 @@ function _updateStatsTableWithSales(req,res,pid,tid,id,fileName,tableName){
 			}
 			console.log(cols);
 			var sql="select include,id,depvar,saledate,soils,uniqueid,name,type from " + parcelTable + "_vars where sales!=1 order by id desc,uniqueid desc,depvar desc,soils asc,name asc";
-  
+
 			//var sql=["select column_name from information_schema.columns where table_schema='"+req.user.shortName+"' and table_name = '"+baseTableName+"' and column_name not in('ogc_fid','wkb_geometry','id','shape_leng','shape_area','_acres_total') and data_type in('numeric','double precision','float','integer','decimal')"];
 			console.log(sql);
 			client.query(sql, function(err, result) {
@@ -1232,7 +1234,7 @@ function _updateStatsTableWithSales(req,res,pid,tid,id,fileName,tableName){
 					}
 					else if(result.rows[i].name==saleSel)
 						continue;
-			
+
 					//if(result.rows[i].name.charAt(0) == result.rows[i].name.charAt(0).toUpperCase())
 					//	result.rows[i].name='"' + result.rows[i].name + '"';
 					//else if(result.rows[i].name.indexOf(" ")!=-1)
@@ -1241,8 +1243,8 @@ function _updateStatsTableWithSales(req,res,pid,tid,id,fileName,tableName){
 					for(var j=0;j<cols.length;j++){
 						if(cols[j] == result.rows[i].name){
 							if(cols[j]!=saleSel)
-							sales.push(cols[j])
-							found=true;
+								sales.push(cols[j])
+								found=true;
 							break;
 						}
 					}

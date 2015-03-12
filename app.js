@@ -17,8 +17,16 @@ var os = require("os");
 os.hostname();
 if(/^win/.test(process.platform))
 	isLocal=true;
+if(process.env.conString){
+	global.conString = process.env.conString || "postgres://dbuser:dbuser@localhost/soils";
+	global.adminConString = process.env.adminConString || "postgres://postgres:postgres@localhost/soils";
+	global.hostString = process.env.hostString || "http://127.0.0.1:8888";
+	global.ogrConnString = process.env.ogrConnString || 'PG:host=localhost user=dbuser dbname=soils password=dbuser';
+	global.postgisStr = process.env.postgisStr || "dbname=soils user=dbuser password=dbuser host=localhost"
+	global.standalone=true;
 
-if(isLocal){
+}
+else if(isLocal){
 //	global.conString = "postgres://postgres:postgres@localhost/soils";
 	global.conString = "postgres://dbuser:dbuser@localhost/soils";
 	global.adminConString = "postgres://postgres:postgres@localhost/soils";
@@ -74,8 +82,8 @@ var log_file = fs.createWriteStream(__dirname + '/debug.log', {flags : 'w'});
 var log_stdout = process.stdout;
 
 console.log = function(d) { //
-  log_file.write(util.format(d) + '\n');
-  log_stdout.write(util.format(d) + '\n');
+	log_file.write(util.format(d) + '\n');
+	log_stdout.write(util.format(d) + '\n');
 };
 
 //, GoogleStrategy = require('passport-google-oauth').OAuth2Strategy
@@ -185,29 +193,35 @@ app.use('/data', express.static(__dirname + '/public/data'));
 app.use('/media', express.static(__dirname + '/public/media'));
 
 //app.use(serveStatic('/css', {'index': ['default.html', 'default.htm']}))
-
-app.use(session({
-	secret: 'keyboard cat',
-	resave: false,
-	store: new pgSession({
-		pg : pg,
-		conString : global.conString,
-		tableName : 'session'
-	}),
-	/*
+if(global.standalone){
+	app.use(session({
+		secret: 'keyboard cat',
+		resave: false,
+		store: new pgSession({
+			pg : pg,
+			conString : global.conString,
+			tableName : 'session'
+		}),
+		/*
   store: new RedisStore({
             port: 8880,
             prefix: "ma"
   }),
-	 */
-	saveUninitialized: true
-}))
+		 */
+		saveUninitialized: true
+	}))
 
-//Initialize Passport!  Also use passport.session() middleware, to support
-//persistent login sessions (recommended).
-app.use(passport.initialize());
-app.use(passport.session());
-
+//	Initialize Passport!  Also use passport.session() middleware, to support
+//	persistent login sessions (recommended).
+	app.use(passport.initialize());
+	app.use(passport.session());
+}
+else{
+	router.use(function(req, res, next) {
+		req.user={shortName:"demo"};
+		next();
+	});
+}
 app.use(require('./controllers'))
 
 //load all routes dynamically

@@ -3,18 +3,30 @@ var express = require('express')
 ,pg = require("pg")
 ,cache = require("memory-cache")
 
-router.use(function(req, res, next) {
-	if (!req.isAuthenticated()) { 
-		console.log("redirecting");
+if(global.standalone){
+	router.use(function(req, res, next) {
+		//console.log(global.conString);
+		//console.log(req.user.shortName);
+		req.user={shortName:"demo"};
+		//console.log(req.user.shortName);
+		next();
+	});
+}
+else {
+	router.use(function(req, res, next) {
+		if (!req.isAuthenticated()) { 
+			console.log("redirecting");
 
-		//res.redirect('/login');
-		res.status(404).json({err:"Not logged in"})
-		return; 
-	}
-	next();
-});
+			//res.redirect('/login');
+			res.status(404).json({err:"Not logged in"})
+			return; 
+		}
+		next();
+	});
+}
+
 //read list of projects
-router.get('/',  function(req, res){
+router.get('/',  function(req, res){	
 	getUserProjects(req,res);
 });
 
@@ -103,7 +115,7 @@ router.get('/:pid/tables/:tid/subject',  function(req, res){
 router.get('/:pid/tables/:tid/subject/tables',  function(req, res){
 	getSubjectTables(req,res);	
 });
-*/
+ */
 //subject table info
 router.get('/:pid/tables/:tid/subject/:sid',  function(req, res){
 	listSubject(req,res);	
@@ -126,7 +138,7 @@ router.delete('/:pid/tables/:tid/subject/:sid',  function(req, res){
 });
 //subject table report single
 //router.get('/:pid/tables/:tid/subject/:sid/report',  function(req, res){
-	//reportSubject(req,res);	
+//reportSubject(req,res);	
 //});
 router.get('/:pid/tables/:tid/subject/:sid/report/:id',  function(req, res){
 	reportSubject(req,res);	
@@ -183,6 +195,8 @@ function createProject(req,res)
 }
 function getUserProjects(req,res)
 {
+	console.log(global.conString);
+	console.log(req.user.shortName);
 	var c;
 	if(c = cache.get('p_'+req.user.shortName)){
 		console.log("Cache hit: " + 'p_'+req.user.shortName)
@@ -1608,8 +1622,8 @@ function downloadSpatialTable(req,res)
 				if(/^win/.test(process.platform))
 					process.env['GDAL_DATA'] = 'C:\\PostgreSQL93\\gdal-data';
 				//res.setHeader ('Content-Length', size);
-			    res.setHeader ('Content-Type', 'application/zip');
-			    res.setHeader('Content-Disposition', 'attachment; filename=' + zipName+".zip");
+				res.setHeader ('Content-Type', 'application/zip');
+				res.setHeader('Content-Disposition', 'attachment; filename=' + zipName+".zip");
 				// is it not a spatial file?
 				var opts=["-t_srs","epsg:3857","-overwrite","-lco", "DROP_TABLE=IF_EXISTS", "-lco", "WRITE_EWKT_GEOM=ON", "-nlt", "MULTIPOLYGON", "-nln",tableName];
 				var opts=[req.user.shortName + "." + tableName+tid+"_soils"];
@@ -1725,7 +1739,7 @@ function downloadTable(req,res){
 	var tid = parseInt(req.params.tid);
 	var sid = parseInt(req.params.sid);
 	if(sid)tid=sid;
-	
+
 	var sql="select name from "+req.user.shortName+".tables where id="+tid;
 	console.log(sql);
 	pg.connect(global.conString,function(err, client, release) {
