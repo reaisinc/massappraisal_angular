@@ -9,25 +9,38 @@
 		<li><a ng-click="gotoUrl('predictions')">Predictions</a></li>
 		<li><a ng-click="gotoUrl('subject')">Subject property</a></li>
 	</ol>
-	
+
 
 	<div class="jumbotron">
 		<div class="row">
 			<div class="col-lg-8 col-xs-8">
 				Before continuing, you need to specify which field is the dependent variable. Usually this will be the sales price. A new field "oid" is added that is guaranteed to be unique, but you may wish to specify a different field as your unique identifier. This unique identifier is used when printing
-				out the residuals. <br> Check the boxes next to the numeric fields you wish to include in the regression analysis. <span ng-show="summary.geomtype=='Polygon'"> <br>
-				<br>Note: rows colored in blue are fields extracted from the USDA soils data, rows colored in green are fields merged from the sales spreadsheet.
+				out the residuals. <br> Check the boxes next to the numeric fields you wish to include in the regression analysis. <span ng-show="summary.geomtype=='Polygon'"> <br> <br>Note: rows colored in blue are fields extracted from the USDA soils data, rows colored in green are
+					fields merged from the sales spreadsheet.
 				</span>
 			</div>
 
 			<div class="col-lg-4 col-xs-4">
-						<div class="btn-group-vertical pull-right" role="group">
-			<button class="btn btn-primary btn-sm" type="button" ng-click="downloadTable()"> <i class="glyphicon glyphicon-file"></i> Download table</button>
-		    <button class="btn btn-primary btn-sm" type="button" ng-show="summary.geomtype!='None'" ng-click="showMap()"> <i class="glyphicon glyphicon-globe"></i> Show on map </button>    
-		    <button class="btn btn-primary btn-sm" type="button" ng-show="summary.geomtype!='None'" target=_blank ng-click="downloadLayer()"> <i class="glyphicon glyphicon-download"></i> Download map data </button>
- 			</div>
-			<a id="dl_summary"></a>
-			<!--  
+				<div class="btn-group-vertical pull-right" role="group">
+					<button class="btn btn-primary btn-sm" type="button" ng-click="downloadTable()">
+						<i class="glyphicon glyphicon-file"></i> Download summary table
+					</button>
+
+					<button class="btn btn-primary btn-sm" type="button" ng-show="summary.geomtype!='None'" ng-click="showMap()">
+						<i class="glyphicon glyphicon-globe"></i> Show on map
+					</button>
+					<div class="btn-group" dropdown>
+						<button class="btn btn-primary btn-sm dropdown-toggle" type="button" dropdown-toggle ng-show="summary.geomtype!='None'" ng-disabled="disabled">
+							<i class="glyphicon glyphicon-download"></i> Download map data <span class="caret"></span>
+						</button>
+						<ul class="dropdown-menu" role="menu">
+							<li><a ng-click="downloadLayer($event,'ESRI Shapefile');">ESRI Shapefile</a></li>
+							<li><a ng-click="downloadLayer($event,'FileGDB');">ESRI FileGeodatabase</a></li>
+						</ul>
+					</div>
+				</div>
+				<a id="dl_summary"></a>
+				<!--  
 				<div id="browse_app" class="list-group">
 					<a id="dl_summary" class="list-group-item list-group-item-info" ng-click="downloadTable()"> <i class="glyphicon glyphicon-file"></i> Download table
 					</a> <a ng-show="summary.geomtype!='None'" class="list-group-item list-group-item-info" target=_blank ng-click="showMap()"> <i class="glyphicon glyphicon-globe"></i> Show on map

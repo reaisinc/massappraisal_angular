@@ -1595,21 +1595,43 @@ function downloadSpatialTable(req,res)
 				}
 				var sql="select a.mukey,a.wkb_geometry,a.musym,"+cols.join(",b.")+" from "+tableName+" b, "+  req.user.shortName+"."+ baseTableName+'_soils a where a._parcelid=b._parcelid';
 
-
+				var opts=["-sql",sql,"-nln",zipName];
 				console.log(sql);
 				release()
-				if(/^win/.test(process.platform))
-					process.env['GDAL_DATA'] = 'C:\\PostgreSQL93\\gdal-data';
+				var format='ESRI Shapefile';
+				var destination="";
+				if(req.query.format=='FileGDB'){
+					//zipName+=".gdb";
+					format=req.query.format;
+					var opts=["-nlt", "POLYGON", "-overwrite", "-nln", zipName, "-sql", sql];
+					//opts.push("-nlt");
+					//opts.push("POLYGON")
+					destination= zipName + ".gdb";
+					//destination="";
+					//zipName+".gdb",
+				}
+				else if(req.query.format=='ESRI Shapefile'){
+					var opts=["-overwrite","-nln",zipName,"-sql",sql];
+					///destination="tmp" + "/" + zipName + ".shp"
+					//destination="";
+				}
+				else{
+					var opts=["-overwrite",'-nln',zipName,"-sql",sql];
+				}
+				//FileGDB
+				//if(/^win/.test(process.platform))
+				//	process.env['GDAL_DATA'] = 'C:\\PostgreSQL93\\gdal-data';
 				//res.setHeader ('Content-Length', size);
 				res.setHeader ('Content-Type', 'application/zip');
 				res.setHeader('Content-Disposition', 'attachment; filename=' + zipName+".zip");
 				// is it not a spatial file?
-				var opts=["-t_srs","epsg:3857","-overwrite","-lco", "DROP_TABLE=IF_EXISTS", "-lco", "WRITE_EWKT_GEOM=ON", "-nlt", "MULTIPOLYGON", "-nln",tableName];
-				var opts=[req.user.shortName + "." + tableName+tid+"_soils"];
-				var opts=["-sql",sql,'-nln',zipName];
+				//var opts=["-t_srs","epsg:3857","-overwrite","-nlt", "MULTIPOLYGON", "-nln",tableName];
+				//var opts=[req.user.shortName + "." + tableName+tid+"_soils"];
+				
 				var ogr = ogr2ogr( global.ogrConnString ) //+ ' active_schema='+req.user.shortName + ' tables=' + req.user.shortName + "." + tableName+"_soils")
-				.format('ESRI Shapefile') 
+				.format(format) 
 				.timeout(60*60*1000)
+				.destination(destination)
 				.options(opts)//
 				.skipfailures()  
 				.stream().pipe(res)

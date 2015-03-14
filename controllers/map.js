@@ -28,7 +28,7 @@ router.get('/',  function(req, res){
 		  if (err){ res.end(JSON.stringify({"err":"No connection to database;"}));throw err;}
 		  client.query(sql, function(err, result) {
 			  if(err)console.log(err);
-			  console.log(result.rows);
+			  //console.log(result.rows);
 			res.render('map', {
 				user : req.user,
 				layerName: req.query.tableName,
@@ -84,7 +84,10 @@ END";
 	// Instantiate a Map object from the mapfile string. You could use
 	// `mapserv.Map.FromFile` instead.
 	mapserv.Map.FromString(mapfile, function handleMap(err, map) {
-	    if (err) throw err;         // error loading the mapfile
+	    if (err) {
+	    	console.log(err);
+	    	throw err;         // error loading the mapfile
+	    }
 
 	    // a minimal CGI environment
 	    var env = {

@@ -693,9 +693,17 @@ maApp.controller('summaryController', function($rootScope,$scope,$http,$location
 			if(status==404)$location.path("/login")
 		});
 	};
-	$scope.downloadLayer = function(){
-		var url = getURL("spatial");
-		$('#dl_summary').attr('href', url)[0].click();
+	$scope.downloadLayer = function($event,format){
+		var url = getURL("spatial") + (format? "?format=" + format:"");
+		console.log(url);
+		//$event.preventDefault();
+	    //$event.stopPropagation();
+		setTimeout(
+		function(){
+			$('#dl_summary').attr('href', url)[0].click();
+		},
+		1000);
+		
 		//$window.open(url);
 	}
 	$scope.downloadTable = function() {
@@ -1310,7 +1318,8 @@ maApp.controller('subsummaryController', function($rootScope,$scope,$http,$locat
 			});
 		};
 		$scope.downloadLayer = function(){
-			var url = getURL("spatial");
+			//var url = getURL("spatial");
+			var url = getURL("spatial") + (type? "?format=" + type:"");
 			$('#dl_summary').attr('href', url)[0].click();
 			//$window.open(url);
 		}

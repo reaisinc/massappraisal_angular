@@ -198,7 +198,7 @@ if(global.standalone){
 	app.use(function(req, res, next) {
 		req.user={shortName:"demo",displayName:"Demo"};
 		req.user.displayName="Demo";
-		console.log(req.user);
+		//console.log(req.user);
 		next();
 	});
 }
@@ -360,10 +360,23 @@ http.createServer(app).listen(app.get('port'), function(){
 		for (var i = 0; i < numCPUs; i++) {
 			cluster.fork();
 		}
+		cluster.on('exit', function(deadWorker, code, signal) {
+		    // Restart the worker
+		    var worker = cluster.fork();
 
+		    // Note the process IDs
+		    var newPID = worker.process.pid;
+		    var oldPID = deadWorker.process.pid;
+
+		    // Log the event
+		    console.log('worker '+oldPID+' died.');
+		    console.log('worker '+newPID+' born.');
+		  });
+		/*
 		cluster.on('exit', function(worker, code, signal) {
 			console.log('worker ' + worker.process.pid + ' died');
 		});
+		*/
 	} else {
 		app.listen(app.get('port'), function(){
 			console.log('Express server listening on port ' + app.get('port'));
