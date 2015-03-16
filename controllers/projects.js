@@ -1627,7 +1627,9 @@ function downloadSpatialTable(req,res)
 				// is it not a spatial file?
 				//var opts=["-t_srs","epsg:3857","-overwrite","-nlt", "MULTIPOLYGON", "-nln",tableName];
 				//var opts=[req.user.shortName + "." + tableName+tid+"_soils"];
-				
+				res.writeHead(200, {
+				    'Set-Cookie':'download_file=; expires=Thu, 01 Jan 1970 00:00:01 GMT'
+				});
 				var ogr = ogr2ogr( global.ogrConnString ) //+ ' active_schema='+req.user.shortName + ' tables=' + req.user.shortName + "." + tableName+"_soils")
 				.format(format) 
 				.timeout(60*60*1000)

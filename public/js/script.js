@@ -643,7 +643,7 @@ maApp.controller('projectController', function($rootScope,$scope,$http,$location
 	};
 });
 
-maApp.controller('summaryController', function($rootScope,$scope,$http,$location,$window) {
+maApp.controller('summaryController', function($rootScope,$scope,$http,$location,$window,$interval) {
 	$scope.selectField = function(field,include) {
 		//console.log(field)
 		//console.log($scope.include);
@@ -696,14 +696,88 @@ maApp.controller('summaryController', function($rootScope,$scope,$http,$location
 	$scope.downloadLayer = function($event,format){
 		var url = getURL("spatial") + (format? "?format=" + format:"");
 		console.log(url);
+		//$cookieStore.put('download_file', 'true');
+		$scope.dlprogress =true;
+		var iframe = document.createElement('iframe');
+		//$cookieStore.put('download_file', 'true');
+		// sets the cookie cookie1
+		document.cookie =
+		 'download_file=true; expires=Fri, 31 Dec 9999 23:59:59 GMT'
+		
+		iframe.src = url;
+		iframe.style.display = "none";
+		document.body.appendChild(iframe);  
+
+		var promise = $interval(function () {
+			if (document.cookie.indexOf('download_file')!=-1){
+				$interval.cancel(promise);
+				$scope.dlprogress =false;
+				//$cookieStore.remove('download_file');
+				document.body.removeChild(iframe);
+			}
+		}, 1500, 500);
+		/*
+		setTimeout(
+				function(){
+					$('#dl_summary').attr('href', url)[0].click();
+
+				},
+				1000);
+		 */
+		//downloadFile($scope,url)
+		return;
+		var xhr = new XMLHttpRequest();
+
+		xhr.open("method","url"); 
+		xhr.onreadystatechange = function(e){
+			if (e.lengthComputable) {
+				$scope.dlprogress = (e.loaded / e.total) * 100;
+				//$('div.progress div.bar').css('width', percentage + '%');
+			}
+		} 
+		xhr.onload = function(e){} 
+		/*		 
+		// download progress
+		xhr.addEventListener("progress", downloadProgress, false)
+
+
+		var xhr = new XMLHttpRequest();
+		xhr.addEventListener("progress", down_or_up_progress, false);
+		xhr.addEventListener("load", displayBlob, false);
+		xhr.responseType = "blob";
+		xhr.open("POST", "/api/convert");
+		xhr.send(fd);
+
+		function down_or_up_progress (event) {
+		    // uploaded.value = ???
+		    // downloaded.value = ???
+		}
+
+	    xhr.open('get', '/', true);
+	    xhr.upload.onprogress = function(e) {
+	      if (e.lengthComputable) {
+	        var percentage = (e.loaded / e.total) * 100;
+	        //$('div.progress div.bar').css('width', percentage + '%');
+	      }
+	    };
+	    xhr.onerror = function(e) {
+	      showInfo('An error occurred while submitting the form. Maybe your file is too big');
+	    };
+	    xhr.onload = function() {
+	      showInfo(this.statusText);
+	    };
+	    xhr.send(url);
+		 */
 		//$event.preventDefault();
-	    //$event.stopPropagation();
+		//$event.stopPropagation();
+		/*
 		setTimeout(
 		function(){
 			$('#dl_summary').attr('href', url)[0].click();
 		},
 		1000);
-		
+		 */
+
 		//$window.open(url);
 	}
 	$scope.downloadTable = function() {
@@ -1709,6 +1783,77 @@ function createUploader($scope,$http,FileUploader,$modalInstance,op){
 		getFileStatus($scope,$http,op);
 	};
 	return uploader;
+}
+
+function downloadFile($scope,url){
+	
+	var xhReq = new XMLHttpRequest();
+
+	xhReq.open("GET",url, true);
+	xhReq.responseType = "blob";
+
+
+	xhReq.onload = function(e) {
+	if (this.readyState == 4 && this.status == 200) {
+		//console.log(this.response);
+		// var m_file = this.response;
+	// alert(m_file);
+
+	}
+	};
+	xhReq.send();
+
+	return;
+	var xhr = new XMLHttpRequest();
+    
+    xhr.addEventListener("progress", updateProgress, false);
+    xhr.addEventListener("load", transferComplete, false);
+    xhr.addEventListener("error", transferFailed, false);
+    xhr.addEventListener("abort", transferCanceled, false);
+
+    xhr.open("GET", url);
+    
+    function updateProgress(oEvent) 
+    {
+        if (oEvent.lengthComputable) 
+        {
+            var percentComplete = (oEvent.loaded / oEvent.total) * 100;
+            $scope.dlprogress=percentComplete;
+            /*
+			 * document.getElementById("progress").setAttribute("value",
+			 * percentComplete);//just a random value
+			 * document.getElementById("size").innerHTML = oEvent.total;
+			 * document.getElementById("downloaded").innerHTML = oEvent.loaded;
+			 */ 
+        }    
+        else 
+        {
+        	$scope.dlprogress=30;
+        	/*
+			 * document.getElementById("progress").setAttribute("value",
+			 * 30);//just a random value
+			 * document.getElementById("size").innerHTML = "unknown";
+			 * document.getElementById("downloaded").innerHTML = "unknown";
+			 */ 
+        }
+    }
+    
+    function transferComplete(oEvent)
+    {
+        alert("Downloaded Successfully");
+    }
+    
+    function transferFailed(oEvent)
+    {
+        alert("Downloading Failed");
+    }
+    
+    function transferCanceled(oEvent)
+    {
+        alert("Downloading Cancelled");
+    }
+    
+    xhr.send();	
 }
 
 //https://gist.github.com/adilapapaya/9787842

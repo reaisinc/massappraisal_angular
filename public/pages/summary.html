@@ -38,6 +38,10 @@
 							<li><a ng-click="downloadLayer($event,'FileGDB');">ESRI FileGeodatabase</a></li>
 						</ul>
 					</div>
+					<div ng-show="dlprogress">
+						<img src="/img/spinner_mac.gif"> Downloading file ..... Please wait
+					</div>
+					
 				</div>
 				<a id="dl_summary"></a>
 				<!--  
